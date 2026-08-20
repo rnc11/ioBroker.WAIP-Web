@@ -32,26 +32,26 @@
         "_divider1": {
             "type": "divider"
         },
-        "registrationTimeout": {
+        "registrationTimeoutSec": {
             "type": "number",
             "label": {
-                "en": "Registration timeout (ms)",
-                "de": "Registrierungs-Timeout (ms)"
+                "en": "Registration timeout (s)",
+                "de": "Registrierungs-Timeout (s)"
             },
-            "min": 1000,
-            "max": 120000,
+            "min": 1,
+            "max": 120,
             "sm": 12,
             "md": 6,
             "lg": 4
         },
-        "reconnectDelay": {
+        "reconnectDelaySec": {
             "type": "number",
             "label": {
-                "en": "Reconnect delay (ms)",
-                "de": "Wiederverbindungs-Verzögerung (ms)"
+                "en": "Reconnect delay (s)",
+                "de": "Wiederverbindungs-Verzögerung (s)"
             },
-            "min": 1000,
-            "max": 120000,
+            "min": 1,
+            "max": 120,
             "sm": 12,
             "md": 6,
             "lg": 4
