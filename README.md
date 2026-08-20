@@ -419,6 +419,12 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.3 (2026-08-21)
+
+- Admin UI: the Monitor ID field is now always full-width, placed on its
+  own row below the WAIP server URL, so the (sometimes long) dropdown
+  entries have enough room to display without being cramped.
+
 ### 0.6.2 (2026-08-21)
 
 - Monitor dropdown entries are now sorted by numeric monitor ID instead
