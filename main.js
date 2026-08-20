@@ -636,7 +636,8 @@ class WaipWeb extends utils.Adapter {
 
         // "alle Wachalarme" ist ein eigener Link außerhalb der kategorisierten Listen -
         // wird unabhängig vom Parsing-Erfolg der übrigen Seite immer als erste Option angeboten.
-        const result = [{ value: '0', label: 'Alle Wachalarme' }];
+        // Label beginnt jeweils mit der eigentlichen Monitor-ID (z.B. "4 - Leitstelle: Lausitz").
+        const result = [{ value: '0', label: '0 - Alle Wachalarme' }];
         const seen = new Set(['0']);
 
         const headingMatches = [];
@@ -656,7 +657,7 @@ class WaipWeb extends utils.Adapter {
                 for (const link of extractLinks(html.slice(start, end))) {
                     if (!seen.has(link.value)) {
                         seen.add(link.value);
-                        result.push({ value: link.value, label: `${sectionLabel}: ${link.label}` });
+                        result.push({ value: link.value, label: `${link.value} - ${sectionLabel}: ${link.label}` });
                     }
                 }
             }
@@ -666,7 +667,7 @@ class WaipWeb extends utils.Adapter {
             for (const link of extractLinks(html)) {
                 if (!seen.has(link.value)) {
                     seen.add(link.value);
-                    result.push(link);
+                    result.push({ value: link.value, label: `${link.value} - ${link.label}` });
                 }
             }
         }
@@ -690,7 +691,7 @@ class WaipWeb extends utils.Adapter {
                 list = await this.fetchMonitorList(targetUrl);
             } catch (e) {
                 this.safeLog('debug', 'getMonitorList', e);
-                list = [{ value: '0', label: 'Alle Wachalarme' }];
+                list = [{ value: '0', label: '0 - Alle Wachalarme' }];
             }
             this.sendTo(obj.from, obj.command, list, obj.callback);
         }

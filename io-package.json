@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "news": {
+      "0.6.1": {
+        "en": "Monitor dropdown entries now start with the actual monitor ID, e.g. '4 - Leitstelle: Lausitz'",
+        "de": "Einträge im Monitor-Dropdown beginnen jetzt mit der eigentlichen Monitor-ID, z.B. '4 - Leitstelle: Lausitz'"
+      },
       "0.6.0": {
         "en": "Monitor ID in the admin UI is now a live dropdown (selectSendTo), fetched from the configured server's /waip/ overview page and grouped by Leitstelle/Kreis/Träger/Wache, with 'Alle Wachalarme' (ID 0) as an explicit option; manual entry stays available if the server can't be reached. Removed the static session-keepalive info text. Added help text to the registration-timeout and reconnect-delay fields.",
         "de": "Monitor-ID in der Admin-Oberfläche ist jetzt ein Live-Dropdown (selectSendTo), das von der /waip/-Übersichtsseite des konfigurierten Servers geladen und nach Leitstelle/Kreis/Träger/Wache gruppiert wird, inkl. 'Alle Wachalarme' (ID 0) als expliziter Option; manuelle Eingabe bleibt möglich, falls der Server nicht erreichbar ist. Statischen Session-Keepalive-Infotext entfernt. Hilfetexte für Registrierungs-Timeout und Wiederverbindungs-Verzögerung ergänzt."
@@ -78,10 +82,6 @@
       "0.2.1": {
         "en": "Detect session cookie rotation and force a socket reconnect so the connection doesn't silently die on an invalidated server session",
         "de": "Session-Cookie-Rotation wird erkannt und erzwingt einen Socket-Reconnect, damit die Verbindung nicht still an einer ungültig gewordenen Server-Session stirbt"
-      },
-      "0.2.0": {
-        "en": "Automatic session cookie management (GET /session/keepalive) so the alarm feed keeps working without a real browser session",
-        "de": "Automatisches Session-Cookie-Management (GET /session/keepalive), damit die Alarm-Zustellung auch ohne echte Browsersitzung weiterläuft"
       }
     },
     "title": "WAIP-Web",
