@@ -1,97 +1,125 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.4",
+    "version": "0.6.5",
     "news": {
+      "0.6.5": {
+        "en": "Fixed all issues reported by the official ioBroker adapter checker: bumped required js-controller to >=5.0.19 and @iobroker/adapter-core to ^3.2.2, replaced deprecated common.license/common.title/common.main with common.licenseInformation/common.titleLang, added common.tier, added translations for titleLang/desc/news into all 10 additional languages, and trimmed common.news to the 7 most recent entries as recommended",
+        "de": "Alle vom offiziellen ioBroker-Adapter-Checker gemeldeten Punkte behoben: benötigten js-controller auf >=5.0.19 und @iobroker/adapter-core auf ^3.2.2 angehoben, veraltete common.license/common.title/common.main durch common.licenseInformation/common.titleLang ersetzt, common.tier ergänzt, titleLang/desc/news in alle 10 zusätzlichen Sprachen übersetzt und common.news wie empfohlen auf die 7 neuesten Einträge gekürzt",
+        "ru": "Устранены все замечания официального ioBroker Adapter Checker: минимальная требуемая версия js-controller повышена до >=5.0.19, а @iobroker/adapter-core — до ^3.2.2, устаревшие common.license/common.title/common.main заменены на common.licenseInformation/common.titleLang, добавлено common.tier, добавлены переводы titleLang/desc/news на все 10 дополнительных языков, а common.news сокращено до 7 последних записей, как рекомендовано",
+        "pt": "Corrigidos todos os pontos relatados pelo verificador oficial de adaptadores do ioBroker: js-controller mínimo exigido elevado para >=5.0.19 e @iobroker/adapter-core para ^3.2.2, os campos obsoletos common.license/common.title/common.main substituídos por common.licenseInformation/common.titleLang, adicionado common.tier, adicionadas traduções de titleLang/desc/news para os 10 idiomas adicionais, e common.news reduzido para as 7 entradas mais recentes, conforme recomendado",
+        "nl": "Alle door de officiële ioBroker adapter-checker gemelde punten opgelost: vereiste js-controller verhoogd naar >=5.0.19 en @iobroker/adapter-core naar ^3.2.2, verouderde common.license/common.title/common.main vervangen door common.licenseInformation/common.titleLang, common.tier toegevoegd, vertalingen van titleLang/desc/news toegevoegd voor alle 10 extra talen, en common.news zoals aanbevolen ingekort tot de 7 meest recente items",
+        "fr": "Correction de tous les points signalés par le vérificateur officiel d'adaptateurs ioBroker : js-controller minimal requis relevé à >=5.0.19 et @iobroker/adapter-core à ^3.2.2, les champs obsolètes common.license/common.title/common.main remplacés par common.licenseInformation/common.titleLang, ajout de common.tier, ajout des traductions de titleLang/desc/news dans les 10 langues supplémentaires, et common.news réduit aux 7 entrées les plus récentes comme recommandé",
+        "it": "Risolti tutti i punti segnalati dal checker ufficiale degli adapter ioBroker: js-controller minimo richiesto elevato a >=5.0.19 e @iobroker/adapter-core a ^3.2.2, i campi deprecati common.license/common.title/common.main sostituiti con common.licenseInformation/common.titleLang, aggiunto common.tier, aggiunte le traduzioni di titleLang/desc/news in tutte le 10 lingue aggiuntive, e common.news ridotto alle 7 voci più recenti come raccomandato",
+        "es": "Se corrigieron todos los puntos señalados por el verificador oficial de adaptadores de ioBroker: se elevó el js-controller mínimo requerido a >=5.0.19 y @iobroker/adapter-core a ^3.2.2, se sustituyeron los campos obsoletos common.license/common.title/common.main por common.licenseInformation/common.titleLang, se añadió common.tier, se añadieron traducciones de titleLang/desc/news a los 10 idiomas adicionales, y common.news se redujo a las 7 entradas más recientes según lo recomendado",
+        "pl": "Naprawiono wszystkie kwestie zgłoszone przez oficjalny checker adapterów ioBroker: podniesiono wymaganą minimalną wersję js-controller do >=5.0.19, a @iobroker/adapter-core do ^3.2.2, przestarzałe pola common.license/common.title/common.main zastąpiono common.licenseInformation/common.titleLang, dodano common.tier, dodano tłumaczenia titleLang/desc/news na wszystkie 10 dodatkowych języków, a common.news skrócono do 7 najnowszych wpisów zgodnie z zaleceniem",
+        "uk": "Виправлено всі зауваження офіційного перевірника адаптерів ioBroker: мінімальну потрібну версію js-controller підвищено до >=5.0.19, а @iobroker/adapter-core — до ^3.2.2, застарілі common.license/common.title/common.main замінено на common.licenseInformation/common.titleLang, додано common.tier, додано переклади titleLang/desc/news на всі 10 додаткових мов, а common.news скорочено до 7 найновіших записів, як рекомендовано",
+        "zh-cn": "修复了官方 ioBroker 适配器检查器报告的所有问题:将所需最低 js-controller 版本提升至 >=5.0.19,@iobroker/adapter-core 提升至 ^3.2.2;用 common.licenseInformation/common.titleLang 替换了已弃用的 common.license/common.title/common.main;新增 common.tier;为 titleLang/desc/news 添加了全部 10 种附加语言的翻译;并按照建议将 common.news 精简为最近的 7 条记录"
+      },
       "0.6.4": {
         "en": "New state status.registeredMonitorName shows the registered monitor as text without the ID (e.g. 'Leitstelle: Lausitz'), resolved once at startup from the same /waip/ overview page as the admin dropdown; status.registeredMonitor keeps showing the ID as before",
-        "de": "Neuer State status.registeredMonitorName zeigt den registrierten Monitor als Text ohne ID (z.B. 'Leitstelle: Lausitz'), einmalig beim Start von derselben /waip/-Übersichtsseite wie das Admin-Dropdown aufgelöst; status.registeredMonitor zeigt weiterhin wie bisher die ID"
+        "de": "Neuer State status.registeredMonitorName zeigt den registrierten Monitor als Text ohne ID (z.B. 'Leitstelle: Lausitz'), einmalig beim Start von derselben /waip/-Übersichtsseite wie das Admin-Dropdown aufgelöst; status.registeredMonitor zeigt weiterhin wie bisher die ID",
+        "ru": "Новое состояние status.registeredMonitorName показывает зарегистрированный монитор в виде текста без ID (например, 'Leitstelle: Lausitz'), которое определяется один раз при запуске с той же обзорной страницы /waip/, что и выпадающий список в админке; status.registeredMonitor по-прежнему показывает ID",
+        "pt": "O novo estado status.registeredMonitorName mostra o monitor registrado como texto sem o ID (ex.: 'Leitstelle: Lausitz'), resolvido uma vez na inicialização a partir da mesma página de visão geral /waip/ usada pela lista suspensa do admin; status.registeredMonitor continua mostrando o ID como antes",
+        "nl": "Nieuwe state status.registeredMonitorName toont de geregistreerde monitor als tekst zonder ID (bijv. 'Leitstelle: Lausitz'), eenmalig bepaald bij het opstarten vanaf dezelfde /waip/-overzichtspagina als de admin-keuzelijst; status.registeredMonitor blijft zoals voorheen de ID tonen",
+        "fr": "Le nouvel état status.registeredMonitorName affiche le moniteur enregistré sous forme de texte sans l'ID (ex. « Leitstelle: Lausitz »), résolu une seule fois au démarrage à partir de la même page de présentation /waip/ que la liste déroulante d'administration ; status.registeredMonitor continue d'afficher l'ID comme auparavant",
+        "it": "Il nuovo stato status.registeredMonitorName mostra il monitor registrato come testo senza ID (es. 'Leitstelle: Lausitz'), risolto una sola volta all'avvio dalla stessa pagina panoramica /waip/ usata dal menu a tendina di amministrazione; status.registeredMonitor continua a mostrare l'ID come prima",
+        "es": "El nuevo estado status.registeredMonitorName muestra el monitor registrado como texto sin el ID (p. ej. 'Leitstelle: Lausitz'), resuelto una sola vez al iniciar desde la misma página de resumen /waip/ que la lista desplegable de administración; status.registeredMonitor sigue mostrando el ID como antes",
+        "pl": "Nowy stan status.registeredMonitorName pokazuje zarejestrowany monitor jako tekst bez ID (np. 'Leitstelle: Lausitz'), ustalany jednorazowo przy starcie na podstawie tej samej strony przeglądu /waip/, co lista rozwijana w panelu administracyjnym; status.registeredMonitor nadal pokazuje ID jak dotychczas",
+        "uk": "Новий стан status.registeredMonitorName показує зареєстрований монітор як текст без ID (напр., 'Leitstelle: Lausitz'), що визначається один раз під час запуску з тієї самої оглядової сторінки /waip/, що й випадний список в адмінці; status.registeredMonitor, як і раніше, показує ID",
+        "zh-cn": "新增状态 status.registeredMonitorName 以文本形式显示已注册的监视器名称(不含 ID,例如 'Leitstelle: Lausitz'),在启动时从与管理界面下拉列表相同的 /waip/ 概览页面解析一次;status.registeredMonitor 保持不变,仍显示 ID"
       },
       "0.6.3": {
         "en": "Monitor ID field is now always full-width, placed on its own row below the WAIP server URL, so the (sometimes long) dropdown entries have enough room",
-        "de": "Feld Monitor-ID ist jetzt immer vollzeilig und steht in einer eigenen Zeile unterhalb der WAIP-Server-URL, damit die teils langen Dropdown-Einträge genug Platz haben"
+        "de": "Feld Monitor-ID ist jetzt immer vollzeilig und steht in einer eigenen Zeile unterhalb der WAIP-Server-URL, damit die teils langen Dropdown-Einträge genug Platz haben",
+        "ru": "Поле ID монитора теперь всегда занимает всю ширину и располагается в отдельной строке под URL сервера WAIP, чтобы для порой длинных пунктов выпадающего списка было достаточно места",
+        "pt": "O campo ID do monitor agora é sempre de largura total, colocado em sua própria linha abaixo da URL do servidor WAIP, para que as entradas (às vezes longas) da lista suspensa tenham espaço suficiente",
+        "nl": "Het veld Monitor-ID is nu altijd volledig breed en staat op een eigen regel onder de WAIP-server-URL, zodat de soms lange items in de keuzelijst genoeg ruimte hebben",
+        "fr": "Le champ ID du moniteur occupe désormais toujours toute la largeur et se trouve sur sa propre ligne sous l'URL du serveur WAIP, afin que les entrées (parfois longues) de la liste déroulante disposent de suffisamment de place",
+        "it": "Il campo ID del monitor ora è sempre a larghezza intera, collocato su una riga propria sotto l'URL del server WAIP, così le voci (a volte lunghe) del menu a tendina hanno spazio sufficiente",
+        "es": "El campo ID del monitor ahora siempre ocupa el ancho completo y se coloca en su propia fila debajo de la URL del servidor WAIP, para que las entradas (a veces largas) de la lista desplegable tengan suficiente espacio",
+        "pl": "Pole ID monitora zajmuje teraz zawsze pełną szerokość i znajduje się w osobnym wierszu poniżej adresu URL serwera WAIP, dzięki czemu czasem długie pozycje listy rozwijanej mają wystarczająco miejsca",
+        "uk": "Поле ID монітора тепер завжди на всю ширину і розташоване в окремому рядку під URL-адресою сервера WAIP, щоб інколи довгі пункти випадного списку мали достатньо місця",
+        "zh-cn": "监视器 ID 字段现在始终占满整行宽度,并单独显示在 WAIP 服务器 URL 下方一行,以便下拉列表中(有时较长的)条目有足够的显示空间"
       },
       "0.6.2": {
         "en": "Monitor dropdown entries are now sorted by numeric monitor ID instead of the source page's order",
-        "de": "Einträge im Monitor-Dropdown werden jetzt nach numerischer Monitor-ID sortiert statt in der Reihenfolge der Quellseite"
+        "de": "Einträge im Monitor-Dropdown werden jetzt nach numerischer Monitor-ID sortiert statt in der Reihenfolge der Quellseite",
+        "ru": "Пункты выпадающего списка мониторов теперь сортируются по числовому ID монитора, а не в порядке исходной страницы",
+        "pt": "As entradas da lista suspensa de monitores agora são ordenadas pelo ID numérico do monitor, em vez da ordem da página de origem",
+        "nl": "Items in de monitor-keuzelijst worden nu gesorteerd op numerieke monitor-ID in plaats van op de volgorde van de bronpagina",
+        "fr": "Les entrées de la liste déroulante des moniteurs sont désormais triées par ID de moniteur numérique plutôt que selon l'ordre de la page source",
+        "it": "Le voci del menu a tendina dei monitor sono ora ordinate per ID monitor numerico anziché secondo l'ordine della pagina di origine",
+        "es": "Las entradas de la lista desplegable de monitores ahora se ordenan por el ID numérico del monitor en lugar del orden de la página de origen",
+        "pl": "Pozycje na liście rozwijanej monitorów są teraz sortowane według numerycznego ID monitora zamiast kolejności ze strony źródłowej",
+        "uk": "Пункти випадного списку моніторів тепер сортуються за числовим ID монітора, а не за порядком на вихідній сторінці",
+        "zh-cn": "监视器下拉列表条目现在按数字监视器 ID 排序,而不是按源页面的顺序排列"
       },
       "0.6.1": {
         "en": "Monitor dropdown entries now start with the actual monitor ID, e.g. '4 - Leitstelle: Lausitz'",
-        "de": "Einträge im Monitor-Dropdown beginnen jetzt mit der eigentlichen Monitor-ID, z.B. '4 - Leitstelle: Lausitz'"
+        "de": "Einträge im Monitor-Dropdown beginnen jetzt mit der eigentlichen Monitor-ID, z.B. '4 - Leitstelle: Lausitz'",
+        "ru": "Пункты выпадающего списка мониторов теперь начинаются с фактического ID монитора, например '4 - Leitstelle: Lausitz'",
+        "pt": "As entradas da lista suspensa de monitores agora começam com o ID real do monitor, por ex. '4 - Leitstelle: Lausitz'",
+        "nl": "Items in de monitor-keuzelijst beginnen nu met de werkelijke monitor-ID, bijv. '4 - Leitstelle: Lausitz'",
+        "fr": "Les entrées de la liste déroulante des moniteurs commencent désormais par l'ID réel du moniteur, par ex. « 4 - Leitstelle: Lausitz »",
+        "it": "Le voci del menu a tendina dei monitor iniziano ora con l'ID effettivo del monitor, ad es. '4 - Leitstelle: Lausitz'",
+        "es": "Las entradas de la lista desplegable de monitores ahora comienzan con el ID real del monitor, p. ej. '4 - Leitstelle: Lausitz'",
+        "pl": "Pozycje na liście rozwijanej monitorów zaczynają się teraz od rzeczywistego ID monitora, np. '4 - Leitstelle: Lausitz'",
+        "uk": "Пункти випадного списку моніторів тепер починаються з фактичного ID монітора, напр. '4 - Leitstelle: Lausitz'",
+        "zh-cn": "监视器下拉列表条目现在以实际监视器 ID 开头,例如 '4 - Leitstelle: Lausitz'"
       },
       "0.6.0": {
         "en": "Monitor ID in the admin UI is now a live dropdown (selectSendTo), fetched from the configured server's /waip/ overview page and grouped by Leitstelle/Kreis/Träger/Wache, with 'Alle Wachalarme' (ID 0) as an explicit option; manual entry stays available if the server can't be reached. Removed the static session-keepalive info text. Added help text to the registration-timeout and reconnect-delay fields.",
-        "de": "Monitor-ID in der Admin-Oberfläche ist jetzt ein Live-Dropdown (selectSendTo), das von der /waip/-Übersichtsseite des konfigurierten Servers geladen und nach Leitstelle/Kreis/Träger/Wache gruppiert wird, inkl. 'Alle Wachalarme' (ID 0) als expliziter Option; manuelle Eingabe bleibt möglich, falls der Server nicht erreichbar ist. Statischen Session-Keepalive-Infotext entfernt. Hilfetexte für Registrierungs-Timeout und Wiederverbindungs-Verzögerung ergänzt."
+        "de": "Monitor-ID in der Admin-Oberfläche ist jetzt ein Live-Dropdown (selectSendTo), das von der /waip/-Übersichtsseite des konfigurierten Servers geladen und nach Leitstelle/Kreis/Träger/Wache gruppiert wird, inkl. 'Alle Wachalarme' (ID 0) als expliziter Option; manuelle Eingabe bleibt möglich, falls der Server nicht erreichbar ist. Statischen Session-Keepalive-Infotext entfernt. Hilfetexte für Registrierungs-Timeout und Wiederverbindungs-Verzögerung ergänzt.",
+        "ru": "ID монитора в интерфейсе администратора теперь представлен в виде динамического выпадающего списка (selectSendTo), который загружается с обзорной страницы /waip/ настроенного сервера и группируется по Leitstelle/Kreis/Träger/Wache, с явным пунктом 'Alle Wachalarme' (ID 0); ручной ввод по-прежнему доступен, если сервер недоступен. Удалён статический информационный текст о Session-Keepalive. Добавлены подсказки к полям времени ожидания регистрации и задержки переподключения.",
+        "pt": "O ID do monitor na interface de administração agora é uma lista suspensa dinâmica (selectSendTo), obtida da página de visão geral /waip/ do servidor configurado e agrupada por Leitstelle/Kreis/Träger/Wache, com 'Alle Wachalarme' (ID 0) como opção explícita; a entrada manual continua disponível se o servidor não puder ser alcançado. Removido o texto informativo estático sobre o keepalive de sessão. Adicionado texto de ajuda aos campos de tempo limite de registro e atraso de reconexão.",
+        "nl": "Monitor-ID in de admin-UI is nu een live keuzelijst (selectSendTo), opgehaald van de /waip/-overzichtspagina van de geconfigureerde server en gegroepeerd naar Leitstelle/Kreis/Träger/Wache, met 'Alle Wachalarme' (ID 0) als expliciete optie; handmatige invoer blijft mogelijk als de server niet bereikbaar is. De statische infotekst over session-keepalive is verwijderd. Hulptekst toegevoegd aan de velden voor registratie-timeout en reconnect-vertraging.",
+        "fr": "L'ID du moniteur dans l'interface d'administration est désormais une liste déroulante dynamique (selectSendTo), récupérée depuis la page de présentation /waip/ du serveur configuré et regroupée par Leitstelle/Kreis/Träger/Wache, avec « Alle Wachalarme » (ID 0) comme option explicite ; la saisie manuelle reste possible si le serveur est inaccessible. Le texte d'information statique sur le keepalive de session a été supprimé. Un texte d'aide a été ajouté aux champs de délai d'enregistrement et de délai de reconnexion.",
+        "it": "L'ID del monitor nell'interfaccia di amministrazione è ora un menu a tendina dinamico (selectSendTo), recuperato dalla pagina panoramica /waip/ del server configurato e raggruppato per Leitstelle/Kreis/Träger/Wache, con 'Alle Wachalarme' (ID 0) come opzione esplicita; l'inserimento manuale resta disponibile se il server non è raggiungibile. Rimosso il testo informativo statico sul keepalive di sessione. Aggiunto testo di aiuto ai campi di timeout di registrazione e ritardo di riconnessione.",
+        "es": "El ID del monitor en la interfaz de administración ahora es una lista desplegable dinámica (selectSendTo), obtenida de la página de resumen /waip/ del servidor configurado y agrupada por Leitstelle/Kreis/Träger/Wache, con 'Alle Wachalarme' (ID 0) como opción explícita; la entrada manual sigue disponible si no se puede contactar con el servidor. Se eliminó el texto informativo estático sobre el keepalive de sesión. Se añadió texto de ayuda a los campos de tiempo de espera de registro y retraso de reconexión.",
+        "pl": "ID monitora w interfejsie administracyjnym jest teraz dynamiczną listą rozwijaną (selectSendTo), pobieraną ze strony przeglądu /waip/ skonfigurowanego serwera i grupowaną według Leitstelle/Kreis/Träger/Wache, z jawną opcją 'Alle Wachalarme' (ID 0); ręczne wprowadzanie pozostaje dostępne, jeśli serwer jest nieosiągalny. Usunięto statyczny tekst informacyjny o keepalive sesji. Dodano tekst pomocy do pól limitu czasu rejestracji i opóźnienia ponownego połączenia.",
+        "uk": "ID монітора в адмін-інтерфейсі тепер є динамічним випадним списком (selectSendTo), який завантажується з оглядової сторінки /waip/ налаштованого сервера та групується за Leitstelle/Kreis/Träger/Wache, з явним пунктом 'Alle Wachalarme' (ID 0); ручне введення залишається доступним, якщо сервер недоступний. Видалено статичний інформаційний текст про keepalive сесії. Додано текст підказки до полів тайм-ауту реєстрації та затримки повторного підключення.",
+        "zh-cn": "管理界面中的监视器 ID 现在是一个动态下拉列表(selectSendTo),从所配置服务器的 /waip/ 概览页面获取数据,并按 Leitstelle/Kreis/Träger/Wache 分组,并明确提供 'Alle Wachalarme'(ID 0)选项;如果无法连接服务器,仍可手动输入。已移除静态的会话保活说明文字。为注册超时和重连延迟字段添加了帮助说明。"
       },
       "0.5.1": {
         "en": "Reclassified log levels so warn becomes a reliable signal again: session-cookie rotation, the known session-renewal error message and server-restart detection are now info instead of warn (they're part of this instance's normal, self-healing ~10-minute session cycle); events discarded for a different monitor ID are now info; housekeeping failures (audit log, socket cleanup) are now debug; a duplicate connect_error log line was removed; failed processing of an incident/feedback/route/TTS event is now logged as error (new level) instead of warn",
-        "de": "Log-Level neu klassifiziert, damit warn wieder ein verlässliches Signal ist: Session-Cookie-Rotation, die bekannte Session-Renewal-Fehlermeldung und die Server-Neustart-Erkennung sind jetzt info statt warn (Teil des normalen, selbstheilenden ~10-Minuten-Session-Zyklus dieser Instanz); für eine andere Monitor-ID verworfene Events sind jetzt info; Housekeeping-Fehler (Audit-Log, Socket-Cleanup) sind jetzt debug; doppeltes connect_error-Logging entfernt; fehlgeschlagene Verarbeitung eines Einsatz-/Rückmeldungs-/Routen-/TTS-Events wird jetzt als error (neues Level) statt warn geloggt"
-      },
-      "0.5.0": {
-        "en": "einsatz.* states (including einsatz.json and all counters) are now cleared on io.standby instead of showing the finished incident until a new one arrives, matching the official frontend's behavior; the finished incident stays available via einsatz.history10",
-        "de": "einsatz.*-States (inkl. einsatz.json und aller Zähler) werden bei io.standby jetzt geleert, statt den beendeten Einsatz bis zum nächsten anzuzeigen - passend zum Verhalten des offiziellen Frontends; der beendete Einsatz bleibt über einsatz.history10 abrufbar"
-      },
-      "0.4.9": {
-        "en": "Reverted an unnecessary line wrap that was itself flagged by prettier/prettier (the line actually fits within printWidth)",
-        "de": "Unnötigen Zeilenumbruch rückgängig gemacht, der selbst von prettier/prettier bemängelt wurde (Zeile passt tatsächlich in die printWidth)"
-      },
-      "0.4.8": {
-        "en": "Fixed the final 16 lint errors (line-wrapping, prefer-template) using the exact CI-reported replacements; lint should now be fully clean",
-        "de": "Letzte 16 Lint-Fehler behoben (Zeilenumbrüche, prefer-template) anhand der von der CI exakt gemeldeten Ersetzungen; Lint sollte jetzt vollständig sauber sein"
-      },
-      "0.4.7": {
-        "en": "Fixed remaining lint errors (curly, no-unused-vars, arrow-parens) across the whole file; developer tooling only, no runtime changes",
-        "de": "Verbleibende Lint-Fehler behoben (curly, no-unused-vars, arrow-parens) über die gesamte Datei; reines Entwickler-Tooling, keine Laufzeit-Änderungen"
-      },
-      "0.4.6": {
-        "en": "Added the missing prettier.config.mjs required by @iobroker/eslint-config; without it Prettier fell back to its own defaults (double quotes) instead of the ioBroker style (single quotes), causing the lint step to fail with hundreds of formatting errors",
-        "de": "Fehlende prettier.config.mjs ergänzt, die von @iobroker/eslint-config vorausgesetzt wird; ohne sie fiel Prettier auf seine eigenen Standard-Einstellungen (doppelte Anführungszeichen) statt auf den ioBroker-Stil (einfache Anführungszeichen) zurück, wodurch der Lint-Schritt mit hunderten Formatierungsfehlern fehlschlug"
-      },
-      "0.4.5": {
-        "en": "Fixed CI pipeline failing with 'Dependencies lock file is not found' by disabling setup-node's built-in npm cache (which needs a lockfile independently of the install command), since no package-lock.json is committed yet",
-        "de": "CI-Pipeline-Fehler 'Dependencies lock file is not found' behoben, indem das eingebaute npm-Caching von setup-node deaktiviert wurde (das unabhängig vom Install-Befehl eine Lockfile braucht), da noch kein package-lock.json im Repo liegt"
-      },
-      "0.4.4": {
-        "en": "Added a standard ioBroker CI pipeline (GitHub Actions: lint + package/integration tests on Node 20/22/24 across Ubuntu/Windows/macOS) - developer tooling only, no runtime changes",
-        "de": "Standard-ioBroker-CI-Pipeline eingerichtet (GitHub Actions: Lint + Package-/Integrationstests auf Node 20/22/24 unter Ubuntu/Windows/macOS) - reines Entwickler-Tooling, keine Laufzeit-Änderungen"
-      },
-      "0.4.3": {
-        "en": "Fixed einsatz.id and einsatz.sondersignal state type (string -> number, matching what the server actually sends); existing objects with the wrong type are migrated automatically on update",
-        "de": "Datentyp von einsatz.id und einsatz.sondersignal korrigiert (string -> number, entspricht dem, was der Server tatsächlich sendet); bestehende Objekte mit falschem Typ werden beim Update automatisch migriert"
-      },
-      "0.4.2": {
-        "en": "Removed the session keepalive config field - the upper bound is now fixed at 5 minutes, matching the site's own /js/session_keepalive.js exactly, since the interval is fully automatic anyway",
-        "de": "Konfigurationsfeld für das Session-Keepalive entfernt - die Obergrenze ist jetzt fix auf 5 Minuten gesetzt (wie /js/session_keepalive.js der Website selbst), da das Intervall ohnehin vollautomatisch ermittelt wird"
-      },
-      "0.4.1": {
-        "en": "Session keepalive interval is now derived adaptively from the server-reported cookie lifetime instead of a fixed assumption (WAIP-Web's cookie lifetime is configurable per instance, default 60s per its source code); corrected an inaccurate code comment about in-memory session storage",
-        "de": "Session-Keepalive-Intervall wird jetzt adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet statt fest angenommen (die Cookie-Laufzeit ist laut Quellcode je WAIP-Web-Instanz konfigurierbar, Standard 60s); ungenauer Code-Kommentar zu In-Memory-Sessions korrigiert"
-      },
-      "0.4.0": {
-        "en": "Restructured objects: nested einsatz.json (with routes/Rückmeldungen as arrays) and einsatz.history10 replace vis.*, json.*, geo.*, history.last10, rueckmeldung.last.json, routen.json/count and rueckmeldung.counts.*; new einsatz.rueckmeldungAnzahl.*/rueckmeldungGesamt/routenGesamt/latitude/longitude and tts.history10. Obsolete objects are removed automatically on update.",
-        "de": "Objektstruktur überarbeitet: verschachteltes einsatz.json (Routen/Rückmeldungen als Arrays) und einsatz.history10 ersetzen vis.*, json.*, geo.*, history.last10, rueckmeldung.last.json, routen.json/count und rueckmeldung.counts.*; neu: einsatz.rueckmeldungAnzahl.*/rueckmeldungGesamt/routenGesamt/latitude/longitude sowie tts.history10. Veraltete Objekte werden beim Update automatisch entfernt."
-      },
-      "0.3.4": {
-        "en": "All state names are now consistently German (was a mix of English/German)",
-        "de": "Alle State-Bezeichnungen sind jetzt konsequent auf Deutsch (vorher englisch/deutsch gemischt)"
-      },
-      "0.3.3": {
-        "en": "Fixed a bug where events could be silently dropped after the registration timeout for non-global monitor IDs, since real WAIP payloads never carry a monitor field; registrationAccepted now reflects reality",
-        "de": "Bug behoben: Events konnten bei nicht-globalen Monitor-IDs nach dem Registrierungs-Timeout still verworfen werden, da reale WAIP-Payloads nie ein Monitor-Feld enthalten; registrationAccepted spiegelt jetzt die Realität wider"
-      },
-      "0.3.2": {
-        "en": "Registration timeout and reconnect delay config fields changed from milliseconds to seconds",
-        "de": "Konfigurationsfelder für Registrierungs-Timeout und Wiederverbindungs-Verzögerung von Millisekunden auf Sekunden umgestellt"
+        "de": "Log-Level neu klassifiziert, damit warn wieder ein verlässliches Signal ist: Session-Cookie-Rotation, die bekannte Session-Renewal-Fehlermeldung und die Server-Neustart-Erkennung sind jetzt info statt warn (Teil des normalen, selbstheilenden ~10-Minuten-Session-Zyklus dieser Instanz); für eine andere Monitor-ID verworfene Events sind jetzt info; Housekeeping-Fehler (Audit-Log, Socket-Cleanup) sind jetzt debug; doppeltes connect_error-Logging entfernt; fehlgeschlagene Verarbeitung eines Einsatz-/Rückmeldungs-/Routen-/TTS-Events wird jetzt als error (neues Level) statt warn geloggt",
+        "ru": "Уровни логирования переклассифицированы, чтобы warn снова стал надёжным сигналом: ротация сессионного cookie, известное сообщение об ошибке обновления сессии и обнаружение перезапуска сервера теперь логируются как info вместо warn (это часть нормального, самовосстанавливающегося ~10-минутного цикла сессии данного сервера); события, отклонённые из-за другого ID монитора, теперь info; сбои вспомогательных операций (журнал аудита, очистка сокета) теперь debug; удалена дублирующаяся запись connect_error; неудачная обработка события инцидента/обратной связи/маршрута/TTS теперь логируется как error (новый уровень) вместо warn",
+        "pt": "Os níveis de log foram reclassificados para que warn volte a ser um sinal confiável: a rotação do cookie de sessão, a mensagem de erro conhecida de renovação de sessão e a detecção de reinício do servidor agora são info em vez de warn (fazem parte do ciclo normal e autorrecuperável de ~10 minutos de sessão desta instância); eventos descartados por um ID de monitor diferente agora são info; falhas de manutenção interna (log de auditoria, limpeza de socket) agora são debug; uma linha de log connect_error duplicada foi removida; o processamento malsucedido de um evento de incidente/feedback/rota/TTS agora é registrado como error (novo nível) em vez de warn",
+        "nl": "Logniveaus zijn opnieuw geclassificeerd zodat warn weer een betrouwbaar signaal is: sessie-cookierotatie, het bekende foutbericht over sessievernieuwing en het detecteren van een serverherstart zijn nu info in plaats van warn (ze horen bij de normale, zelfherstellende sessiecyclus van ongeveer 10 minuten van deze instantie); events die vanwege een andere monitor-ID worden genegeerd zijn nu info; huishoudelijke fouten (auditlog, socket-opruiming) zijn nu debug; een dubbele connect_error-logregel is verwijderd; mislukte verwerking van een incident-/feedback-/route-/TTS-event wordt nu gelogd als error (nieuw niveau) in plaats van warn",
+        "fr": "Les niveaux de journalisation ont été reclassés afin que warn redevienne un signal fiable : la rotation du cookie de session, le message d'erreur connu de renouvellement de session et la détection d'un redémarrage du serveur sont désormais en info au lieu de warn (ils font partie du cycle de session normal et autorégénérateur d'environ 10 minutes de cette instance) ; les événements rejetés pour un ID de moniteur différent sont désormais en info ; les échecs de maintenance interne (journal d'audit, nettoyage du socket) sont désormais en debug ; une ligne de journal connect_error dupliquée a été supprimée ; le traitement échoué d'un événement d'incident/retour/itinéraire/TTS est désormais journalisé en error (nouveau niveau) au lieu de warn",
+        "it": "I livelli di log sono stati riclassificati in modo che warn torni a essere un segnale affidabile: la rotazione del cookie di sessione, il noto messaggio di errore di rinnovo sessione e il rilevamento del riavvio del server sono ora info invece di warn (fanno parte del normale ciclo di sessione autorigenerante di circa 10 minuti di questa istanza); gli eventi scartati per un ID monitor diverso sono ora info; i fallimenti di manutenzione interna (log di audit, pulizia socket) sono ora debug; è stata rimossa una riga di log connect_error duplicata; l'elaborazione fallita di un evento di incidente/feedback/percorso/TTS è ora registrata come error (nuovo livello) invece di warn",
+        "es": "Se reclasificaron los niveles de registro para que warn vuelva a ser una señal fiable: la rotación de la cookie de sesión, el mensaje de error conocido de renovación de sesión y la detección de reinicio del servidor ahora son info en lugar de warn (forman parte del ciclo de sesión normal y autorreparable de ~10 minutos de esta instancia); los eventos descartados por un ID de monitor diferente ahora son info; los fallos de mantenimiento interno (registro de auditoría, limpieza de socket) ahora son debug; se eliminó una línea de registro connect_error duplicada; el procesamiento fallido de un evento de incidente/comentario/ruta/TTS ahora se registra como error (nuevo nivel) en lugar de warn",
+        "pl": "Poziomy logowania zostały przeklasyfikowane, aby warn ponownie stał się wiarygodnym sygnałem: rotacja ciasteczka sesji, znany komunikat błędu odnawiania sesji oraz wykrycie restartu serwera są teraz logowane jako info zamiast warn (są częścią normalnego, samonaprawiającego się ok. 10-minutowego cyklu sesji tej instancji); zdarzenia odrzucone z powodu innego ID monitora są teraz info; błędy czynności porządkowych (dziennik audytu, czyszczenie socketu) są teraz debug; usunięto zduplikowany wpis dziennika connect_error; nieudane przetworzenie zdarzenia incydentu/potwierdzenia/trasy/TTS jest teraz logowane jako error (nowy poziom) zamiast warn",
+        "uk": "Рівні журналювання перекласифіковано, щоб warn знову став надійним сигналом: ротація сесійного cookie, відоме повідомлення про помилку оновлення сесії та виявлення перезапуску сервера тепер журналюються як info замість warn (це частина нормального, самовідновлюваного ~10-хвилинного циклу сесії цього екземпляра); події, відхилені через інший ID монітора, тепер info; збої допоміжних операцій (журнал аудиту, очищення сокета) тепер debug; видалено дубльований рядок журналу connect_error; невдала обробка події інциденту/зворотного зв'язку/маршруту/TTS тепер журналюється як error (новий рівень) замість warn",
+        "zh-cn": "重新划分了日志级别,使 warn 重新成为可靠信号:会话 cookie 轮换、已知的会话续期错误消息以及服务器重启检测现在记录为 info 而非 warn(它们是该实例正常、可自愈的约 10 分钟会话周期的一部分);因监视器 ID 不同而被丢弃的事件现在记录为 info;内部维护性失败(审计日志、套接字清理)现在记录为 debug;移除了重复的 connect_error 日志记录;警情/反馈/路线/TTS 事件处理失败现在记录为 error(新级别)而非 warn"
       }
     },
-    "title": "WAIP-Web",
     "titleLang": {
       "en": "WAIP-Web",
-      "de": "WAIP-Web"
+      "de": "WAIP-Web",
+      "ru": "WAIP-Web",
+      "pt": "WAIP-Web",
+      "nl": "WAIP-Web",
+      "fr": "WAIP-Web",
+      "it": "WAIP-Web",
+      "es": "WAIP-Web",
+      "pl": "WAIP-Web",
+      "uk": "WAIP-Web",
+      "zh-cn": "WAIP-Web"
     },
     "desc": {
       "en": "Connects to a WAIP (Wachalarm-IP) dispatch monitor via Socket.IO and mirrors alarms, feedback, routes and TTS announcements into ioBroker states.",
-      "de": "Verbindet sich mit einem WAIP-Wachalarm-Monitor per Socket.IO und bildet Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab."
+      "de": "Verbindet sich mit einem WAIP-Wachalarm-Monitor per Socket.IO und bildet Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab.",
+      "ru": "Подключается к монитору диспетчеризации WAIP (Wachalarm-IP) через Socket.IO и отображает тревоги, обратную связь, маршруты и голосовые объявления TTS в виде состояний ioBroker.",
+      "pt": "Conecta-se a um monitor de despacho WAIP (Wachalarm-IP) via Socket.IO e reflete alarmes, feedback, rotas e anúncios TTS em estados do ioBroker.",
+      "nl": "Maakt verbinding met een WAIP (Wachalarm-IP) alarmmonitor via Socket.IO en zet alarmen, terugmeldingen, routes en TTS-meldingen om in ioBroker-states.",
+      "fr": "Se connecte à un moniteur d'alerte WAIP (Wachalarm-IP) via Socket.IO et retranscrit les alarmes, les retours, les itinéraires et les annonces TTS sous forme d'états ioBroker.",
+      "it": "Si collega a un monitor di allarme WAIP (Wachalarm-IP) tramite Socket.IO e riporta allarmi, riscontri, percorsi e annunci TTS come stati ioBroker.",
+      "es": "Se conecta a un monitor de alarma WAIP (Wachalarm-IP) mediante Socket.IO y refleja alarmas, confirmaciones, rutas y anuncios TTS como estados de ioBroker.",
+      "pl": "Łączy się z monitorem alarmowym WAIP (Wachalarm-IP) przez Socket.IO i odwzorowuje alarmy, potwierdzenia, trasy oraz komunikaty TTS jako stany ioBroker.",
+      "uk": "Підключається до монітора оповіщення WAIP (Wachalarm-IP) через Socket.IO та відображає тривоги, підтвердження, маршрути й TTS-повідомлення як стани ioBroker.",
+      "zh-cn": "通过 Socket.IO 连接到 WAIP(Wachalarm-IP)调度监视器,并将警报、反馈、路线和语音播报(TTS)映射为 ioBroker 状态。"
     },
     "authors": [
       "rnc11 <rocco.noetzel@gmx.de>"
@@ -103,9 +131,11 @@
       "alarmierung",
       "leitstelle"
     ],
-    "license": "MIT",
+    "licenseInformation": {
+      "type": "free",
+      "license": "MIT"
+    },
     "platform": "Javascript/Node.js",
-    "main": "main.js",
     "icon": "waip-web.png",
     "enabled": true,
     "extIcon": "https://raw.githubusercontent.com/rnc11/ioBroker.waip-web/main/admin/waip-web.png",
@@ -113,6 +143,7 @@
     "loglevel": "info",
     "mode": "daemon",
     "type": "alarm",
+    "tier": 2,
     "compact": true,
     "messagebox": true,
     "connectionType": "cloud",
@@ -123,7 +154,7 @@
     },
     "dependencies": [
       {
-        "js-controller": ">=4.0.0"
+        "js-controller": ">=5.0.19"
       }
     ],
     "globalDependencies": [
