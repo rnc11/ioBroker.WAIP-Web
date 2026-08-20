@@ -11,10 +11,14 @@
  * Admin-Konfiguration statt aus einem Laufzeit-State.
  */
 
+const https = require('https');
+const http = require('http');
+const { URL } = require('url');
 const utils = require('@iobroker/adapter-core');
 const { io } = require('socket.io-client');
 
 const DEFAULT_URL = 'https://wachalarm.leitstelle-lausitz.de';
+const DEFAULT_SESSION_KEEPALIVE_MS = 5 * 60 * 1000; // 5 Minuten, wie /js/session_keepalive.js der Seite selbst
 const HISTORY_SIZE = 10;
 const ALLOWED_EINSATZ_FIELDS = ['id', 'uuid', 'einsatzart', 'stichwort', 'ort', 'ortsteil', 'ablaufzeit', 'sondersignal'];
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
@@ -40,6 +44,7 @@ const STATE_DEFS = [
     { id: 'debug.rawPayloadShort', type: 'string', role: 'text', name: 'Raw payload preview (500 chars)' },
     { id: 'debug.ignoredCount', type: 'number', role: 'value', name: 'Count of ignored events (wrong/unknown monitor)', def: 0 },
     { id: 'debug.monitorAudit', type: 'string', role: 'json', name: 'Monitor audit log (last 200 entries)' },
+    { id: 'debug.sessionExpires', type: 'string', role: 'date', name: 'Session-Cookie gültig bis (letzte Erneuerung)' },
     { id: 'history.last10', type: 'string', role: 'json', name: `Last ${HISTORY_SIZE} Einsätze` },
     { id: 'einsatz.id', type: 'string', role: 'text', name: 'Einsatz ID' },
     { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
@@ -204,6 +209,8 @@ class WaipWeb extends utils.Adapter {
         this.registrationTimer = null;
         this.reconnectTimer = null;
         this.restzeitInterval = null;
+        this.sessionKeepaliveInterval = null;
+        this.sessionCookie = null;
 
         this._lastDisconnectMsg = null;
         this._lastDisconnectTs = 0;
@@ -218,10 +225,14 @@ class WaipWeb extends utils.Adapter {
     async onReady() {
         this.REGISTRATION_TIMEOUT_MS = Number(this.config.registrationTimeout) || 10000;
         this.RECONNECT_DELAY_MS = Number(this.config.reconnectDelay) || 5000;
+        this.SESSION_KEEPALIVE_MS = Number(this.config.sessionKeepaliveInterval) || DEFAULT_SESSION_KEEPALIVE_MS;
         this.url = (this.config.url || DEFAULT_URL).trim();
         this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
 
         await this.initObjects();
+        // Session-Cookie holen, bevor die erste Socket.IO-Verbindung aufgebaut wird
+        await this.refreshSessionCookie();
+        this.startSessionKeepalive();
         this.startRestzeitInterval();
         this.connect();
     }
@@ -240,6 +251,10 @@ class WaipWeb extends utils.Adapter {
             if (this.restzeitInterval) {
                 this.clearInterval(this.restzeitInterval);
                 this.restzeitInterval = null;
+            }
+            if (this.sessionKeepaliveInterval) {
+                this.clearInterval(this.sessionKeepaliveInterval);
+                this.sessionKeepaliveInterval = null;
             }
             callback();
         } catch (e) {
@@ -263,6 +278,81 @@ class WaipWeb extends utils.Adapter {
                 native: {},
             });
         }
+    }
+
+    /* Einfacher HTTP(S)-GET ohne zusätzliche Dependency; optional mit Cookie-Header. */
+    httpGet(targetUrl, cookie) {
+        return new Promise((resolve, reject) => {
+            let parsed;
+            try {
+                parsed = new URL(targetUrl);
+            } catch (e) {
+                reject(e);
+                return;
+            }
+            const client = parsed.protocol === 'http:' ? http : https;
+            const headers = { 'User-Agent': 'ioBroker.waip-web' };
+            if (cookie) headers.Cookie = cookie;
+            const req = client.get(parsed, { headers, timeout: 15000 }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+                res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, body: data }));
+            });
+            req.on('error', reject);
+            req.on('timeout', () => req.destroy(new Error('timeout')));
+        });
+    }
+
+    /* Baut aus einem oder mehreren Set-Cookie-Headern einen sendefertigen Cookie-Header (name=value; name2=value2). */
+    extractCookieHeader(setCookieHeader) {
+        const arr = Array.isArray(setCookieHeader) ? setCookieHeader : setCookieHeader ? [setCookieHeader] : [];
+        const pairs = arr.map((c) => c.split(';')[0].trim()).filter(Boolean);
+        return pairs.length ? pairs.join('; ') : null;
+    }
+
+    /*
+     Holt bzw. erneuert den Session-Cookie über GET /session/keepalive (rolling session,
+     analog zum /js/session_keepalive.js der WAIP-Seite selbst). Ohne aktiven Cookie
+     verbindet sich der Socket sonst anonym und die Session läuft nach ~10 Minuten ab,
+     wodurch die Alarm-Zustellung stoppt.
+    */
+    async refreshSessionCookie() {
+        try {
+            const keepaliveUrl = `${this.url}/session/keepalive`;
+            const res = await this.httpGet(keepaliveUrl, this.sessionCookie);
+            const newCookie = this.extractCookieHeader(res.headers['set-cookie']);
+            if (newCookie) {
+                this.sessionCookie = newCookie;
+                let expires = null;
+                try {
+                    expires = JSON.parse(res.body).expires || null;
+                } catch (e) {
+                    /* ignore, body war kein JSON */
+                }
+                if (expires) {
+                    try {
+                        await this.setStateAsync('debug.sessionExpires', expires, true);
+                    } catch (e) {
+                        /* ignore */
+                    }
+                }
+                this.log.debug(`session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''})`);
+                return true;
+            }
+            this.safeWarn('refreshSessionCookie', `keepalive lieferte keinen Set-Cookie-Header (status ${res.statusCode})`);
+            return false;
+        } catch (e) {
+            this.safeWarn('refreshSessionCookie', e);
+            return false;
+        }
+    }
+
+    startSessionKeepalive() {
+        this.sessionKeepaliveInterval = this.setInterval(() => {
+            this.refreshSessionCookie().catch(() => {});
+        }, this.SESSION_KEEPALIVE_MS);
     }
 
     /* Sicheres, deduplizierendes Warn-Logging. */
@@ -658,13 +748,19 @@ class WaipWeb extends utils.Adapter {
      WICHTIG: automatische reconnects deaktiviert (reconnection: false). Nach
      disconnect/connect_error wird manuell reconnect() nach RECONNECT_DELAY_MS aufgerufen.
     */
-    connect() {
+    async connect() {
         try {
             const monStr = isValidMonitor(this.monitorID) ? this.monitorID : '0';
 
             if (this.socket && this.currentMonitor === monStr && !this.connecting) {
                 this.log.debug(`connect(): already connected to monitor ${monStr}, skipping`);
                 return;
+            }
+
+            // Falls (z.B. nach einem längeren Disconnect) noch kein/kein frischer
+            // Session-Cookie vorliegt, vor dem (Re-)Connect einen holen.
+            if (!this.sessionCookie) {
+                await this.refreshSessionCookie();
             }
 
             this.cleanupSocket();
@@ -682,6 +778,9 @@ class WaipWeb extends utils.Adapter {
                 reconnection: false,
                 timeout: 20000,
                 query: { monitor: monStr },
+                // Session-Cookie mitschicken, damit die Verbindung nicht anonym/ohne
+                // Server-Session läuft (siehe refreshSessionCookie/startSessionKeepalive)
+                extraHeaders: this.sessionCookie ? { Cookie: this.sessionCookie } : undefined,
             });
 
             try {
