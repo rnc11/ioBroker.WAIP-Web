@@ -672,6 +672,11 @@ class WaipWeb extends utils.Adapter {
             }
         }
 
+        // Nach numerischer Monitor-ID sortiert statt in der (je nach Kategorie/Instanz
+        // unterschiedlichen) Reihenfolge der Quellseite - '0' (Alle Wachalarme) landet
+        // dabei automatisch an erster Stelle, da alle echten Monitor-IDs größer sind.
+        result.sort((a, b) => Number(a.value) - Number(b.value));
+
         return result;
     }
 
