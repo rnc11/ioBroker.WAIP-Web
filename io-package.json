@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.3.4",
+    "version": "0.4.0",
     "news": {
+      "0.4.0": {
+        "en": "Restructured objects: nested einsatz.json (with routes/Rückmeldungen as arrays) and einsatz.history10 replace vis.*, json.*, geo.*, history.last10, rueckmeldung.last.json, routen.json/count and rueckmeldung.counts.*; new einsatz.rueckmeldungAnzahl.*/rueckmeldungGesamt/routenGesamt/latitude/longitude and tts.history10. Obsolete objects are removed automatically on update.",
+        "de": "Objektstruktur überarbeitet: verschachteltes einsatz.json (Routen/Rückmeldungen als Arrays) und einsatz.history10 ersetzen vis.*, json.*, geo.*, history.last10, rueckmeldung.last.json, routen.json/count und rueckmeldung.counts.*; neu: einsatz.rueckmeldungAnzahl.*/rueckmeldungGesamt/routenGesamt/latitude/longitude sowie tts.history10. Veraltete Objekte werden beim Update automatisch entfernt."
+      },
       "0.3.4": {
         "en": "All state names are now consistently German (was a mix of English/German)",
         "de": "Alle State-Bezeichnungen sind jetzt konsequent auf Deutsch (vorher englisch/deutsch gemischt)"
