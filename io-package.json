@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "news": {
+      "0.5.1": {
+        "en": "Reclassified log levels so warn becomes a reliable signal again: session-cookie rotation, the known session-renewal error message and server-restart detection are now info instead of warn (they're part of this instance's normal, self-healing ~10-minute session cycle); events discarded for a different monitor ID are now info; housekeeping failures (audit log, socket cleanup) are now debug; a duplicate connect_error log line was removed; failed processing of an incident/feedback/route/TTS event is now logged as error (new level) instead of warn",
+        "de": "Log-Level neu klassifiziert, damit warn wieder ein verlässliches Signal ist: Session-Cookie-Rotation, die bekannte Session-Renewal-Fehlermeldung und die Server-Neustart-Erkennung sind jetzt info statt warn (Teil des normalen, selbstheilenden ~10-Minuten-Session-Zyklus dieser Instanz); für eine andere Monitor-ID verworfene Events sind jetzt info; Housekeeping-Fehler (Audit-Log, Socket-Cleanup) sind jetzt debug; doppeltes connect_error-Logging entfernt; fehlgeschlagene Verarbeitung eines Einsatz-/Rückmeldungs-/Routen-/TTS-Events wird jetzt als error (neues Level) statt warn geloggt"
+      },
       "0.5.0": {
         "en": "einsatz.* states (including einsatz.json and all counters) are now cleared on io.standby instead of showing the finished incident until a new one arrives, matching the official frontend's behavior; the finished incident stays available via einsatz.history10",
         "de": "einsatz.*-States (inkl. einsatz.json und aller Zähler) werden bei io.standby jetzt geleert, statt den beendeten Einsatz bis zum nächsten anzuzeigen - passend zum Verhalten des offiziellen Frontends; der beendete Einsatz bleibt über einsatz.history10 abrufbar"

@@ -419,6 +419,22 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.5.1 (2026-08-21)
+
+- **Logging:** Reclassified log levels so `warn` becomes a reliable signal
+  again. Session-cookie rotation, the known "Fehler beim Erneuern der
+  Session" server message, and detected server restarts are now logged
+  as `info` instead of `warn`, since they're part of this instance's
+  normal, self-healing ~10-minute session cycle. Events discarded for a
+  different monitor ID are now `info` (frequency remains tracked via
+  `debug.ignoredCount`). Failures that only affect internal housekeeping
+  (`debug.monitorAudit`, socket cleanup) are now `debug`. A duplicate
+  `connect_error` log line (logged once at `warn`, once at `info`) was
+  removed. Introduced `error` level for cases where an incident,
+  feedback, route or TTS event genuinely failed to be processed (actual
+  data loss), so these now stand out instead of being buried among
+  routine `warn` noise.
+
 ### 0.5.0 (2026-08-20)
 
 - **Behavior change:** On `io.standby`, all `einsatz.*` states (including
