@@ -310,7 +310,10 @@ class WaipWeb extends utils.Adapter {
     async onReady() {
         this.REGISTRATION_TIMEOUT_MS = (Number(this.config.registrationTimeoutSec) || 10) * 1000;
         this.RECONNECT_DELAY_MS = (Number(this.config.reconnectDelaySec) || 5) * 1000;
-        this.SESSION_KEEPALIVE_MS = (Number(this.config.sessionKeepaliveIntervalSec) || DEFAULT_SESSION_KEEPALIVE_SEC) * 1000;
+        // Obergrenze für das Session-Keepalive-Intervall - bewusst nicht konfigurierbar,
+        // analog zum fest einprogrammierten Wert in /js/session_keepalive.js der Website
+        // selbst. Das tatsächliche Intervall wird adaptiv ermittelt (siehe refreshSessionCookie).
+        this.SESSION_KEEPALIVE_MS = DEFAULT_SESSION_KEEPALIVE_SEC * 1000;
         this.url = (this.config.url || DEFAULT_URL).trim();
         this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
 
