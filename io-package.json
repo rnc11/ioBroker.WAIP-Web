@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "news": {
+      "0.2.1": {
+        "en": "Detect session cookie rotation and force a socket reconnect so the connection doesn't silently die on an invalidated server session",
+        "de": "Session-Cookie-Rotation wird erkannt und erzwingt einen Socket-Reconnect, damit die Verbindung nicht still an einer ungültig gewordenen Server-Session stirbt"
+      },
       "0.2.0": {
         "en": "Automatic session cookie management (GET /session/keepalive) so the alarm feed keeps working without a real browser session",
         "de": "Automatisches Session-Cookie-Management (GET /session/keepalive), damit die Alarm-Zustellung auch ohne echte Browsersitzung weiterläuft"
