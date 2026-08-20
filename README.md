@@ -419,6 +419,12 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.1 (2026-08-21)
+
+- Monitor dropdown entries now start with the actual monitor ID, e.g.
+  "4 - Leitstelle: Lausitz", so the numeric ID stays visible even after
+  a monitor has been selected.
+
 ### 0.6.0 (2026-08-21)
 
 - **Admin UI:** Monitor ID is now a live dropdown (`selectSendTo`) instead
