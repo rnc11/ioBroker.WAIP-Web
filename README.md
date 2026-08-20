@@ -2,13 +2,208 @@
 
 [![Test and Release](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml)
 
+## English
+
+Unofficial ioBroker adapter for **Wachalarm IP-Web (WAIP-Web)**
+
+Connects via Socket.IO to a WAIP-Web dispatch monitor and mirrors incidents
+("Einsatz"), responder feedback ("Rückmeldung"), routes and TTS
+announcements into ioBroker states – without needing a browser tab to stay
+open.
+
+### About this adapter
+
+This adapter is an **unofficial community project** and has no connection
+to the WAIP-Web project, to Robert-112, or to the operator of any specific
+instance (e.g. the Integrated Regional Dispatch Center Lausitz /
+Integrierte Regionalleitstelle Lausitz). It was built by analyzing the
+behavior of the frontend (`client_waip.js`) that a WAIP-Web instance
+publicly serves to any browser, in order to replicate the same Socket.IO
+events and data fields a regular browser client receives.
+
+The adapter connects **without logging in** and therefore only ever
+receives WAIP-Web's public permission tier (keyword, location, approximate
+position, alerted resources, feedback) – the same data any anonymous
+browser visitor would see without signing in. No access restrictions are
+bypassed.
+
+> **Note:** An always-on automated client like this adapter is different
+> from an occasionally opened browser tab. Before running it against a
+> production instance, briefly check with the operator/your dispatch
+> center whether a permanent automated connection is welcome.
+
+### About WAIP-Web
+
+[Wachalarm IP-Web](https://github.com/Robert-112/n112_waip-web) is an
+open-source web application by **Robert-112** that displays dispatch/alert
+information for fire departments and EMS device-independently in the
+browser (Windows, Linux, Mac, smartphone – no installation needed). Among
+other things it offers:
+
+- **Alarm monitor** – incident type, keyword, special signal, location,
+  map, alerted resources, app-based responder feedback including voice
+  announcements
+- **Dashboard** – overview of all ongoing incidents
+- **Feedback function** – app-based responder feedback, grouped by role
+  (EK/GF/ZF/VF) and additional qualification (AGT/FZF/MA/MED)
+- **Administration** – user management, station data, monitor overview
+
+WAIP-Web itself is licensed under
+[**Creative Commons BY-SA 4.0**](https://creativecommons.org/licenses/by-sa/4.0/).
+This adapter contains no code from the WAIP-Web project; it implements an
+independent client for its Socket.IO interface.
+
+### Features
+
+- Connects to the `/waip` namespace via `socket.io-client`, registers via
+  `emit('WAIP', monitorId)` (emitted 3× for robustness)
+- Manual reconnect handling (the library's own auto-reconnect is
+  disabled) with a configurable delay
+- Registration timeout with an audit log (`debug.monitorAudit`)
+- Geodata normalization (wgs84 fields, `position`, or GeoJSON `geometry`
+  → centroid)
+- History of the last 10 completed incidents (`einsatz.history10`)
+- Separate handlers for alarm (`io.new_waip`), feedback (`io.new_rmld`),
+  routes (`io.routes`), TTS (`io.playtts`) and standby (`io.standby`)
+- Automatic session-cookie management (see below), so alarm delivery
+  keeps working indefinitely without an open browser session
+- Server-restart detection via `io.version`, with automatic session
+  refresh + reconnect
+- Complete incident data including nested feedback/routes per incident
+  (feedback and routes are 1:n relationships)
+- Aggregated feedback counters per role/capability, mirroring the live
+  badges on the web UI
+
+#### Why a session cookie is needed
+
+The WAIP-Web server ties alarm delivery to an Express session cookie,
+which a browser renews automatically every few minutes via a bundled
+script. A plain Socket.IO client never gets this cookie automatically –
+the adapter therefore fetches it itself via `GET /session/keepalive` and
+attaches it to the Socket.IO connection.
+
+According to the WAIP-Web source code, the cookie's lifetime is
+**configurable per instance via an environment variable** (server
+default: 60 seconds; this instance apparently uses 10 minutes) – a fixed
+renewal interval would therefore potentially be wrong for other WAIP-Web
+instances. The adapter instead derives the actual interval **adaptively**
+from the expiry time the server reports on every call (80% of the
+observed lifetime, at least 55 seconds, at most a fixed 5-minute ceiling)
+– the exact same clamping that `/js/session_keepalive.js` on the site
+itself uses.
+
+### Configuration
+
+In the admin UI of the adapter instance:
+
+| Field | Description | Default |
+| --- | --- | --- |
+| WAIP server URL | Base URL of the WAIP-Web instance | `https://wachalarm.leitstelle-lausitz.de` |
+| Monitor ID | Monitor identifier; empty/`0` = global monitor | *(empty)* |
+| Registration timeout (s) | Time until a missing registration confirmation is logged | `10` |
+| Reconnect delay (s) | Wait time before a manual reconnect after disconnect/error | `5` |
+
+The session keepalive interval is **not configurable** – it's derived
+fully automatically on every renewal from the cookie lifetime the server
+reports (min. 55s, max. 5 min., matching `/js/session_keepalive.js` on
+the site itself).
+
+### States (under `waip-web.0.*`)
+
+Feedback and routes are 1:n lists per incident and are therefore stored
+as nested JSON arrays inside `einsatz.json` and in every entry of
+`einsatz.history10` – complemented by quick-to-bind counters so VIS
+bindings and triggers don't need JSON parsing.
+
+#### info
+
+| State | Type | Description |
+| --- | --- | --- |
+| `connection` | boolean | Standard ioBroker indicator: connection to the WAIP server active |
+
+#### status
+
+| State | Type | Description |
+| --- | --- | --- |
+| `connected` | boolean | Socket.IO connection technically established |
+| `alarmAktiv` | boolean | `true` since the last `io.new_waip`, `false` since the last `io.standby` |
+| `restzeit` | number (s) | Remaining seconds until `einsatz.ablaufzeit`, updated every second |
+| `registeredMonitor` | string | Monitor ID last registered with the server |
+| `registrationAccepted` | mixed | `"pending"` right after connecting, `true` once the first event was received, otherwise `false` once the registration timeout elapses |
+
+#### einsatz
+
+Flat fields of the currently running incident. Cleared (`null`/`0`) on
+`io.standby`, matching the official frontend – `status.alarmAktiv` is
+therefore a reliable switch for whether these fields currently hold real
+live data. The most recently finished incident remains available via
+`einsatz.history10`:
+
+| State | Type | Description |
+| --- | --- | --- |
+| `id` | number | Internal incident ID |
+| `uuid` | string | Unique incident UUID (also used to associate feedback) |
+| `einsatzart` | string | e.g. "Brandeinsatz" (fire), "Hilfeleistungseinsatz" (technical assistance), "Rettungseinsatz" (rescue/EMS), "Krankentransport" (patient transport) |
+| `stichwort` | string | Alarm keyword |
+| `ort` | string | Location/town |
+| `ortsteil` | string | District (if different from `ort`) |
+| `strasse` / `hausnummer` | string | Address |
+| `objekt` / `objektteil` | string | Building name and part |
+| `einsatzdetails` | string | Extra details (only populated for fire/technical-assistance incidents) |
+| `besonderheiten` | string | Free-text remarks from the dispatch center |
+| `zeitstempel` | string (date) | Alarm time |
+| `ablaufzeit` | string (date) | End of the standby display duration, basis for `status.restzeit` |
+| `einsatznummer` | string | Incident number (if assigned by the server) |
+| `sondersignal` | number | `1` = special signal (lights & siren), otherwise none |
+| `permissions` | mixed | The registration's permission flag (full access to the detail map yes/no) |
+| `latitude` / `longitude` | number | Incident location (normalized from wgs84 fields or GeoJSON centroid) |
+| `json` | string (JSON) | Complete incident object: all fields above plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
+| `history10` | string (JSON array) | Last 10 completed incidents, same object shape as `json`, written on `io.standby` |
+| `routenGesamt` | number | Number of routes in the current incident (= `json.routen.length`) |
+| `rueckmeldungGesamt` | number | Total feedback count for the current incident |
+| `rueckmeldungAnzahl.ek` | number | Feedback count as team member ("Einsatzkraft") |
+| `rueckmeldungAnzahl.gf` | number | Feedback count as crew leader ("Gruppenführer") |
+| `rueckmeldungAnzahl.zf` | number | Feedback count as division chief ("Zugführer") |
+| `rueckmeldungAnzahl.vf` | number | Feedback count as group commander ("Verbandsführer") |
+| `rueckmeldungAnzahl.agt` | number | Feedback count with breathing-apparatus qualification ("Atemschutzgeräteträger") |
+| `rueckmeldungAnzahl.fzf` | number | Feedback count as vehicle commander ("Fahrzeugführer") |
+| `rueckmeldungAnzahl.ma` | number | Feedback count as driver/operator ("Maschinist") |
+| `rueckmeldungAnzahl.med` | number | Feedback count with a medical qualification |
+
+#### tts
+
+| State | Type | Description |
+| --- | --- | --- |
+| `last` | string (URL) | URL of the most recently received voice announcement |
+| `lastTimestamp` | string (date) | Time of the last announcement |
+| `history10` | string (JSON array) | Last 10 announcements as `{zeitstempel, url}` |
+
+#### debug
+
+| State | Type | Description |
+| --- | --- | --- |
+| `lastEvent` | string (JSON) | Last received socket event (name + timestamp), for connection diagnostics |
+| `normalizedPosition` | string (JSON) | Last normalized position of the incident |
+| `rawPayloadShort` | string | Preview (500 characters) of the raw, unnormalized `io.new_waip` payload |
+| `ignoredCount` | number | Count of discarded events (payload explicitly named a different monitor ID) |
+| `monitorAudit` | string (JSON array) | Chronological log of connect/registration/reconnect events (200 entries) |
+| `sessionExpires` | string (date) | Expiry time of the session cookie as of the last renewal |
+| `lastError` | string (JSON) | Last error message reported by the server (`io.error`) |
+| `serverVersion` | string | Last reported server instance ID (`io.version`); a change suggests a server restart |
+
+JSON-internal keys inside `einsatz.json` (`emAlarmiert`, `emWeitere`,
+`routen`, `rueckmeldungen`) stay lowercase – these are object properties
+inside the JSON value, not their own ioBroker states.
+
+## Deutsch
+
 Inoffizieller ioBroker-Adapter für **Wachalarm IP-Web (WAIP-Web)**
 
 Verbindet sich per Socket.IO mit einem WAIP-Web-Wachalarm-Monitor und bildet
 Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab –
 ohne dass ein Browser-Tab dauerhaft offen sein muss.
 
-## Über diesen Adapter
+### Über diesen Adapter
 
 Dieser Adapter ist ein **inoffizielles Community-Projekt** und steht in
 keiner Verbindung zum WAIP-Web-Projekt, zu Robert-112 oder zum Betreiber
@@ -30,7 +225,7 @@ keine Zugriffsbeschränkungen umgangen.
 > Betreiber/deiner Leitstelle ab, ob eine dauerhafte automatisierte
 > Verbindung erwünscht ist.
 
-## Über WAIP-Web
+### Über WAIP-Web
 
 [Wachalarm IP-Web](https://github.com/Robert-112/n112_waip-web) ist eine
 quelloffene Webanwendung von **Robert-112**, die Alarmierungsinformationen
@@ -51,7 +246,7 @@ lizenziert. Dieser Adapter enthält keinen Code aus dem WAIP-Web-Projekt,
 sondern implementiert eine eigenständige Anbindung an dessen Socket.IO-
 Schnittstelle.
 
-## Funktionen
+### Funktionen
 
 - Verbindung zum Namespace `/waip` per `socket.io-client`, Registrierung
   über `emit('WAIP', monitorId)` (3-faches Emit für Robustheit)
@@ -72,7 +267,7 @@ Schnittstelle.
 - Aggregierte Rückmeldungs-Zähler pro Rolle/Fähigkeit, analog zu den
   Live-Badges der Weboberfläche
 
-### Warum ein Session-Cookie nötig ist
+#### Warum ein Session-Cookie nötig ist
 
 Der WAIP-Web-Server bindet die Alarm-Zustellung an einen
 Express-Session-Cookie, den ein Browser über ein mitgeliefertes Skript
@@ -90,7 +285,7 @@ Laufzeit, mindestens 55 Sekunden, höchstens die konfigurierte Obergrenze) –
 genau die gleiche Klammerung, die auch `/js/session_keepalive.js` der
 Website selbst verwendet.
 
-## Konfiguration
+### Konfiguration
 
 In der Admin-Oberfläche der Adapterinstanz:
 
@@ -106,20 +301,20 @@ jeder Erneuerung vollautomatisch aus der vom Server gemeldeten Cookie-
 Laufzeit abgeleitet (min. 55s, max. 5 Min., analog zu
 `/js/session_keepalive.js` der Website selbst).
 
-## States (unter `waip-web.0.*`)
+### States (unter `waip-web.0.*`)
 
 Rückmeldungen und Routen sind pro Einsatz Listen (1:n) und liegen deshalb
 als verschachtelte JSON-Arrays in `einsatz.json` bzw. in jedem Eintrag von
 `einsatz.history10` – ergänzt um schnell bindbare Zähler, damit VIS-Bindings
 und Trigger ohne JSON-Parsing auskommen.
 
-### info
+#### info
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
 | `connection` | boolean | Standard-ioBroker-Indikator: Verbindung zum WAIP-Server aktiv |
 
-### status
+#### status
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
@@ -129,7 +324,7 @@ und Trigger ohne JSON-Parsing auskommen.
 | `registeredMonitor` | string | Zuletzt beim Server registrierte Monitor-ID |
 | `registrationAccepted` | mixed | `"pending"` direkt nach Connect, `true` sobald das erste Event empfangen wurde, sonst `false` nach Ablauf des Registrierungs-Timeouts |
 
-### einsatz
+#### einsatz
 
 Flache Felder des aktuell laufenden Einsatzes. Werden bei `io.standby`
 geleert (`null`/`0`), analog zum offiziellen Frontend – `status.alarmAktiv`
@@ -168,7 +363,7 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `rueckmeldungAnzahl.ma` | number | Anzahl Rückmeldungen als Maschinist |
 | `rueckmeldungAnzahl.med` | number | Anzahl Rückmeldungen mit medizinischer Befähigung |
 
-### tts
+#### tts
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
@@ -176,7 +371,7 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `lastTimestamp` | string (date) | Zeitpunkt der letzten Ansage |
 | `history10` | string (JSON-Array) | Letzte 10 Ansagen als `{zeitstempel, url}` |
 
-### debug
+#### debug
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
@@ -193,259 +388,14 @@ JSON-interne Schlüssel innerhalb von `einsatz.json` (`emAlarmiert`,
 `emWeitere`, `routen`, `rueckmeldungen`) bleiben kleingeschrieben – das sind
 Objekteigenschaften im JSON-Wert, keine eigenen ioBroker-States.
 
-## Installation / Entwicklung
-
-Node.js (>=18) und npm werden benötigt:
-
-```bash
-npm install
-```
-
-Adapter danach z. B. über den ioBroker-Admin (Custom-URL-Installation von
-GitHub) oder per `iobroker url <github-url>` einbinden.
-
-### Tests / CI
-
-```bash
-npm run lint            # ESLint (@iobroker/eslint-config)
-npm run test:package    # prüft package.json / io-package.json auf Konsistenz
-npm run test:integration  # startet den Adapter gegen einen echten js-controller
-```
-
-Alle drei laufen automatisch per GitHub Actions bei jedem Push/PR
-(`.github/workflows/test-and-release.yml`), über die zentral von ioBroker
-gepflegten Actions `testing-action-check` und `testing-action-adapter`
-(Matrix: Node 20/22/24 auf Ubuntu/Windows/macOS). Der optionale
-`deploy`-Job (automatische npm-Veröffentlichung bei Versions-Tags) ist
-auskommentiert, bis npm Trusted Publishing eingerichtet ist.
-
-## Changelog
-
-### 0.5.0 (2026-08-20)
-
-- **Verhaltensänderung:** Bei `io.standby` werden jetzt alle `einsatz.*`-
-  States (inkl. `einsatz.json` und aller Zähler) geleert, statt den Stand
-  des beendeten Einsatzes stehen zu lassen – analog zum offiziellen
-  Frontend, das beim Standby ebenfalls Stichwort, Ortsdaten etc. leert.
-  `status.alarmAktiv` ist damit ein verlässlicher Schalter, ob `einsatz.*`
-  gerade echte Live-Daten enthält. Der beendete Einsatz bleibt vollständig
-  über `einsatz.history10` abrufbar (wird davor archiviert).
-
-### 0.4.9 (2026-08-20)
-
-- **CI-Fix:** Einen selbst eingeführten, unnötigen Zeilenumbruch in
-  `connect()` (Engine-Packet-Preview) rückgängig gemacht – der wurde von
-  `prettier/prettier` als überflüssig bemängelt, die Zeile passt
-  tatsächlich einzeilig in die printWidth.
-
-### 0.4.8 (2026-08-20)
-
-- **CI-Fix:** Letzte 16 Lint-Fehler behoben – diesmal lag die vollständige,
-  nicht abgeschnittene Fehlerliste inkl. exaktem gewünschtem Ersetzungstext
-  vor, daher konnte jede Stelle präzise 1:1 korrigiert werden (Zeilenumbrüche
-  bei zu langen Aufrufen/Objekten, ein `prefer-template`-Fall). Lint sollte
-  damit vollständig grün sein.
-
-### 0.4.7 (2026-08-20)
-
-- **CI-Fix:** Restliche Lint-Fehler in `main.js` behoben – durchgängig
-  `curly` (Klammern auch bei Einzeiler-`if`/`for`), `no-unused-vars` bei
-  leeren `catch`-Blöcken (`catch (e) {}` → `catch {}` wo `e` nicht
-  verwendet wird) und `arrowParens: avoid` (Klammern bei
-  Einzelparameter-Arrow-Funktionen entfernt). Rein mechanische
-  Codestil-Korrekturen, keine Verhaltensänderung.
-
-### 0.4.6 (2026-08-20)
-
-- **CI-Fix:** Der `lint`-Schritt schlug mit hunderten Formatierungsfehlern
-  fehl (u. a. „Replace 'x' with "x""). Ursache: `@iobroker/eslint-config`
-  verlangt zusätzlich zur `eslint.config.mjs` eine eigene
-  `prettier.config.mjs`, die den ioBroker-Formatierungsstil (einfache
-  Anführungszeichen, 4er-Einrückung, `trailingComma: 'all'`) re-exportiert
-  – ohne sie fiel Prettier auf seine eigenen Standardwerte (doppelte
-  Anführungszeichen) zurück. Datei ergänzt.
-
-### 0.4.5 (2026-08-20)
-
-- **CI-Fix:** Erster Pipeline-Lauf schlug mit „Dependencies lock file is
-  not found" fehl. Ursache: `actions/setup-node`s eingebautes npm-Caching
-  braucht unabhängig vom Install-Befehl eine `package-lock.json` für den
-  Cache-Key. Da noch keine im Repo liegt, jetzt `package-cache: 'false'`
-  in beiden Jobs gesetzt.
-
-### 0.4.4 (2026-08-20)
-
-- CI-Pipeline eingerichtet (`.github/workflows/test-and-release.yml`),
-  nach dem Standard-Muster des offiziellen `@iobroker/create-adapter`-
-  Templates: `check-and-lint`-Job (ESLint via `@iobroker/eslint-config`)
-  und `adapter-tests`-Matrix (Node 20/22/24 × Ubuntu/Windows/macOS) über
-  die zentralen Actions `testing-action-check`/`testing-action-adapter`.
-  Dafür `test/package.js` und `test/integration.js` (`@iobroker/testing`)
-  sowie `eslint.config.mjs` ergänzt; `@iobroker/testing` auf `^5.2.2`
-  angehoben. Da noch kein `package-lock.json` im Repo liegt, nutzt die
-  Pipeline `npm install` statt `npm ci`.
-- `engines.node` in `package.json` auf `>=18` angehoben (passend zu den
-  getesteten Node-Versionen und den Anforderungen von `@iobroker/testing` 5.x)
-- `deploy`-Job (automatische npm-Veröffentlichung) liegt vorbereitet, aber
-  auskommentiert vor, bis npm Trusted Publishing eingerichtet ist
-
-### 0.4.3 (2026-08-20)
-
-- **Bugfix:** `einsatz.id` und `einsatz.sondersignal` waren als `string`
-  deklariert, der Server schickt sie aber tatsächlich als Zahl
-  (`sondersignal` z. B. laut `client_waip.js`: `switch (data.sondersignal)
-  { case 1: ... }`) – ioBroker loggte deshalb bei jedem Einsatz einen
-  Typ-Warnhinweis. Beide States sind jetzt als `number` deklariert.
-  Bereits bestehende Objekte mit dem alten (falschen) Typ werden beim
-  nächsten Adapterstart automatisch neu angelegt (`migrateObjectTypes()`,
-  generisch für künftige Typ-Korrekturen).
-
-### 0.4.2 (2026-08-20)
-
-- Konfigurationsfeld „Session-Keepalive-Intervall – Obergrenze" wieder
-  entfernt: Das offizielle `/js/session_keepalive.js` der Website hat
-  diese Obergrenze fest auf 5 Minuten einprogrammiert, nicht einstellbar.
-  Ein Adminfeld dafür suggerierte fälschlich ein festes Intervall, obwohl
-  die eigentliche Erneuerung längst vollautomatisch läuft (siehe 0.4.1).
-  Die Obergrenze ist jetzt ebenfalls fix auf 5 Minuten gesetzt.
-
-### 0.4.1 (2026-08-20)
-
-- **Robustheit:** Session-Keepalive-Intervall ist jetzt adaptiv statt fest
-  angenommen. Der Quellcode von WAIP-Web (`server/app_cfg.js`) zeigt, dass
-  die Session-Cookie-Lebensdauer je Instanz per Umgebungsvariable
-  konfigurierbar ist (Server-Standard: 60s statt der bisher angenommenen
-  10 Minuten) – der Adapter leitet das Erneuerungsintervall jetzt aus der
-  vom Server tatsächlich gemeldeten Ablaufzeit ab (analog zu
-  `/js/session_keepalive.js` der Website: 80 % der beobachteten Laufzeit,
-  mind. 55s, höchstens die konfigurierte Obergrenze). Die Konfigurations-
-  option „Session-Keepalive-Intervall" ist entsprechend jetzt eine
-  Obergrenze statt ein festes Intervall.
-- Kommentar zu `io.version`/Server-Neustart korrigiert: WAIP-Web speichert
-  Sessions laut `server/auth.js` persistent (SQLite), nicht in-memory –
-  ein Neustart löscht sie also normalerweise nicht. Die vorsorgliche
-  Session-Auffrischung + Reconnect bei Server-Neustart bleibt als generelle
-  Absicherung bestehen, nur die bisherige Begründung war ungenau.
-
-### 0.4.0 (2026-08-20)
-
-- **Objektstruktur überarbeitet:** Rückmeldungen und Routen sind pro Einsatz
-  Listen (1:n) und liegen jetzt als verschachtelte JSON-Arrays in einem
-  Gesamtobjekt `einsatz.json` (inkl. `emAlarmiert[]`, `emWeitere[]`, `routen[]`,
-  `rueckmeldungen[]`) statt in mehreren losen States.
-- `einsatz.history10` ersetzt `history.last10` – jetzt mit dem **vollständigen**
-  verschachtelten Einsatz-Objekt pro Eintrag statt nur 6 reduzierten Feldern.
-- Neue Zähler direkt unter `einsatz.*`: `routenGesamt`, `rueckmeldungGesamt`,
-  `rueckmeldungAnzahl.{ek,gf,zf,vf,agt,fzf,ma,med}` (ersetzt `rueckmeldung.counts.*`).
-- `einsatz.latitude`/`einsatz.longitude` ersetzen `geo.latitude`/`geo.longitude`
-  (Position liegt zusätzlich in `einsatz.json.position`).
-- Neuer State `tts.history10` (letzte 10 TTS-Ansagen).
-- **Entfernt:** kompletter `vis.*`-Kanal, `json.raw`, `json.einsatz`,
-  `geo.position`, `rueckmeldung.last.json`, `routen.json`, `routen.count`,
-  `einsatz.emWeitere` (jetzt Teil von `einsatz.json`).
-- Der Adapter entfernt beim ersten Start nach dem Update alle veralteten
-  Objekte aus der vorherigen Struktur automatisch (`cleanupObsoleteObjects()`).
-
-### 0.3.4 (2026-08-20)
-
-- Alle State-Bezeichnungen (`common.name`) konsequent auf Deutsch
-  umgestellt (vorher teils Englisch, teils Deutsch gemischt) – der Adapter
-  ist ohnehin nur für den deutschsprachigen Raum sinnvoll
-
-### 0.3.3 (2026-08-20)
-
-- **Bugfix (potenzieller Datenverlust):** Bei einer konkreten Monitor-ID
-  (≠ `0`) wurden Events nach Ablauf des Registrierungs-Timeouts still
-  verworfen ("unknownMonitor"), weil reale WAIP-Payloads laut
-  `client_waip.js` **nie** ein Monitor-Kennungsfeld enthalten – die
-  Zuordnung passiert komplett serverseitig über Socket.IO-Rooms. Dadurch
-  konnte die Alarm-Zustellung nach 10s vollständig stillstehen, obwohl die
-  Verbindung technisch stand. `status.registrationAccepted` blieb aus
-  demselben Grund auch bei globalem Monitor (`0`) dauerhaft `false`.
-  Jetzt bestätigt jedes empfangene Event die Registrierung; verworfen wird
-  nur noch, wenn ein Payload explizit eine andere Monitor-ID nennt.
-
-### 0.3.2 (2026-08-20)
-
-- Konfigurationsfelder „Registrierungs-Timeout" und „Wiederverbindungs-
-  Verzögerung" ebenfalls von Millisekunden auf Sekunden umgestellt
-  (`registrationTimeout` → `registrationTimeoutSec`, Default `10`;
-  `reconnectDelay` → `reconnectDelaySec`, Default `5`). Bestehende
-  Instanzen ohne neu gesetzten Wert nutzen automatisch die Defaults.
-
-### 0.3.1 (2026-08-20)
-
-- Konfigurationsfeld „Session-Keepalive-Intervall" von Millisekunden auf
-  Sekunden umgestellt (`sessionKeepaliveInterval` → `sessionKeepaliveIntervalSec`,
-  Default weiterhin 5 Min = `300`). Bestehende Instanzen ohne neu gesetzten
-  Wert nutzen automatisch den Default.
-
-### 0.3.0 (2026-08-20)
-
-- **Bugfix:** `wgs84_x`/`wgs84_y` waren vertauscht (Breiten-/Längengrad).
-  Laut offiziellem Web-Frontend (`client_waip.js`) gilt
-  `wgs84_x = Breitengrad, wgs84_y = Längengrad` – entgegen der üblichen
-  GIS-Konvention. `geo.latitude`/`geo.longitude` waren dadurch bei direkt
-  übermittelten Koordinaten (nicht GeoJSON-Fallback) vertauscht.
-- Fehlender `io.standby`-Handler ergänzt: `status.alarmAktiv` wurde bisher
-  nie zurückgesetzt, wenn ein Einsatz beendet ist
-- Neue Einsatz-Felder erfasst (bisher nur im rohen `json.raw`/`json.einsatz`
-  enthalten, jetzt als eigene States): `zeitstempel`, `einsatznummer`,
-  `objekt`, `objektteil`, `strasse`, `hausnummer`, `einsatzdetails`,
-  `besonderheiten`, `permissions`
-- `em_alarmiert` (alarmierte Einsatzmittel) wird jetzt in
-  `vis.fahrzeugTabelle` abgelegt, `em_weitere` in `einsatz.emWeitere`
-- Rückmeldungen werden jetzt pro Einsatz gesammelt (`vis.rueckmeldungenTabelle`)
-  und zu Zählern pro Rolle/Fähigkeit aggregiert (`rueckmeldung.counts.*`),
-  analog zu den Live-Badges (EK/GF/ZF/VF/AGT/FZF/MA/MED) der Weboberfläche
-- Neue Handler für `io.error` (→ `debug.lastError`) und `io.version`
-  (Server-Neustart-Erkennung → Session-Cookie-Refresh + erzwungener Reconnect)
-- `reconnectForRotatedSession()` zu generischem `forceReconnect(reason)`
-  verallgemeinert (wird jetzt auch bei Server-Versionswechsel genutzt)
-
-### 0.2.1 (2026-08-20)
-
-- Session-Cookie-Rotation erkannt: Liefert `/session/keepalive` einen
-  anderen Cookie-Wert als zuvor (z. B. weil die alte Session serverseitig
-  bereits ungültig war – verpasster Keepalive, Server-Neustart mit
-  In-Memory-Sessionstore), wird eine bestehende Socket.IO-Verbindung jetzt
-  aktiv mit der neuen Session neu aufgebaut, statt auf einen stillen
-  Ausfall zu warten
-
-### 0.2.0 (2026-08-20)
-
-- Session-Cookie-Management eingeführt: Der Adapter holt und erneuert
-  selbstständig den `connect.sid`-Session-Cookie des WAIP-Servers
-  (`GET /session/keepalive`, analog zu `/js/session_keepalive.js` der
-  Website) und hängt ihn an die Socket.IO-Verbindung an. Behebt, dass die
-  Alarm-Zustellung nach ca. 10 Minuten ohne aktive Browsersitzung aufhörte.
-- Neuer State `debug.sessionExpires` sowie neue Konfigurationsoption
-  „Session-Keepalive-Intervall (ms)" (Default `300000`)
-
-### 0.1.1 (2026-08-20)
-
-- Favicon von `wachalarm.leitstelle-lausitz.de` als Adapter-Icon
-  (`admin/waip-web.png`) übernommen, ersetzt den bisherigen Platzhalter
-- Repository auf GitHub von `ioBroker.WAIP-Web` auf `ioBroker.waip-web`
-  umbenannt (Großbuchstaben im Repo-Namen verhinderten die Installation
-  per `iobroker url` mit `Process exited with code 25`); alle URLs in
-  `package.json`/`io-package.json` entsprechend angepasst
-
-### 0.1.0 (2026-08-20)
-
-- Erste Version: Portierung des ursprünglichen "WAIP Instrumented v3.9"
-  ioBroker-JavaScript-Adapter-Scripts in einen eigenständigen Adapter.
-  URL/Monitor-ID kommen jetzt aus der Admin-Konfiguration statt aus einem
-  Laufzeit-State.
-
 ## License
 
-MIT License (dieser Adapter) – siehe [LICENSE](LICENSE).
+MIT License (this adapter) – see [LICENSE](LICENSE).
 
-Der Adapter verbindet sich mit Instanzen von
-[WAIP-Web](https://github.com/Robert-112/n112_waip-web), das unter
-CC BY-SA 4.0 durch Robert-112 lizenziert ist. Dieser Adapter enthält
-keinen Code aus diesem Projekt.
+The adapter connects to instances of
+[WAIP-Web](https://github.com/Robert-112/n112_waip-web), which is licensed
+under CC BY-SA 4.0 by Robert-112. This adapter contains no code from that
+project.
 
 Copyright (c) 2026 rnc11
 
@@ -466,3 +416,228 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Changelog
+
+### 0.5.0 (2026-08-20)
+
+- **Behavior change:** On `io.standby`, all `einsatz.*` states (including
+  `einsatz.json` and all counters) are now cleared instead of leaving the
+  finished incident's data in place – matching the official frontend,
+  which also clears keyword, location data etc. on standby.
+  `status.alarmAktiv` is therefore now a reliable switch for whether
+  `einsatz.*` currently holds real live data. The finished incident
+  remains fully available via `einsatz.history10` (archived there first).
+
+### 0.4.9 (2026-08-20)
+
+- **CI fix:** Reverted a self-introduced, unnecessary line wrap in
+  `connect()` (engine-packet preview) – `prettier/prettier` flagged it as
+  superfluous; the line actually fits on one line within the configured
+  print width.
+
+### 0.4.8 (2026-08-20)
+
+- **CI fix:** Fixed the final 16 lint errors – this time the complete,
+  non-truncated error list including the exact desired replacement text
+  was available, so every location could be corrected precisely 1:1
+  (line wraps for overly long calls/objects, one `prefer-template`
+  case). Lint should now be fully green.
+
+### 0.4.7 (2026-08-20)
+
+- **CI fix:** Fixed the remaining lint errors in `main.js` – consistently
+  applied `curly` (braces even for single-line `if`/`for`),
+  `no-unused-vars` for empty `catch` blocks (`catch (e) {}` → `catch {}`
+  where `e` isn't used), and `arrowParens: avoid` (removed parentheses
+  around single-parameter arrow functions). Purely mechanical code-style
+  fixes, no behavior change.
+
+### 0.4.6 (2026-08-20)
+
+- **CI fix:** The `lint` step failed with hundreds of formatting errors
+  (e.g. "Replace 'x' with "x""). Cause: `@iobroker/eslint-config`
+  requires its own `prettier.config.mjs` in addition to
+  `eslint.config.mjs`, re-exporting the ioBroker formatting style
+  (single quotes, 4-space indentation, `trailingComma: 'all'`) – without
+  it, Prettier fell back to its own defaults (double quotes). File added.
+
+### 0.4.5 (2026-08-20)
+
+- **CI fix:** The first pipeline run failed with "Dependencies lock file
+  is not found". Cause: `actions/setup-node`'s built-in npm caching
+  needs a `package-lock.json` for its cache key, independent of the
+  install command used. Since none is committed to the repo yet,
+  `package-cache: 'false'` is now set on both jobs.
+
+### 0.4.4 (2026-08-20)
+
+- Set up the CI pipeline (`.github/workflows/test-and-release.yml`),
+  following the standard pattern of the official
+  `@iobroker/create-adapter` template: a `check-and-lint` job (ESLint
+  via `@iobroker/eslint-config`) and an `adapter-tests` matrix (Node
+  20/22/24 × Ubuntu/Windows/macOS) via the central
+  `testing-action-check`/`testing-action-adapter` actions. Added
+  `test/package.js` and `test/integration.js` (`@iobroker/testing`)
+  plus `eslint.config.mjs` for this; bumped `@iobroker/testing` to
+  `^5.2.2`. Since no `package-lock.json` is committed yet, the pipeline
+  uses `npm install` instead of `npm ci`.
+- Raised `engines.node` in `package.json` to `>=18` (matching the tested
+  Node versions and `@iobroker/testing` 5.x's requirements)
+- A `deploy` job (automatic npm publishing) is prepared but commented
+  out until npm Trusted Publishing is set up
+
+### 0.4.3 (2026-08-20)
+
+- **Bugfix:** `einsatz.id` and `einsatz.sondersignal` were declared as
+  `string`, but the server actually sends them as numbers
+  (`sondersignal`, per `client_waip.js`: `switch (data.sondersignal) {
+  case 1: ... }`) – ioBroker therefore logged a type warning on every
+  incident. Both states are now declared as `number`. Existing objects
+  with the old (wrong) type are automatically recreated on the next
+  adapter start (`migrateObjectTypes()`, generic for future type
+  corrections).
+
+### 0.4.2 (2026-08-20)
+
+- Removed the "Session keepalive interval – upper bound" config field
+  again: the official `/js/session_keepalive.js` on the site hard-codes
+  this upper bound at 5 minutes and doesn't make it configurable. Having
+  an admin field for it wrongly suggested a fixed interval, even though
+  the actual renewal has long been fully automatic (see 0.4.1). The
+  upper bound is now likewise fixed at 5 minutes.
+
+### 0.4.1 (2026-08-20)
+
+- **Robustness:** The session keepalive interval is now adaptive instead
+  of a fixed assumption. WAIP-Web's source code (`server/app_cfg.js`)
+  shows that the session cookie's lifetime is configurable per instance
+  via an environment variable (server default: 60s instead of the
+  previously assumed 10 minutes) – the adapter now derives the renewal
+  interval from the expiry time actually reported by the server
+  (matching `/js/session_keepalive.js` on the site: 80% of the observed
+  lifetime, min. 55s, at most the configured upper bound). The "Session
+  keepalive interval" config option is accordingly now an upper bound
+  rather than a fixed interval.
+- Corrected a comment about `io.version`/server restarts: per
+  `server/auth.js`, WAIP-Web stores sessions persistently (SQLite), not
+  in-memory – a restart therefore normally doesn't clear them. The
+  proactive session refresh + reconnect on server restart remains as a
+  general safeguard, only the previous justification was inaccurate.
+
+### 0.4.0 (2026-08-20)
+
+- **Restructured the object tree:** Feedback and routes are 1:n lists
+  per incident and now live as nested JSON arrays inside one overall
+  object `einsatz.json` (including `emAlarmiert[]`, `emWeitere[]`,
+  `routen[]`, `rueckmeldungen[]`) instead of several loose states.
+- `einsatz.history10` replaces `history.last10` – now with the **full**
+  nested incident object per entry instead of just 6 reduced fields.
+- New counters directly under `einsatz.*`: `routenGesamt`,
+  `rueckmeldungGesamt`, `rueckmeldungAnzahl.{ek,gf,zf,vf,agt,fzf,ma,med}`
+  (replaces `rueckmeldung.counts.*`).
+- `einsatz.latitude`/`einsatz.longitude` replace
+  `geo.latitude`/`geo.longitude` (position is additionally available in
+  `einsatz.json.position`).
+- New state `tts.history10` (last 10 TTS announcements).
+- **Removed:** the entire `vis.*` channel, `json.raw`, `json.einsatz`,
+  `geo.position`, `rueckmeldung.last.json`, `routen.json`,
+  `routen.count`, `einsatz.emWeitere` (now part of `einsatz.json`).
+- The adapter automatically removes all obsolete objects from the
+  previous structure on its first start after the update
+  (`cleanupObsoleteObjects()`).
+
+### 0.3.4 (2026-08-20)
+
+- All state names (`common.name`) consistently switched to German
+  (previously a mix of English and German) – the adapter only makes
+  sense for German-speaking users anyway
+
+### 0.3.3 (2026-08-20)
+
+- **Bugfix (potential data loss):** For a specific monitor ID (≠ `0`),
+  events were silently discarded ("unknownMonitor") after the
+  registration timeout elapsed, because real WAIP payloads, per
+  `client_waip.js`, **never** contain a monitor-identifying field – that
+  assignment happens entirely server-side via Socket.IO rooms. As a
+  result, alarm delivery could stop completely after 10s even though
+  the connection was technically up. `status.registrationAccepted`
+  stayed permanently `false` for the same reason, even for the global
+  monitor (`0`). Now any received event confirms the registration;
+  events are only discarded if a payload explicitly names a different
+  monitor ID.
+
+### 0.3.2 (2026-08-20)
+
+- Also switched the "Registration timeout" and "Reconnect delay" config
+  fields from milliseconds to seconds (`registrationTimeout` →
+  `registrationTimeoutSec`, default `10`; `reconnectDelay` →
+  `reconnectDelaySec`, default `5`). Existing instances without a newly
+  set value automatically use the defaults.
+
+### 0.3.1 (2026-08-20)
+
+- Switched the "Session keepalive interval" config field from
+  milliseconds to seconds (`sessionKeepaliveInterval` →
+  `sessionKeepaliveIntervalSec`, still defaulting to 5 min = `300`).
+  Existing instances without a newly set value automatically use the
+  default.
+
+### 0.3.0 (2026-08-20)
+
+- **Bugfix:** `wgs84_x`/`wgs84_y` were swapped (latitude/longitude). Per
+  the official web frontend (`client_waip.js`), `wgs84_x = latitude,
+  wgs84_y = longitude` – contrary to the usual GIS convention.
+  `geo.latitude`/`geo.longitude` were therefore swapped for directly
+  transmitted coordinates (not the GeoJSON fallback path).
+- Added the missing `io.standby` handler: `status.alarmAktiv` was
+  previously never reset when an incident ended
+- Captured new incident fields (previously only contained in the raw
+  `json.raw`/`json.einsatz`, now as their own states): `zeitstempel`,
+  `einsatznummer`, `objekt`, `objektteil`, `strasse`, `hausnummer`,
+  `einsatzdetails`, `besonderheiten`, `permissions`
+- `em_alarmiert` (alerted resources) is now stored in
+  `vis.fahrzeugTabelle`, `em_weitere` in `einsatz.emWeitere`
+- Feedback is now collected per incident (`vis.rueckmeldungenTabelle`)
+  and aggregated into counters per role/capability
+  (`rueckmeldung.counts.*`), mirroring the live badges
+  (EK/GF/ZF/VF/AGT/FZF/MA/MED) on the web UI
+- New handlers for `io.error` (→ `debug.lastError`) and `io.version`
+  (server-restart detection → session-cookie refresh + forced reconnect)
+- Generalized `reconnectForRotatedSession()` into the more generic
+  `forceReconnect(reason)` (now also used on a server version change)
+
+### 0.2.1 (2026-08-20)
+
+- Detected session-cookie rotation: if `/session/keepalive` returns a
+  different cookie value than before (e.g. because the old session was
+  already invalid server-side – a missed keepalive, a server restart
+  with an in-memory session store), an existing Socket.IO connection is
+  now actively rebuilt with the new session instead of waiting for a
+  silent failure
+
+### 0.2.0 (2026-08-20)
+
+- Introduced session-cookie management: the adapter fetches and renews
+  the WAIP server's `connect.sid` session cookie itself (`GET
+  /session/keepalive`, matching `/js/session_keepalive.js` on the site)
+  and attaches it to the Socket.IO connection. Fixes alarm delivery
+  stopping after about 10 minutes without an active browser session.
+- New state `debug.sessionExpires` and a new config option "Session
+  keepalive interval (ms)" (default `300000`)
+
+### 0.1.1 (2026-08-20)
+
+- Adopted the favicon from `wachalarm.leitstelle-lausitz.de` as the
+  adapter icon (`admin/waip-web.png`), replacing the previous
+  placeholder
+- Renamed the GitHub repository from `ioBroker.WAIP-Web` to
+  `ioBroker.waip-web` (uppercase letters in the repo name prevented
+  installation via `iobroker url` with `Process exited with code 25`);
+  updated all URLs in `package.json`/`io-package.json` accordingly
+
+### 0.1.0 (2026-08-20)
+
+- Initial version: ported the original "WAIP Instrumented v3.9" ioBroker
+  JavaScript-adapter script into a standalone adapter. The URL/monitor
+  ID now come from the admin configuration instead of a runtime state.
