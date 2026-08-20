@@ -419,6 +419,11 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.2 (2026-08-21)
+
+- Monitor dropdown entries are now sorted by numeric monitor ID instead
+  of following the source page's (per-category) order.
+
 ### 0.6.1 (2026-08-21)
 
 - Monitor dropdown entries now start with the actual monitor ID, e.g.
