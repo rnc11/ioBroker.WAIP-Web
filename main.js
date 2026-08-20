@@ -24,7 +24,13 @@ const utils = require('@iobroker/adapter-core');
 const { io } = require('socket.io-client');
 
 const DEFAULT_URL = 'https://wachalarm.leitstelle-lausitz.de';
-const DEFAULT_SESSION_KEEPALIVE_SEC = 300; // 5 Minuten, wie /js/session_keepalive.js der Seite selbst
+const DEFAULT_SESSION_KEEPALIVE_SEC = 300; // Obergrenze, wie /js/session_keepalive.js der Seite selbst
+// Untergrenze fürs Keepalive-Intervall, analog zur Klammerung in /js/session_keepalive.js
+// (min(max(maxAge*0.8, 55s), Obergrenze)). Die tatsächliche Cookie-Laufzeit ist je
+// WAIP-Web-Instanz per ENV konfigurierbar (Server-Default lt. server/app_cfg.js: 60s!) -
+// deshalb wird das Intervall unten adaptiv aus der vom Server gemeldeten Ablaufzeit
+// berechnet, statt einen festen Wert anzunehmen.
+const SESSION_KEEPALIVE_MIN_MS = 55 * 1000;
 const HISTORY_SIZE = 10;
 const ALLOWED_EINSATZ_FIELDS = [
     'id',
@@ -283,7 +289,8 @@ class WaipWeb extends utils.Adapter {
         this.registrationTimer = null;
         this.reconnectTimer = null;
         this.restzeitInterval = null;
-        this.sessionKeepaliveInterval = null;
+        this.sessionKeepaliveTimer = null;
+        this.nextSessionKeepaliveDelayMs = null;
         this.sessionCookie = null;
         this.currentEinsatzUuid = null;
         this.currentEinsatzSnapshot = null; // verschachteltes Objekt -> einsatz.json
@@ -331,9 +338,9 @@ class WaipWeb extends utils.Adapter {
                 this.clearInterval(this.restzeitInterval);
                 this.restzeitInterval = null;
             }
-            if (this.sessionKeepaliveInterval) {
-                this.clearInterval(this.sessionKeepaliveInterval);
-                this.sessionKeepaliveInterval = null;
+            if (this.sessionKeepaliveTimer) {
+                this.clearTimeout(this.sessionKeepaliveTimer);
+                this.sessionKeepaliveTimer = null;
             }
             callback();
         } catch (e) {
@@ -411,18 +418,27 @@ class WaipWeb extends utils.Adapter {
     /*
      Holt bzw. erneuert den Session-Cookie über GET /session/keepalive (rolling session,
      analog zum /js/session_keepalive.js der WAIP-Seite selbst). Ohne aktiven Cookie
-     verbindet sich der Socket sonst anonym und die Session läuft nach ~10 Minuten ab,
-     wodurch die Alarm-Zustellung stoppt.
+     verbindet sich der Socket sonst anonym und die Session läuft ab, wodurch die
+     Alarm-Zustellung stoppt.
 
      Solange die bisherige Session noch gültig ist, liefert der Server denselben
      connect.sid zurück (nur die Ablaufzeit wird verlängert). Ist die alte Session
-     serverseitig bereits weg (z.B. Keepalive verpasst, Server-Neustart mit
-     In-Memory-Sessionstore), bekommen wir hier einen NEUEN Cookie-Wert - das wird
-     erkannt (isRotation) und meldet dem Aufrufer, ob eine bestehende Socket.IO-
-     Verbindung (die noch mit der alten Session verknüpft ist) neu aufgebaut werden sollte.
+     serverseitig nicht mehr gültig (z.B. weil der letzte Keepalive-Call die konfigurierte
+     Cookie-Laufzeit überschritten hat, oder der Server sie aus anderen Gründen invalidiert
+     hat), bekommen wir hier einen NEUEN Cookie-Wert - das wird erkannt (isRotation) und
+     meldet dem Aufrufer, ob eine bestehende Socket.IO-Verbindung (die noch mit der alten
+     Session verknüpft ist) neu aufgebaut werden sollte.
+
+     Aus der vom Server gemeldeten Ablaufzeit wird außerdem die tatsächliche Cookie-
+     Lebensdauer dieser Instanz abgeleitet und in this.nextSessionKeepaliveDelayMs
+     abgelegt (siehe scheduleSessionKeepalive) - server/app_cfg.js des WAIP-Web-Projekts
+     zeigt, dass die Lebensdauer per ENV konfigurierbar ist (Standard dort: 60s, diese
+     Instanz nutzt offenbar 10 Min.), ein fest angenommenes Intervall wäre also für andere
+     Instanzen potenziell falsch.
     */
     async refreshSessionCookie() {
         const previousCookie = this.sessionCookie;
+        const requestStartedAt = Date.now();
         try {
             const keepaliveUrl = `${this.url}/session/keepalive`;
             const res = await this.httpGet(keepaliveUrl, this.sessionCookie);
@@ -442,12 +458,23 @@ class WaipWeb extends utils.Adapter {
                     } catch (e) {
                         /* ignore */
                     }
+                    const expiresMs = new Date(expires).getTime();
+                    if (!isNaN(expiresMs)) {
+                        const observedMaxAgeMs = expiresMs - requestStartedAt;
+                        if (observedMaxAgeMs > 0) {
+                            // gleiche Klammerung wie /js/session_keepalive.js: 80% der
+                            // beobachteten Laufzeit, mindestens SESSION_KEEPALIVE_MIN_MS,
+                            // höchstens die konfigurierte Obergrenze (this.SESSION_KEEPALIVE_MS)
+                            const ceiling = Math.max(this.SESSION_KEEPALIVE_MS, SESSION_KEEPALIVE_MIN_MS);
+                            this.nextSessionKeepaliveDelayMs = Math.min(Math.max(observedMaxAgeMs * 0.8, SESSION_KEEPALIVE_MIN_MS), ceiling);
+                        }
+                    }
                 }
                 if (isRotation) {
                     this.log.warn('Session-Cookie wurde vom Server neu ausgestellt (alte Session war ungültig) – erzwinge Reconnect');
                     this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'session_cookie_rotated' }).catch(() => {});
                 } else {
-                    this.log.debug(`session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''})`);
+                    this.log.debug(`session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''}${this.nextSessionKeepaliveDelayMs ? `, nächstes Keepalive in ${Math.round(this.nextSessionKeepaliveDelayMs / 1000)}s` : ''})`);
                 }
                 return { ok: true, rotated: isRotation };
             }
@@ -477,11 +504,25 @@ class WaipWeb extends utils.Adapter {
         this.connect(true);
     }
 
+    /* Startet die adaptive Keepalive-Kette. Nutzt this.nextSessionKeepaliveDelayMs, falls
+       aus einer vorherigen refreshSessionCookie()-Antwort bereits eine reale Cookie-Laufzeit
+       bekannt ist (z.B. aus dem initialen Aufruf in onReady()), sonst die konfigurierte
+       Obergrenze als vorsichtigen Startwert. */
     startSessionKeepalive() {
-        this.sessionKeepaliveInterval = this.setInterval(async () => {
+        this.scheduleSessionKeepalive(this.nextSessionKeepaliveDelayMs || this.SESSION_KEEPALIVE_MS);
+    }
+
+    /* setTimeout statt setInterval, weil sich das Intervall von Aufruf zu Aufruf ändern
+       kann (adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet). */
+    scheduleSessionKeepalive(delayMs) {
+        if (this.sessionKeepaliveTimer) {
+            this.clearTimeout(this.sessionKeepaliveTimer);
+        }
+        this.sessionKeepaliveTimer = this.setTimeout(async () => {
             const { rotated } = await this.refreshSessionCookie();
             if (rotated) this.forceReconnect('Session-Cookie rotiert');
-        }, this.SESSION_KEEPALIVE_MS);
+            this.scheduleSessionKeepalive(this.nextSessionKeepaliveDelayMs || this.SESSION_KEEPALIVE_MS);
+        }, delayMs);
     }
 
     /* Sicheres, deduplizierendes Warn-Logging. */
@@ -825,9 +866,11 @@ class WaipWeb extends utils.Adapter {
 
     /* Handler für io.version - Server-Identität/Version. Ändert sich die vom Server
        gemeldete ID zur Laufzeit, ist der Server vermutlich neu gestartet (das offizielle
-       Frontend lädt in diesem Fall die Seite komplett neu). Für uns bedeutet das u.a.,
-       dass eine In-Memory-Session serverseitig verloren gegangen sein kann - daher Cookie
-       auffrischen und die Verbindung vorsorglich neu aufbauen. */
+       Frontend lädt in diesem Fall die Seite komplett neu). Laut server/auth.js des
+       WAIP-Web-Projekts werden Sessions persistent (SQLite) gespeichert, ein Neustart
+       löscht sie also normalerweise NICHT automatisch - trotzdem ist ein Server-Neustart
+       ein guter genereller Anlass, Cookie und Verbindung vorsorglich aufzufrischen (billige
+       Absicherung gegen jede Art von serverseitiger Zustandsänderung, nicht nur Sessions). */
     async handleServerVersion(serverId) {
         try {
             await this.setStateAsync('debug.serverVersion', String(serverId), true);
