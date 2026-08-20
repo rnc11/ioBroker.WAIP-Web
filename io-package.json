@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.3",
+    "version": "0.6.4",
     "news": {
+      "0.6.4": {
+        "en": "New state status.registeredMonitorName shows the registered monitor as text without the ID (e.g. 'Leitstelle: Lausitz'), resolved once at startup from the same /waip/ overview page as the admin dropdown; status.registeredMonitor keeps showing the ID as before",
+        "de": "Neuer State status.registeredMonitorName zeigt den registrierten Monitor als Text ohne ID (z.B. 'Leitstelle: Lausitz'), einmalig beim Start von derselben /waip/-Übersichtsseite wie das Admin-Dropdown aufgelöst; status.registeredMonitor zeigt weiterhin wie bisher die ID"
+      },
       "0.6.3": {
         "en": "Monitor ID field is now always full-width, placed on its own row below the WAIP server URL, so the (sometimes long) dropdown entries have enough room",
         "de": "Feld Monitor-ID ist jetzt immer vollzeilig und steht in einer eigenen Zeile unterhalb der WAIP-Server-URL, damit die teils langen Dropdown-Einträge genug Platz haben"
@@ -78,10 +82,6 @@
       "0.3.2": {
         "en": "Registration timeout and reconnect delay config fields changed from milliseconds to seconds",
         "de": "Konfigurationsfelder für Registrierungs-Timeout und Wiederverbindungs-Verzögerung von Millisekunden auf Sekunden umgestellt"
-      },
-      "0.3.1": {
-        "en": "Session keepalive interval config field changed from milliseconds to seconds",
-        "de": "Konfigurationsfeld für das Session-Keepalive-Intervall von Millisekunden auf Sekunden umgestellt"
       }
     },
     "title": "WAIP-Web",

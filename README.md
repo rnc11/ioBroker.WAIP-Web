@@ -129,6 +129,7 @@ bindings and triggers don't need JSON parsing.
 | `alarmAktiv` | boolean | `true` since the last `io.new_waip`, `false` since the last `io.standby` |
 | `restzeit` | number (s) | Remaining seconds until `einsatz.ablaufzeit`, updated every second |
 | `registeredMonitor` | string | Monitor ID last registered with the server |
+| `registeredMonitorName` | string | Display name of that monitor, without the ID (e.g. "Leitstelle: Lausitz"); resolved once at startup from the same `/waip/` overview page as the admin dropdown, `null` if it couldn't be resolved |
 | `registrationAccepted` | mixed | `"pending"` right after connecting, `true` once the first event was received, otherwise `false` once the registration timeout elapses |
 
 #### einsatz
@@ -322,6 +323,7 @@ und Trigger ohne JSON-Parsing auskommen.
 | `alarmAktiv` | boolean | `true` seit dem letzten `io.new_waip`, `false` seit dem letzten `io.standby` |
 | `restzeit` | number (s) | Verbleibende Sekunden bis `einsatz.ablaufzeit`, sekündlich aktualisiert |
 | `registeredMonitor` | string | Zuletzt beim Server registrierte Monitor-ID |
+| `registeredMonitorName` | string | Anzeigename dieses Monitors ohne ID (z. B. „Leitstelle: Lausitz"); wird einmalig beim Start von derselben `/waip/`-Übersichtsseite wie das Admin-Dropdown aufgelöst, `null` falls nicht auflösbar |
 | `registrationAccepted` | mixed | `"pending"` direkt nach Connect, `true` sobald das erste Event empfangen wurde, sonst `false` nach Ablauf des Registrierungs-Timeouts |
 
 #### einsatz
@@ -418,6 +420,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.6.4 (2026-08-21)
+
+- New state `status.registeredMonitorName` shows the registered monitor
+  as text without the ID (e.g. "Leitstelle: Lausitz"), resolved once at
+  startup from the same `/waip/` overview page as the admin dropdown.
+  `status.registeredMonitor` is unchanged and keeps showing the ID.
 
 ### 0.6.3 (2026-08-21)
 

@@ -115,6 +115,12 @@ const STATE_DEFS = [
     },
     { id: 'status.registeredMonitor', type: 'string', role: 'text', name: 'Aktuell registrierte Monitor-ID' },
     {
+        id: 'status.registeredMonitorName',
+        type: 'string',
+        role: 'text',
+        name: 'Aktuell registrierter Monitor (Text, ohne ID)',
+    },
+    {
         id: 'status.registrationAccepted',
         type: 'mixed',
         role: 'indicator',
@@ -452,6 +458,7 @@ class WaipWeb extends utils.Adapter {
 
         this.socket = null;
         this.currentMonitor = '';
+        this.monitorName = null; // Anzeigename des konfigurierten Monitors, siehe refreshMonitorName()
         this.connecting = false;
         this.registrationPending = false;
         this.registrationTimer = null;
@@ -495,6 +502,9 @@ class WaipWeb extends utils.Adapter {
         await this.refreshSessionCookie();
         this.startSessionKeepalive();
         this.startRestzeitInterval();
+        // Nicht awaiten - der Alarm-Empfang soll nicht auf diesen (rein informativen)
+        // Namens-Lookup warten müssen.
+        this.refreshMonitorName().catch(() => {});
         this.connect();
     }
 
@@ -678,6 +688,24 @@ class WaipWeb extends utils.Adapter {
         result.sort((a, b) => Number(a.value) - Number(b.value));
 
         return result;
+    }
+
+    /* Löst this.monitorID einmalig zu einem Anzeigenamen ohne ID auf (z.B. "Leitstelle:
+       Lausitz" statt "4 - Leitstelle: Lausitz") und schreibt ihn nach status.registered-
+       MonitorName. Wird nur einmal beim Start aufgerufen (nicht bei jedem Reconnect) - das
+       Ergebnis wird in this.monitorName gecacht und von onSocketConnect() bei jedem
+       (Re-)Connect erneut in den State geschrieben, ohne die Übersichtsseite erneut zu holen. */
+    async refreshMonitorName() {
+        const monStr = isValidMonitor(this.monitorID) ? this.monitorID : '0';
+        try {
+            const list = await this.fetchMonitorList(this.url);
+            const match = list.find(item => item.value === String(monStr));
+            this.monitorName = match ? match.label.replace(/^\d+\s*-\s*/, '') : null;
+        } catch (e) {
+            this.safeLog('debug', 'refreshMonitorName', e);
+            this.monitorName = null;
+        }
+        await this.setField('status.registeredMonitorName', this.monitorName);
     }
 
     /* Reagiert auf sendTo-Nachrichten aus dem Admin (aktuell nur 'getMonitorList' für das
@@ -1481,6 +1509,9 @@ class WaipWeb extends utils.Adapter {
 
         this.registrationPending = true;
         this.setState('status.registeredMonitor', monStr, true);
+        // Gecachter Anzeigename (siehe refreshMonitorName) - keine erneute HTTP-Abfrage
+        // bei jedem (Re-)Connect, ist ggf. beim allerersten Connect noch null.
+        this.setState('status.registeredMonitorName', this.monitorName, true);
         this.setState('status.registrationAccepted', 'pending', true);
         if (this.registrationTimer) {
             this.clearTimeout(this.registrationTimer);
