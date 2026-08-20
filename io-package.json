@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.3.3",
+    "version": "0.3.4",
     "news": {
+      "0.3.4": {
+        "en": "All state names are now consistently German (was a mix of English/German)",
+        "de": "Alle State-Bezeichnungen sind jetzt konsequent auf Deutsch (vorher englisch/deutsch gemischt)"
+      },
       "0.3.3": {
         "en": "Fixed a bug where events could be silently dropped after the registration timeout for non-global monitor IDs, since real WAIP payloads never carry a monitor field; registrationAccepted now reflects reality",
         "de": "Bug behoben: Events konnten bei nicht-globalen Monitor-IDs nach dem Registrierungs-Timeout still verworfen werden, da reale WAIP-Payloads nie ein Monitor-Feld enthalten; registrationAccepted spiegelt jetzt die Realität wider"
@@ -105,7 +109,7 @@
       "type": "state",
       "common": {
         "role": "indicator.connected",
-        "name": "Connected to WAIP server",
+        "name": "Verbunden mit WAIP-Server",
         "type": "boolean",
         "read": true,
         "write": false,

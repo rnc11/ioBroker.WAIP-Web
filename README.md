@@ -77,6 +77,12 @@ einbinden.
 
 ## Changelog
 
+### 0.3.4 (2026-08-20)
+
+- Alle State-Bezeichnungen (`common.name`) konsequent auf Deutsch
+  umgestellt (vorher teils Englisch, teils Deutsch gemischt) – der Adapter
+  ist ohnehin nur für den deutschsprachigen Raum sinnvoll
+
 ### 0.3.3 (2026-08-20)
 
 - **Bugfix (potenzieller Datenverlust):** Bei einer konkreten Monitor-ID
