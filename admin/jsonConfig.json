@@ -56,18 +56,18 @@
             "md": 6,
             "lg": 4
         },
-        "sessionKeepaliveInterval": {
+        "sessionKeepaliveIntervalSec": {
             "type": "number",
             "label": {
-                "en": "Session keepalive interval (ms)",
-                "de": "Session-Keepalive-Intervall (ms)"
+                "en": "Session keepalive interval (s)",
+                "de": "Session-Keepalive-Intervall (s)"
             },
             "help": {
                 "en": "How often the server session cookie (GET /session/keepalive) is renewed, so the alarm feed keeps working uninterrupted without a real browser session",
                 "de": "Wie oft der Server-Session-Cookie (GET /session/keepalive) erneuert wird, damit die Alarm-Zustellung auch ohne echte Browsersitzung ununterbrochen weiterläuft"
             },
-            "min": 30000,
-            "max": 600000,
+            "min": 30,
+            "max": 600,
             "sm": 12,
             "md": 6,
             "lg": 4

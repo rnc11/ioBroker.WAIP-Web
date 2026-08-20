@@ -18,7 +18,7 @@ const utils = require('@iobroker/adapter-core');
 const { io } = require('socket.io-client');
 
 const DEFAULT_URL = 'https://wachalarm.leitstelle-lausitz.de';
-const DEFAULT_SESSION_KEEPALIVE_MS = 5 * 60 * 1000; // 5 Minuten, wie /js/session_keepalive.js der Seite selbst
+const DEFAULT_SESSION_KEEPALIVE_SEC = 300; // 5 Minuten, wie /js/session_keepalive.js der Seite selbst
 const HISTORY_SIZE = 10;
 const ALLOWED_EINSATZ_FIELDS = [
     'id',
@@ -272,7 +272,7 @@ class WaipWeb extends utils.Adapter {
     async onReady() {
         this.REGISTRATION_TIMEOUT_MS = Number(this.config.registrationTimeout) || 10000;
         this.RECONNECT_DELAY_MS = Number(this.config.reconnectDelay) || 5000;
-        this.SESSION_KEEPALIVE_MS = Number(this.config.sessionKeepaliveInterval) || DEFAULT_SESSION_KEEPALIVE_MS;
+        this.SESSION_KEEPALIVE_MS = (Number(this.config.sessionKeepaliveIntervalSec) || DEFAULT_SESSION_KEEPALIVE_SEC) * 1000;
         this.url = (this.config.url || DEFAULT_URL).trim();
         this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
 
