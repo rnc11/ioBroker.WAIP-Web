@@ -73,11 +73,20 @@ Schnittstelle.
 ### Warum ein Session-Cookie nötig ist
 
 Der WAIP-Web-Server bindet die Alarm-Zustellung an einen
-Express-Session-Cookie (10 Minuten gültig), den ein Browser über ein
-mitgeliefertes Skript automatisch alle paar Minuten erneuert. Ein reiner
-Socket.IO-Client bekommt diesen Cookie nie automatisch – der Adapter holt
-ihn deshalb selbst per `GET /session/keepalive`, hängt ihn an die
-Socket.IO-Verbindung an und erneuert ihn periodisch (Standard: alle 5 Min.).
+Express-Session-Cookie, den ein Browser über ein mitgeliefertes Skript
+automatisch alle paar Minuten erneuert. Ein reiner Socket.IO-Client bekommt
+diesen Cookie nie automatisch – der Adapter holt ihn deshalb selbst per
+`GET /session/keepalive` und hängt ihn an die Socket.IO-Verbindung an.
+
+Die Cookie-Lebensdauer ist laut Quellcode von WAIP-Web **pro Instanz per
+Umgebungsvariable konfigurierbar** (Server-Standard: 60 Sekunden; diese
+Instanz nutzt offenbar 10 Minuten) – ein fest angenommenes Erneuerungs-
+intervall wäre daher für andere WAIP-Web-Instanzen potenziell falsch. Der
+Adapter leitet das tatsächliche Intervall deshalb **adaptiv** aus der vom
+Server bei jedem Aufruf gemeldeten Ablaufzeit ab (80 % der beobachteten
+Laufzeit, mindestens 55 Sekunden, höchstens die konfigurierte Obergrenze) –
+genau die gleiche Klammerung, die auch `/js/session_keepalive.js` der
+Website selbst verwendet.
 
 ## Konfiguration
 
@@ -89,7 +98,7 @@ In der Admin-Oberfläche der Adapterinstanz:
 | Monitor-ID | Monitor-Kennung; leer/`0` = globaler Monitor | *(leer)* |
 | Registrierungs-Timeout (s) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10` |
 | Wiederverbindungs-Verzögerung (s) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5` |
-| Session-Keepalive-Intervall (s) | Wie oft der Session-Cookie per `GET /session/keepalive` erneuert wird | `300` (5 Min) |
+| Session-Keepalive-Intervall – Obergrenze (s) | Maximales Intervall für die Erneuerung des Session-Cookies; das tatsächliche Intervall wird adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet (min. 55s) | `300` (5 Min) |
 
 ## States (unter `waip-web.0.*`)
 
@@ -188,6 +197,24 @@ Adapter danach z. B. über den ioBroker-Admin (Custom-URL-Installation von
 GitHub) oder per `iobroker url <github-url>` einbinden.
 
 ## Changelog
+
+### 0.4.1 (2026-08-20)
+
+- **Robustheit:** Session-Keepalive-Intervall ist jetzt adaptiv statt fest
+  angenommen. Der Quellcode von WAIP-Web (`server/app_cfg.js`) zeigt, dass
+  die Session-Cookie-Lebensdauer je Instanz per Umgebungsvariable
+  konfigurierbar ist (Server-Standard: 60s statt der bisher angenommenen
+  10 Minuten) – der Adapter leitet das Erneuerungsintervall jetzt aus der
+  vom Server tatsächlich gemeldeten Ablaufzeit ab (analog zu
+  `/js/session_keepalive.js` der Website: 80 % der beobachteten Laufzeit,
+  mind. 55s, höchstens die konfigurierte Obergrenze). Die Konfigurations-
+  option „Session-Keepalive-Intervall" ist entsprechend jetzt eine
+  Obergrenze statt ein festes Intervall.
+- Kommentar zu `io.version`/Server-Neustart korrigiert: WAIP-Web speichert
+  Sessions laut `server/auth.js` persistent (SQLite), nicht in-memory –
+  ein Neustart löscht sie also normalerweise nicht. Die vorsorgliche
+  Session-Auffrischung + Reconnect bei Server-Neustart bleibt als generelle
+  Absicherung bestehen, nur die bisherige Begründung war ungenau.
 
 ### 0.4.0 (2026-08-20)
 

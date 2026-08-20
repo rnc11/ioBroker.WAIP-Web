@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "news": {
+      "0.4.1": {
+        "en": "Session keepalive interval is now derived adaptively from the server-reported cookie lifetime instead of a fixed assumption (WAIP-Web's cookie lifetime is configurable per instance, default 60s per its source code); corrected an inaccurate code comment about in-memory session storage",
+        "de": "Session-Keepalive-Intervall wird jetzt adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet statt fest angenommen (die Cookie-Laufzeit ist laut Quellcode je WAIP-Web-Instanz konfigurierbar, Standard 60s); ungenauer Code-Kommentar zu In-Memory-Sessions korrigiert"
+      },
       "0.4.0": {
         "en": "Restructured objects: nested einsatz.json (with routes/Rückmeldungen as arrays) and einsatz.history10 replace vis.*, json.*, geo.*, history.last10, rueckmeldung.last.json, routen.json/count and rueckmeldung.counts.*; new einsatz.rueckmeldungAnzahl.*/rueckmeldungGesamt/routenGesamt/latitude/longitude and tts.history10. Obsolete objects are removed automatically on update.",
         "de": "Objektstruktur überarbeitet: verschachteltes einsatz.json (Routen/Rückmeldungen als Arrays) und einsatz.history10 ersetzen vis.*, json.*, geo.*, history.last10, rueckmeldung.last.json, routen.json/count und rueckmeldung.counts.*; neu: einsatz.rueckmeldungAnzahl.*/rueckmeldungGesamt/routenGesamt/latitude/longitude sowie tts.history10. Veraltete Objekte werden beim Update automatisch entfernt."

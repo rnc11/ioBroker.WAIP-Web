@@ -59,14 +59,14 @@
         "sessionKeepaliveIntervalSec": {
             "type": "number",
             "label": {
-                "en": "Session keepalive interval (s)",
-                "de": "Session-Keepalive-Intervall (s)"
+                "en": "Session keepalive interval - upper bound (s)",
+                "de": "Session-Keepalive-Intervall - Obergrenze (s)"
             },
             "help": {
-                "en": "How often the server session cookie (GET /session/keepalive) is renewed, so the alarm feed keeps working uninterrupted without a real browser session",
-                "de": "Wie oft der Server-Session-Cookie (GET /session/keepalive) erneuert wird, damit die Alarm-Zustellung auch ohne echte Browsersitzung ununterbrochen weiterläuft"
+                "en": "Upper bound for how often the server session cookie (GET /session/keepalive) is renewed. The actual interval is derived adaptively from the cookie lifetime the server reports (min. 55s), since that lifetime is configurable per WAIP-Web instance and not fixed",
+                "de": "Obergrenze, wie oft der Server-Session-Cookie (GET /session/keepalive) maximal erneuert wird. Das tatsächliche Intervall wird adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet (mind. 55s), da diese Laufzeit je WAIP-Web-Instanz unterschiedlich konfiguriert sein kann"
             },
-            "min": 30,
+            "min": 55,
             "max": 600,
             "sm": 12,
             "md": 6,
