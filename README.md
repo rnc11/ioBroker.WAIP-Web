@@ -77,6 +77,19 @@ einbinden.
 
 ## Changelog
 
+### 0.3.3 (2026-08-20)
+
+- **Bugfix (potenzieller Datenverlust):** Bei einer konkreten Monitor-ID
+  (≠ `0`) wurden Events nach Ablauf des Registrierungs-Timeouts still
+  verworfen ("unknownMonitor"), weil reale WAIP-Payloads laut
+  `client_waip.js` **nie** ein Monitor-Kennungsfeld enthalten – die
+  Zuordnung passiert komplett serverseitig über Socket.IO-Rooms. Dadurch
+  konnte die Alarm-Zustellung nach 10s vollständig stillstehen, obwohl die
+  Verbindung technisch stand. `status.registrationAccepted` blieb aus
+  demselben Grund auch bei globalem Monitor (`0`) dauerhaft `false`.
+  Jetzt bestätigt jedes empfangene Event die Registrierung; verworfen wird
+  nur noch, wenn ein Payload explizit eine andere Monitor-ID nennt.
+
 ### 0.3.2 (2026-08-20)
 
 - Konfigurationsfelder „Registrierungs-Timeout" und „Wiederverbindungs-
