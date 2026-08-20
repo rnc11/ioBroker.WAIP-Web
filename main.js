@@ -56,6 +56,19 @@ const RUECKMELDUNG_ANZAHL_KEYS = ['ek', 'gf', 'zf', 'vf', 'agt', 'fzf', 'ma', 'm
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
 const WARN_DEDUPE_MS = 5000;
 
+/* Für die dynamische Monitor-Auswahl im Admin (siehe fetchMonitorList/onMessage):
+   Die /waip/-Übersichtsseite einer WAIP-Web-Instanz gliedert die verfügbaren
+   Monitore typischerweise in diese vier Überschriften. Nicht jede Instanz nutzt
+   zwingend exakt diese Gliederung - findet fetchMonitorList() keine davon, wird
+   die komplette Seite als eine einzige, unkategorisierte Liste geparst. */
+const MONITOR_CATEGORY_HEADINGS = [
+    { key: 'leitstelle', re: /Alarmmonitor\s+Leitstelle/i },
+    { key: 'kreis', re: /Alarmmonitor\s+Kreis/i },
+    { key: 'traeger', re: /Alarmmonitor\s+Tr(?:&auml;|ä)ger/i },
+    { key: 'wache', re: /Alarmmonitor\s+Wache/i },
+];
+const MONITOR_CATEGORY_LABELS = { leitstelle: 'Leitstelle', kreis: 'Kreis', traeger: 'Träger', wache: 'Wache' };
+
 // State-Objekte, die beim Start aus früheren Versionen entfernt werden (Struktur-Migration).
 const OBSOLETE_OBJECT_IDS = [
     'json.raw',
@@ -396,6 +409,36 @@ function normalizeData(obj) {
     }
 }
 
+/* Dekodiert die auf der /waip/-Übersichtsseite vorkommenden HTML-Entities (teils
+   benannt wie &auml;, teils numerisch) und normalisiert Whitespace. Für die dynamische
+   Monitor-Auswahl im Admin (siehe fetchMonitorList). */
+function decodeHtmlEntities(str) {
+    if (!str) {
+        return str;
+    }
+    const named = {
+        amp: '&',
+        lt: '<',
+        gt: '>',
+        quot: '"',
+        apos: "'",
+        nbsp: ' ',
+        auml: 'ä',
+        ouml: 'ö',
+        uuml: 'ü',
+        Auml: 'Ä',
+        Ouml: 'Ö',
+        Uuml: 'Ü',
+        szlig: 'ß',
+    };
+    return str
+        .replace(/&(amp|lt|gt|quot|apos|nbsp|auml|ouml|uuml|Auml|Ouml|Uuml|szlig);/g, m => named[m.slice(1, -1)])
+        .replace(/&#(\d+);/g, m => String.fromCodePoint(Number(m.slice(2, -1))))
+        .replace(/&#x([0-9a-fA-F]+);/gi, m => String.fromCodePoint(parseInt(m.slice(3, -1), 16)))
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 class WaipWeb extends utils.Adapter {
     constructor(options) {
         super({
@@ -405,6 +448,7 @@ class WaipWeb extends utils.Adapter {
 
         this.on('ready', this.onReady.bind(this));
         this.on('unload', this.onUnload.bind(this));
+        this.on('message', this.onMessage.bind(this));
 
         this.socket = null;
         this.currentMonitor = '';
@@ -560,6 +604,96 @@ class WaipWeb extends utils.Adapter {
             req.on('error', reject);
             req.on('timeout', () => req.destroy(new Error('timeout')));
         });
+    }
+
+    /* Holt die öffentliche Monitor-Übersichtsseite (/waip/) der übergebenen WAIP-Web-
+       Instanz und parst daraus die verfügbaren Monitor-IDs für die Admin-Dropdown-Auswahl
+       (siehe onMessage/'getMonitorList'). Rein lesend, erfordert keine Session/Cookie. */
+    async fetchMonitorList(baseUrl) {
+        const clean = String(baseUrl || '').replace(/\/+$/, '');
+        if (!clean) {
+            throw new Error('keine WAIP-Server-URL angegeben');
+        }
+        const res = await this.httpGet(`${clean}/waip/`);
+        if (res.statusCode !== 200 || !res.body) {
+            throw new Error(`Monitor-Übersicht nicht abrufbar (status ${res.statusCode})`);
+        }
+        const html = res.body;
+
+        const LINK_RE = /href="\/waip\/(\d+)"[^>]*>\s*([^<]+?)\s*(?:<|$)/g;
+        const extractLinks = section => {
+            const out = [];
+            let m;
+            LINK_RE.lastIndex = 0;
+            while ((m = LINK_RE.exec(section))) {
+                const label = decodeHtmlEntities(m[2]);
+                if (label) {
+                    out.push({ value: m[1], label });
+                }
+            }
+            return out;
+        };
+
+        // "alle Wachalarme" ist ein eigener Link außerhalb der kategorisierten Listen -
+        // wird unabhängig vom Parsing-Erfolg der übrigen Seite immer als erste Option angeboten.
+        const result = [{ value: '0', label: 'Alle Wachalarme' }];
+        const seen = new Set(['0']);
+
+        const headingMatches = [];
+        for (const cat of MONITOR_CATEGORY_HEADINGS) {
+            const m = cat.re.exec(html);
+            if (m) {
+                headingMatches.push({ key: cat.key, index: m.index });
+            }
+        }
+
+        if (headingMatches.length) {
+            headingMatches.sort((a, b) => a.index - b.index);
+            for (let i = 0; i < headingMatches.length; i++) {
+                const start = headingMatches[i].index;
+                const end = i + 1 < headingMatches.length ? headingMatches[i + 1].index : html.length;
+                const sectionLabel = MONITOR_CATEGORY_LABELS[headingMatches[i].key] || headingMatches[i].key;
+                for (const link of extractLinks(html.slice(start, end))) {
+                    if (!seen.has(link.value)) {
+                        seen.add(link.value);
+                        result.push({ value: link.value, label: `${sectionLabel}: ${link.label}` });
+                    }
+                }
+            }
+        } else {
+            // Keine der bekannten Überschriften gefunden -> gesamte Seite unkategorisiert parsen,
+            // damit die Auswahl auch bei abweichend strukturierten WAIP-Web-Instanzen funktioniert.
+            for (const link of extractLinks(html)) {
+                if (!seen.has(link.value)) {
+                    seen.add(link.value);
+                    result.push(link);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /* Reagiert auf sendTo-Nachrichten aus dem Admin (aktuell nur 'getMonitorList' für das
+       dynamische Monitor-Dropdown, siehe admin/jsonConfig.json). */
+    async onMessage(obj) {
+        if (!obj || typeof obj !== 'object') {
+            return;
+        }
+        if (obj.command === 'getMonitorList') {
+            if (!obj.callback) {
+                return;
+            }
+            const targetUrl = (obj.message && obj.message.url) || this.config.url;
+            let list;
+            try {
+                list = await this.fetchMonitorList(targetUrl);
+            } catch (e) {
+                this.safeLog('debug', 'getMonitorList', e);
+                list = [{ value: '0', label: 'Alle Wachalarme' }];
+            }
+            this.sendTo(obj.from, obj.command, list, obj.callback);
+        }
     }
 
     /* Baut aus einem oder mehreren Set-Cookie-Headern einen sendefertigen Cookie-Header (name=value; name2=value2). */
