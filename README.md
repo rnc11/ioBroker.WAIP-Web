@@ -18,6 +18,12 @@ Routen und TTS-Ansagen als ioBroker-States ab.
 - History der letzten 10 Einsätze (`history.last10`)
 - Getrennte Handler für Alarm (`io.new_waip`), Rückmeldung (`io.new_rmld`),
   Routen (`io.routes`) und TTS (`io.playtts`)
+- Automatisches Session-Cookie-Management: Der WAIP-Server erwartet einen
+  Express-Session-Cookie (10 Minuten gültig, wie ihn ein echter Browser
+  über `/js/session_keepalive.js` erneuert). Der Adapter holt diesen Cookie
+  selbst per `GET /session/keepalive`, hängt ihn an die Socket.IO-Verbindung
+  an und erneuert ihn periodisch – damit läuft die Alarm-Zustellung auch
+  ohne echte Browsersitzung dauerhaft weiter
 
 ## Konfiguration
 
@@ -29,6 +35,7 @@ In der Admin-Oberfläche der Adapterinstanz:
 | Monitor-ID | Monitor-Kennung; leer/`0` = globaler Monitor | *(leer)* |
 | Registrierungs-Timeout (ms) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10000` |
 | Wiederverbindungs-Verzögerung (ms) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5000` |
+| Session-Keepalive-Intervall (ms) | Wie oft der Session-Cookie per `GET /session/keepalive` erneuert wird | `300000` (5 Min) |
 
 ## States (Auszug, unter `waip-web.0.*`)
 
@@ -39,7 +46,7 @@ In der Admin-Oberfläche der Adapterinstanz:
 - `einsatz.id` / `uuid` / `einsatzart` / `stichwort` / `ort` / `ortsteil` / `ablaufzeit` / `sondersignal`
 - `rueckmeldung.last.json`, `routen.json`, `routen.count`, `tts.last`, `tts.lastTimestamp`
 - `history.last10`
-- `debug.lastEvent`, `debug.normalizedPosition`, `debug.rawPayloadShort`, `debug.ignoredCount`, `debug.monitorAudit`
+- `debug.lastEvent`, `debug.normalizedPosition`, `debug.rawPayloadShort`, `debug.ignoredCount`, `debug.monitorAudit`, `debug.sessionExpires`
 
 ## Installation / Entwicklung
 
@@ -55,6 +62,16 @@ Verzeichnis installieren`) oder per Symlink in die ioBroker-`node_modules`
 einbinden.
 
 ## Changelog
+
+### 0.2.0 (2026-08-20)
+
+- Session-Cookie-Management eingeführt: Der Adapter holt und erneuert
+  selbstständig den `connect.sid`-Session-Cookie des WAIP-Servers
+  (`GET /session/keepalive`, analog zu `/js/session_keepalive.js` der
+  Website) und hängt ihn an die Socket.IO-Verbindung an. Behebt, dass die
+  Alarm-Zustellung nach ca. 10 Minuten ohne aktive Browsersitzung aufhörte.
+- Neuer State `debug.sessionExpires` sowie neue Konfigurationsoption
+  „Session-Keepalive-Intervall (ms)" (Default `300000`)
 
 ### 0.1.1 (2026-08-20)
 
