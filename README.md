@@ -219,6 +219,14 @@ auskommentiert, bis npm Trusted Publishing eingerichtet ist.
 
 ## Changelog
 
+### 0.4.8 (2026-08-20)
+
+- **CI-Fix:** Letzte 16 Lint-Fehler behoben – diesmal lag die vollständige,
+  nicht abgeschnittene Fehlerliste inkl. exaktem gewünschtem Ersetzungstext
+  vor, daher konnte jede Stelle präzise 1:1 korrigiert werden (Zeilenumbrüche
+  bei zu langen Aufrufen/Objekten, ein `prefer-template`-Fall). Lint sollte
+  damit vollständig grün sein.
+
 ### 0.4.7 (2026-08-20)
 
 - **CI-Fix:** Restliche Lint-Fehler in `main.js` behoben – durchgängig

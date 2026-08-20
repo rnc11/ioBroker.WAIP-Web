@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.7",
+    "version": "0.4.8",
     "news": {
+      "0.4.8": {
+        "en": "Fixed the final 16 lint errors (line-wrapping, prefer-template) using the exact CI-reported replacements; lint should now be fully clean",
+        "de": "Letzte 16 Lint-Fehler behoben (Zeilenumbrüche, prefer-template) anhand der von der CI exakt gemeldeten Ersetzungen; Lint sollte jetzt vollständig sauber sein"
+      },
       "0.4.7": {
         "en": "Fixed remaining lint errors (curly, no-unused-vars, arrow-parens) across the whole file; developer tooling only, no runtime changes",
         "de": "Verbleibende Lint-Fehler behoben (curly, no-unused-vars, arrow-parens) über die gesamte Datei; reines Entwickler-Tooling, keine Laufzeit-Änderungen"
