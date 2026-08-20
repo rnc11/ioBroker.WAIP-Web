@@ -135,7 +135,7 @@ eintrifft):
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `id` | string | Interne Einsatz-ID |
+| `id` | number | Interne Einsatz-ID |
 | `uuid` | string | Eindeutige Einsatz-UUID (dient auch der Zuordnung von Rückmeldungen) |
 | `einsatzart` | string | z. B. „Brandeinsatz", „Hilfeleistungseinsatz", „Rettungseinsatz", „Krankentransport" |
 | `stichwort` | string | Alarmstichwort |
@@ -148,7 +148,7 @@ eintrifft):
 | `zeitstempel` | string (date) | Alarmzeit |
 | `ablaufzeit` | string (date) | Ende der Standby-Anzeigedauer, Basis für `status.restzeit` |
 | `einsatznummer` | string | Einsatznummer (sofern vom Server vergeben) |
-| `sondersignal` | string | `1` = Sondersignal, sonst kein Sondersignal |
+| `sondersignal` | number | `1` = Sondersignal, sonst kein Sondersignal |
 | `permissions` | mixed | Berechtigungsflag der Registrierung (Vollzugriff auf Detailkarte ja/nein) |
 | `latitude` / `longitude` | number | Position des Einsatzortes (normalisiert aus wgs84-Feldern oder GeoJSON-Mittelpunkt) |
 | `json` | string (JSON) | Vollständiges Einsatz-Objekt: alle Felder oben plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
@@ -201,6 +201,17 @@ Adapter danach z. B. über den ioBroker-Admin (Custom-URL-Installation von
 GitHub) oder per `iobroker url <github-url>` einbinden.
 
 ## Changelog
+
+### 0.4.3 (2026-08-20)
+
+- **Bugfix:** `einsatz.id` und `einsatz.sondersignal` waren als `string`
+  deklariert, der Server schickt sie aber tatsächlich als Zahl
+  (`sondersignal` z. B. laut `client_waip.js`: `switch (data.sondersignal)
+  { case 1: ... }`) – ioBroker loggte deshalb bei jedem Einsatz einen
+  Typ-Warnhinweis. Beide States sind jetzt als `number` deklariert.
+  Bereits bestehende Objekte mit dem alten (falschen) Typ werden beim
+  nächsten Adapterstart automatisch neu angelegt (`migrateObjectTypes()`,
+  generisch für künftige Typ-Korrekturen).
 
 ### 0.4.2 (2026-08-20)
 

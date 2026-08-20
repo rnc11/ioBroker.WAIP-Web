@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "news": {
+      "0.4.3": {
+        "en": "Fixed einsatz.id and einsatz.sondersignal state type (string -> number, matching what the server actually sends); existing objects with the wrong type are migrated automatically on update",
+        "de": "Datentyp von einsatz.id und einsatz.sondersignal korrigiert (string -> number, entspricht dem, was der Server tatsächlich sendet); bestehende Objekte mit falschem Typ werden beim Update automatisch migriert"
+      },
       "0.4.2": {
         "en": "Removed the session keepalive config field - the upper bound is now fixed at 5 minutes, matching the site's own /js/session_keepalive.js exactly, since the interval is fully automatic anyway",
         "de": "Konfigurationsfeld für das Session-Keepalive entfernt - die Obergrenze ist jetzt fix auf 5 Minuten gesetzt (wie /js/session_keepalive.js der Website selbst), da das Intervall ohnehin vollautomatisch ermittelt wird"

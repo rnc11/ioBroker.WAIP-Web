@@ -98,7 +98,7 @@ const STATE_DEFS = [
     { id: 'debug.lastError', type: 'string', role: 'json', name: 'Letzte Server-Fehlermeldung (io.error)' },
     { id: 'debug.serverVersion', type: 'string', role: 'text', name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)' },
     // flache Felder des aktuellen Einsatzes
-    { id: 'einsatz.id', type: 'string', role: 'text', name: 'Einsatz ID' },
+    { id: 'einsatz.id', type: 'number', role: 'value', name: 'Einsatz ID' },
     { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
     { id: 'einsatz.einsatzart', type: 'string', role: 'text', name: 'Einsatzart' },
     { id: 'einsatz.stichwort', type: 'string', role: 'text', name: 'Alarmstichwort' },
@@ -113,7 +113,7 @@ const STATE_DEFS = [
     { id: 'einsatz.zeitstempel', type: 'string', role: 'date', name: 'Alarmzeitstempel' },
     { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
     { id: 'einsatz.einsatznummer', type: 'string', role: 'text', name: 'Einsatznummer' },
-    { id: 'einsatz.sondersignal', type: 'string', role: 'text', name: 'Sondersignal' },
+    { id: 'einsatz.sondersignal', type: 'number', role: 'value', name: 'Sondersignal', def: 0 },
     { id: 'einsatz.permissions', type: 'mixed', role: 'json', name: 'Berechtigungs-Flag der Registrierung' },
     { id: 'einsatz.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
     { id: 'einsatz.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
@@ -318,6 +318,7 @@ class WaipWeb extends utils.Adapter {
         this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
 
         await this.cleanupObsoleteObjects();
+        await this.migrateObjectTypes();
         await this.initObjects();
         // Session-Cookie holen, bevor die erste Socket.IO-Verbindung aufgebaut wird
         await this.refreshSessionCookie();
@@ -364,6 +365,25 @@ class WaipWeb extends utils.Adapter {
                 }
             } catch (e) {
                 /* ignore - Objekt existierte vermutlich nicht */
+            }
+        }
+    }
+
+    /* Löscht bestehende State-Objekte, deren common.type nicht mehr zur aktuellen
+       STATE_DEFS-Definition passt (z.B. weil sich herausstellt, dass der Server ein Feld
+       als Zahl statt als String schickt - siehe einsatz.id/einsatz.sondersignal in 0.4.3).
+       setObjectNotExistsAsync legt danach in initObjects() ein frisches Objekt mit dem
+       korrekten Typ an. Generisch für alle künftigen Typ-Korrekturen, nicht nur diese. */
+    async migrateObjectTypes() {
+        for (const def of STATE_DEFS) {
+            try {
+                const obj = await this.getObjectAsync(def.id);
+                if (obj && obj.common && obj.common.type && obj.common.type !== def.type) {
+                    await this.delObjectAsync(def.id);
+                    this.log.info(`State-Objekt mit geändertem Datentyp neu angelegt: ${def.id} (${obj.common.type} -> ${def.type})`);
+                }
+            } catch (e) {
+                /* ignore - Objekt existierte vermutlich noch nicht */
             }
         }
     }
