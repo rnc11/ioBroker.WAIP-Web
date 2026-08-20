@@ -421,6 +421,15 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.5 (2026-08-21)
+
+- Fixed all issues reported by the official [ioBroker adapter checker](https://adapter-check.iobroker.in/):
+  - Bumped the required `js-controller` dependency to `>=5.0.19` and `@iobroker/adapter-core` to `^3.2.2`
+  - Replaced the deprecated `common.license`/`common.title`/`common.main` fields with `common.licenseInformation`/`common.titleLang`; `common.main` is redundant with `package.json`'s `main` field
+  - Added the required `common.tier` (`2` - external/cloud data source)
+  - Added translations of `titleLang`, `desc` and the kept `common.news` entries into all 10 additional ioBroker admin languages (ru, pt, nl, fr, it, es, pl, uk, zh-cn)
+  - Trimmed `common.news` to the 7 most recent entries, as recommended (the repository builder truncates there anyway); the full history stays in this changelog
+
 ### 0.6.4 (2026-08-21)
 
 - New state `status.registeredMonitorName` shows the registered monitor
