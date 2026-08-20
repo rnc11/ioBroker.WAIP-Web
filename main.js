@@ -1081,8 +1081,12 @@ class WaipWeb extends utils.Adapter {
     }
 
     /* Handler für Standby (io.standby) - Einsatz beendet / Monitor im Ruhezustand.
-       Die zuletzt bekannten Einsatzdaten (einsatz.*, einsatz.json, Zähler) bleiben bewusst
-       stehen, bis ein neuer Einsatz eintrifft - nur alarmAktiv wird zurückgesetzt. */
+       Analog zum offiziellen Frontend (client_waip.js leert dabei Stichwort, Ortsdaten,
+       Besonderheiten etc. und setzt die Karte zurück): der abgeschlossene Einsatz wird
+       zuerst archiviert (einsatz.history10), danach werden alle auf den aktuellen Einsatz
+       bezogenen States geleert - so bleibt alarmAktiv ein verlässlicher Schalter dafür, ob
+       einsatz.* gerade echte Live-Daten enthält, statt still den letzten (beendeten)
+       Einsatz weiter anzuzeigen. */
     async handleStandby() {
         try {
             this.log.info('Standby empfangen - Einsatz beendet bzw. Monitor im Ruhezustand');
@@ -1093,9 +1097,34 @@ class WaipWeb extends utils.Adapter {
                 this.safeWarn('status.alarmAktiv.setState', e);
             }
             await this.pushEinsatzToHistory();
+            await this.clearCurrentEinsatzStates();
         } catch (e) {
             this.safeWarn('handleStandby', e);
         }
+    }
+
+    /* Leert alle States, die sich auf den aktuellen (jetzt beendeten) Einsatz beziehen -
+       flache einsatz.*-Felder, einsatz.json sowie alle abgeleiteten Zähler. Wird nach
+       pushEinsatzToHistory() aufgerufen, der abgeschlossene Einsatz bleibt also weiterhin
+       über einsatz.history10 abrufbar. */
+    async clearCurrentEinsatzStates() {
+        const tasks = this.ALLOWED_EINSATZ_FIELDS.map(k => this.setStateAsync(`einsatz.${k}`, null, true));
+        tasks.push(this.setStateAsync('einsatz.latitude', null, true));
+        tasks.push(this.setStateAsync('einsatz.longitude', null, true));
+        tasks.push(this.setStateAsync('einsatz.json', null, true));
+        tasks.push(this.setStateAsync('einsatz.routenGesamt', 0, true));
+        const results = await Promise.allSettled(tasks);
+        for (const r of results) {
+            if (r.status === 'rejected') {
+                this.safeWarn('clearCurrentEinsatzStates', r.reason);
+            }
+        }
+
+        this.currentEinsatzUuid = null;
+        this.currentEinsatzSnapshot = null;
+        // rueckmeldungGesamt/rueckmeldungAnzahl.* liest aus this.currentEinsatzSnapshot,
+        // ist jetzt also null -> alle Zähler werden konsistent auf 0 zurückgesetzt.
+        await this.updateRueckmeldungCounts();
     }
 
     /* Handler für Server-Fehlermeldungen (io.error). */

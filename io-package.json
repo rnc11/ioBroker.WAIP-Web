@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.9",
+    "version": "0.5.0",
     "news": {
+      "0.5.0": {
+        "en": "einsatz.* states (including einsatz.json and all counters) are now cleared on io.standby instead of showing the finished incident until a new one arrives, matching the official frontend's behavior; the finished incident stays available via einsatz.history10",
+        "de": "einsatz.*-States (inkl. einsatz.json und aller Zähler) werden bei io.standby jetzt geleert, statt den beendeten Einsatz bis zum nächsten anzuzeigen - passend zum Verhalten des offiziellen Frontends; der beendete Einsatz bleibt über einsatz.history10 abrufbar"
+      },
       "0.4.9": {
         "en": "Reverted an unnecessary line wrap that was itself flagged by prettier/prettier (the line actually fits within printWidth)",
         "de": "Unnötigen Zeilenumbruch rückgängig gemacht, der selbst von prettier/prettier bemängelt wurde (Zeile passt tatsächlich in die printWidth)"

@@ -131,9 +131,11 @@ und Trigger ohne JSON-Parsing auskommen.
 
 ### einsatz
 
-Flache Felder des aktuell laufenden bzw. zuletzt bekannten Einsatzes (bleiben
-nach `io.standby` als letzter bekannter Stand erhalten, bis ein neuer Einsatz
-eintrifft):
+Flache Felder des aktuell laufenden Einsatzes. Werden bei `io.standby`
+geleert (`null`/`0`), analog zum offiziellen Frontend – `status.alarmAktiv`
+ist damit ein verlässlicher Schalter dafür, ob hier gerade echte Live-Daten
+stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
+`einsatz.history10` abrufbar:
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
@@ -218,6 +220,16 @@ gepflegten Actions `testing-action-check` und `testing-action-adapter`
 auskommentiert, bis npm Trusted Publishing eingerichtet ist.
 
 ## Changelog
+
+### 0.5.0 (2026-08-20)
+
+- **Verhaltensänderung:** Bei `io.standby` werden jetzt alle `einsatz.*`-
+  States (inkl. `einsatz.json` und aller Zähler) geleert, statt den Stand
+  des beendeten Einsatzes stehen zu lassen – analog zum offiziellen
+  Frontend, das beim Standby ebenfalls Stichwort, Ortsdaten etc. leert.
+  `status.alarmAktiv` ist damit ein verlässlicher Schalter, ob `einsatz.*`
+  gerade echte Live-Daten enthält. Der beendete Einsatz bleibt vollständig
+  über `einsatz.history10` abrufbar (wird davor archiviert).
 
 ### 0.4.9 (2026-08-20)
 
