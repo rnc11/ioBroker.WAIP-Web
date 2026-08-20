@@ -1,0 +1,88 @@
+{
+  "common": {
+    "name": "waip-web",
+    "version": "0.1.0",
+    "news": {
+      "0.1.0": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung"
+      }
+    },
+    "title": "WAIP-Web",
+    "titleLang": {
+      "en": "WAIP-Web",
+      "de": "WAIP-Web"
+    },
+    "desc": {
+      "en": "Connects to a WAIP (Wachalarm-IP) dispatch monitor via Socket.IO and mirrors alarms, feedback, routes and TTS announcements into ioBroker states.",
+      "de": "Verbindet sich mit einem WAIP-Wachalarm-Monitor per Socket.IO und bildet Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab."
+    },
+    "authors": [
+      "rnc11 <rocco.noetzel@gmx.de>"
+    ],
+    "keywords": [
+      "waip",
+      "wachalarm",
+      "feuerwehr",
+      "alarmierung",
+      "leitstelle"
+    ],
+    "license": "MIT",
+    "platform": "Javascript/Node.js",
+    "main": "main.js",
+    "icon": "waip-web.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/rnc11/ioBroker.WAIP-Web/main/admin/waip-web.png",
+    "readme": "https://github.com/rnc11/ioBroker.WAIP-Web/blob/main/README.md",
+    "loglevel": "info",
+    "mode": "daemon",
+    "type": "alarm",
+    "compact": true,
+    "connectionType": "cloud",
+    "dataSource": "push",
+    "materialize": false,
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=4.0.0"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=6.0.0"
+      }
+    ]
+  },
+  "native": {
+    "url": "https://wachalarm.leitstelle-lausitz.de",
+    "monitorID": "",
+    "registrationTimeout": 10000,
+    "reconnectDelay": 5000
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Connected to WAIP server",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
+}
