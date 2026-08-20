@@ -219,6 +219,16 @@ auskommentiert, bis npm Trusted Publishing eingerichtet ist.
 
 ## Changelog
 
+### 0.4.6 (2026-08-20)
+
+- **CI-Fix:** Der `lint`-Schritt schlug mit hunderten Formatierungsfehlern
+  fehl (u. a. „Replace 'x' with "x""). Ursache: `@iobroker/eslint-config`
+  verlangt zusätzlich zur `eslint.config.mjs` eine eigene
+  `prettier.config.mjs`, die den ioBroker-Formatierungsstil (einfache
+  Anführungszeichen, 4er-Einrückung, `trailingComma: 'all'`) re-exportiert
+  – ohne sie fiel Prettier auf seine eigenen Standardwerte (doppelte
+  Anführungszeichen) zurück. Datei ergänzt.
+
 ### 0.4.5 (2026-08-20)
 
 - **CI-Fix:** Erster Pipeline-Lauf schlug mit „Dependencies lock file is

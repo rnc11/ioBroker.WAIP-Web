@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.5",
+    "version": "0.4.6",
     "news": {
+      "0.4.6": {
+        "en": "Added the missing prettier.config.mjs required by @iobroker/eslint-config; without it Prettier fell back to its own defaults (double quotes) instead of the ioBroker style (single quotes), causing the lint step to fail with hundreds of formatting errors",
+        "de": "Fehlende prettier.config.mjs ergänzt, die von @iobroker/eslint-config vorausgesetzt wird; ohne sie fiel Prettier auf seine eigenen Standard-Einstellungen (doppelte Anführungszeichen) statt auf den ioBroker-Stil (einfache Anführungszeichen) zurück, wodurch der Lint-Schritt mit hunderten Formatierungsfehlern fehlschlug"
+      },
       "0.4.5": {
         "en": "Fixed CI pipeline failing with 'Dependencies lock file is not found' by disabling setup-node's built-in npm cache (which needs a lockfile independently of the install command), since no package-lock.json is committed yet",
         "de": "CI-Pipeline-Fehler 'Dependencies lock file is not found' behoben, indem das eingebaute npm-Caching von setup-node deaktiviert wurde (das unabhängig vom Install-Befehl eine Lockfile braucht), da noch kein package-lock.json im Repo liegt"
