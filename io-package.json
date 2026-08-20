@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "news": {
+      "0.1.1": {
+        "en": "Use the WAIP site favicon as adapter icon; fix repository casing in URLs",
+        "de": "Favicon der WAIP-Seite als Adapter-Icon übernommen; Repository-Schreibweise in URLs korrigiert"
+      },
       "0.1.0": {
         "en": "initial release",
         "de": "Erstveröffentlichung"
@@ -32,8 +36,8 @@
     "main": "main.js",
     "icon": "waip-web.png",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/rnc11/ioBroker.WAIP-Web/main/admin/waip-web.png",
-    "readme": "https://github.com/rnc11/ioBroker.WAIP-Web/blob/main/README.md",
+    "extIcon": "https://raw.githubusercontent.com/rnc11/ioBroker.waip-web/main/admin/waip-web.png",
+    "readme": "https://github.com/rnc11/ioBroker.waip-web/blob/main/README.md",
     "loglevel": "info",
     "mode": "daemon",
     "type": "alarm",
