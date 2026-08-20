@@ -641,7 +641,10 @@ class WaipWeb extends utils.Adapter {
                 }
                 return { ok: true, rotated: isRotation };
             }
-            this.safeWarn('refreshSessionCookie', `keepalive lieferte keinen Set-Cookie-Header (status ${res.statusCode})`);
+            this.safeWarn(
+                'refreshSessionCookie',
+                `keepalive lieferte keinen Set-Cookie-Header (status ${res.statusCode})`,
+            );
             return { ok: false, rotated: false };
         } catch (e) {
             this.safeWarn('refreshSessionCookie', e);
@@ -826,7 +829,10 @@ class WaipWeb extends utils.Adapter {
                 const match = this.payloadMonitorMatch(payload);
 
                 if (match === false) {
-                    this.safeWarn('ignoredEvent.wrongMonitor', `Event für anderen Monitor empfangen (current=${this.currentMonitor})`);
+                    this.safeWarn(
+                        'ignoredEvent.wrongMonitor',
+                        `Event für anderen Monitor empfangen (current=${this.currentMonitor})`,
+                    );
                     this.incrementIgnoredCount();
                     return;
                 }
@@ -944,7 +950,11 @@ class WaipWeb extends utils.Adapter {
 
             const data = normalizeData(incoming || {});
             try {
-                await this.setStateAsync('debug.normalizedPosition', JSON.stringify({ position: data.position ?? null }), true);
+                await this.setStateAsync(
+                    'debug.normalizedPosition',
+                    JSON.stringify({ position: data.position ?? null }),
+                    true,
+                );
             } catch {
                 /* ignore */
             }
@@ -1045,7 +1055,9 @@ class WaipWeb extends utils.Adapter {
 
             // Rückmeldungen für einen anderen (alten) Einsatz nicht mit aufnehmen.
             if (data.waip_uuid && this.currentEinsatzUuid && data.waip_uuid !== this.currentEinsatzUuid) {
-                this.log.debug(`Rückmeldung für abweichenden Einsatz ${data.waip_uuid} ignoriert (aktuell=${this.currentEinsatzUuid})`);
+                this.log.debug(
+                    `Rückmeldung für abweichenden Einsatz ${data.waip_uuid} ignoriert (aktuell=${this.currentEinsatzUuid})`,
+                );
                 return;
             }
 
@@ -1107,7 +1119,9 @@ class WaipWeb extends utils.Adapter {
         try {
             await this.setStateAsync('debug.serverVersion', String(serverId), true);
             if (this.lastServerVersion && this.lastServerVersion !== serverId) {
-                this.log.warn(`WAIP-Server meldet neue Version/Instanz-ID (${this.lastServerVersion} -> ${serverId}) - vermutlich Server-Neustart`);
+                this.log.warn(
+                    `WAIP-Server meldet neue Version/Instanz-ID (${this.lastServerVersion} -> ${serverId}) - vermutlich Server-Neustart`,
+                );
                 this.appendMonitorAudit({
                     ts: new Date().toISOString(),
                     event: 'server_version_changed',
@@ -1222,7 +1236,12 @@ class WaipWeb extends utils.Adapter {
 
         try {
             this.log.info(`socket.emit('WAIP', ${monStr}) [1/3]`);
-            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 1 }).catch(() => {});
+            this.appendMonitorAudit({
+                ts: new Date().toISOString(),
+                event: 'emit_WAIP',
+                value: monStr,
+                attempt: 1,
+            }).catch(() => {});
             this.socket.emit('WAIP', monStr);
         } catch (e) {
             this.safeWarn('socket.emit.WAIP', e);
@@ -1231,7 +1250,12 @@ class WaipWeb extends utils.Adapter {
         this.setTimeout(() => {
             try {
                 this.log.debug(`socket.emit('WAIP', ${monStr}) [2/3]`);
-                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 2 }).catch(() => {});
+                this.appendMonitorAudit({
+                    ts: new Date().toISOString(),
+                    event: 'emit_WAIP',
+                    value: monStr,
+                    attempt: 2,
+                }).catch(() => {});
                 if (this.socket) {
                     this.socket.emit('WAIP', monStr);
                 }
@@ -1243,7 +1267,12 @@ class WaipWeb extends utils.Adapter {
         this.setTimeout(() => {
             try {
                 this.log.debug(`socket.emit('WAIP', ${monStr}) [3/3]`);
-                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 3 }).catch(() => {});
+                this.appendMonitorAudit({
+                    ts: new Date().toISOString(),
+                    event: 'emit_WAIP',
+                    value: monStr,
+                    attempt: 3,
+                }).catch(() => {});
                 if (this.socket) {
                     this.socket.emit('WAIP', monStr);
                 }
@@ -1265,8 +1294,14 @@ class WaipWeb extends utils.Adapter {
             const acc = accState ? accState.val : null;
             if (acc !== true) {
                 await this.setStateAsync('status.registrationAccepted', false, true);
-                this.log.warn(`WAIP registration for monitor ${this.currentMonitor} not confirmed within ${this.REGISTRATION_TIMEOUT_MS}ms`);
-                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'registration_timeout', monitor: this.currentMonitor }).catch(() => {});
+                this.log.warn(
+                    `WAIP registration for monitor ${this.currentMonitor} not confirmed within ${this.REGISTRATION_TIMEOUT_MS}ms`,
+                );
+                this.appendMonitorAudit({
+                    ts: new Date().toISOString(),
+                    event: 'registration_timeout',
+                    monitor: this.currentMonitor,
+                }).catch(() => {});
             }
             this.registrationTimer = null;
         }, this.REGISTRATION_TIMEOUT_MS);
@@ -1289,7 +1324,9 @@ class WaipWeb extends utils.Adapter {
         this.cleanupSocket();
         this.reconnectTimer = this.setTimeout(() => {
             this.log.info(`manual reconnect triggered for monitor '${this.currentMonitor}'`);
-            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'manual_reconnect_triggered' }).catch(() => {});
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'manual_reconnect_triggered' }).catch(
+                () => {},
+            );
             this.connect();
         }, this.RECONNECT_DELAY_MS);
     }
@@ -1303,7 +1340,9 @@ class WaipWeb extends utils.Adapter {
         this.cleanupSocket();
         this.reconnectTimer = this.setTimeout(() => {
             this.log.info(`manual reconnect after connect_error for monitor '${this.currentMonitor}'`);
-            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'manual_reconnect_after_error' }).catch(() => {});
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'manual_reconnect_after_error' }).catch(
+                () => {},
+            );
             this.connect();
         }, this.RECONNECT_DELAY_MS);
     }
@@ -1334,7 +1373,9 @@ class WaipWeb extends utils.Adapter {
             this.connecting = true;
             this.currentMonitor = monStr;
 
-            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'connect_called', using: monStr }).catch(() => {});
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'connect_called', using: monStr }).catch(
+                () => {},
+            );
             this.log.info(`connect(): using monitor '${monStr}'`);
 
             const namespaceUrl = `${this.url}/waip`;
@@ -1360,7 +1401,8 @@ class WaipWeb extends utils.Adapter {
                                 if (['ping', 'pong', 'open', 'close'].includes(String(pkt.type))) {
                                     this.log.debug(`engine.packet: ${JSON.stringify(pkt)}`);
                                 } else if (pkt.data && typeof pkt.data === 'string') {
-                                    const preview = pkt.data.length > 200 ? pkt.data.slice(0, 200) + '...' : pkt.data;
+                                    const preview =
+                                        pkt.data.length > 200 ? `${pkt.data.slice(0, 200)}...` : pkt.data;
                                     this.log.debug(`engine.packet.message preview: ${preview}`);
                                 }
                             }
@@ -1382,7 +1424,12 @@ class WaipWeb extends utils.Adapter {
             const anyListener = (event, ...args) => {
                 try {
                     firstCount++;
-                    const previewArgs = args && args.length ? (typeof args[0] === 'string' ? args[0].slice(0, 500) : JSON.stringify(args[0]).slice(0, 500)) : '';
+                    const previewArgs =
+                        args && args.length
+                            ? typeof args[0] === 'string'
+                                ? args[0].slice(0, 500)
+                                : JSON.stringify(args[0]).slice(0, 500)
+                            : '';
                     this.log.debug(`incoming event '${event}' preview: ${previewArgs}`);
                     if (firstCount >= 6 && this.socket && typeof this.socket.offAny === 'function') {
                         try {
@@ -1418,7 +1465,11 @@ class WaipWeb extends utils.Adapter {
                     const now = Date.now();
                     if (event !== this._lastDebugEvent.event || now - this._lastDebugEvent.ts > 5000) {
                         this._lastDebugEvent = { event, ts: now };
-                        this.setField('debug.lastEvent', { event, ts: new Date().toISOString(), argsCount: args.length }).catch(() => {});
+                        this.setField('debug.lastEvent', {
+                            event,
+                            ts: new Date().toISOString(),
+                            argsCount: args.length,
+                        }).catch(() => {});
                     }
                 } catch {
                     /* ignore */
