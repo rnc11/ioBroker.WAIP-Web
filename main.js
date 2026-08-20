@@ -628,7 +628,9 @@ class WaipWeb extends utils.Adapter {
                     }
                 }
                 if (isRotation) {
-                    this.log.warn(
+                    // Teil des normalen, selbstheilenden Session-Zyklus dieser Instanz
+                    // (siehe refreshSessionCookie-Kommentar oben) -> info statt warn.
+                    this.log.info(
                         'Session-Cookie wurde vom Server neu ausgestellt (alte Session war ungültig) – erzwinge Reconnect',
                     );
                     this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'session_cookie_rotated' }).catch(
@@ -695,8 +697,10 @@ class WaipWeb extends utils.Adapter {
         }, delayMs);
     }
 
-    /* Sicheres, deduplizierendes Warn-Logging. */
-    safeWarn(context, err) {
+    /* Sicheres, deduplizierendes Logging. level ist 'error'/'warn'/'info'/'debug' -
+       je unerwarteter/handlungsbedürftiger ein Fall ist, desto höher das Level.
+       safeWarn() bleibt als Kurzform für den (weitaus häufigsten) warn-Fall erhalten. */
+    safeLog(level, context, err) {
         try {
             const now = Date.now();
             const msg = typeof err === 'string' ? err : err && err.message ? err.message : String(err);
@@ -706,10 +710,14 @@ class WaipWeb extends utils.Adapter {
             }
             this._warnCache.lastMsg = out;
             this._warnCache.ts = now;
-            this.log.warn(out);
+            this.log[level](out);
         } catch {
             /* silent */
         }
+    }
+
+    safeWarn(context, err) {
+        this.safeLog('warn', context, err);
     }
 
     /* Dedupliziertes Info-Logging für Disconnects. */
@@ -743,7 +751,8 @@ class WaipWeb extends utils.Adapter {
             }
             await this.setStateAsync('debug.monitorAudit', JSON.stringify(arr), true);
         } catch (e) {
-            this.safeWarn('appendMonitorAudit', e);
+            // betrifft nur das interne Audit-Log, keine echten Einsatzdaten -> debug statt warn
+            this.safeLog('debug', 'appendMonitorAudit', e);
         }
     }
 
@@ -829,7 +838,11 @@ class WaipWeb extends utils.Adapter {
                 const match = this.payloadMonitorMatch(payload);
 
                 if (match === false) {
-                    this.safeWarn(
+                    // Reine, erwartete Filterlogik (kein Fehler) - Häufigkeit ist über
+                    // debug.ignoredCount messbar; nur bei dauerhaft hoher Anzahl ein
+                    // Hinweis auf eine falsch konfigurierte Monitor-ID.
+                    this.safeLog(
+                        'info',
                         'ignoredEvent.wrongMonitor',
                         `Event für anderen Monitor empfangen (current=${this.currentMonitor})`,
                     );
@@ -852,10 +865,12 @@ class WaipWeb extends utils.Adapter {
                 try {
                     handler(payload);
                 } catch (e) {
-                    this.safeWarn('handler.exec', e);
+                    // Ein empfangenes Event konnte nicht verarbeitet werden -> echter
+                    // Datenverlust, daher error statt warn.
+                    this.safeLog('error', 'handler.exec', e);
                 }
             } catch (e) {
-                this.safeWarn('wrapHandlerWithMonitorCheck', e);
+                this.safeLog('error', 'wrapHandlerWithMonitorCheck', e);
             }
         };
     }
@@ -1036,7 +1051,8 @@ class WaipWeb extends utils.Adapter {
 
             await this.persistEinsatzSnapshot();
         } catch (e) {
-            this.safeWarn('handleAlarm', e);
+            // Ein Alarm-Event konnte nicht verarbeitet werden -> echter Datenverlust.
+            this.safeLog('error', 'handleAlarm', e);
         }
     }
 
@@ -1076,7 +1092,8 @@ class WaipWeb extends utils.Adapter {
             await this.persistEinsatzSnapshot();
             await this.updateRueckmeldungCounts();
         } catch (e) {
-            this.safeWarn('handleRueckmeldung', e);
+            // Eine Rückmeldung konnte nicht verarbeitet werden -> echter Datenverlust.
+            this.safeLog('error', 'handleRueckmeldung', e);
         }
     }
 
@@ -1099,7 +1116,8 @@ class WaipWeb extends utils.Adapter {
             await this.pushEinsatzToHistory();
             await this.clearCurrentEinsatzStates();
         } catch (e) {
-            this.safeWarn('handleStandby', e);
+            // Standby konnte nicht verarbeitet werden -> Historie/States ggf. inkonsistent.
+            this.safeLog('error', 'handleStandby', e);
         }
     }
 
@@ -1127,10 +1145,16 @@ class WaipWeb extends utils.Adapter {
         await this.updateRueckmeldungCounts();
     }
 
-    /* Handler für Server-Fehlermeldungen (io.error). */
+    /* Handler für Server-Fehlermeldungen (io.error). Das bekannte "Fehler beim Erneuern
+       der Session"-Muster gehört zum normalen, selbstheilenden ~10-Minuten-Session-Zyklus
+       dieser Instanz (Reconnect erfolgt automatisch über refreshSessionCookie/forceReconnect)
+       und wird deshalb nur als info geloggt. Alle anderen, unbekannten io.error-Inhalte
+       bleiben warn, da dort nicht bekannt ist, ob sie folgenlos sind. */
     async handleServerError(data) {
         try {
-            this.safeWarn('io.error (Server)', typeof data === 'string' ? data : JSON.stringify(data));
+            const msg = typeof data === 'string' ? data : JSON.stringify(data);
+            const isKnownSessionRenewalError = /Fehler beim Erneuern der Session/i.test(msg);
+            this.safeLog(isKnownSessionRenewalError ? 'info' : 'warn', 'io.error (Server)', msg);
             await this.setField('debug.lastError', data);
         } catch {
             /* ignore */
@@ -1148,7 +1172,9 @@ class WaipWeb extends utils.Adapter {
         try {
             await this.setStateAsync('debug.serverVersion', String(serverId), true);
             if (this.lastServerVersion && this.lastServerVersion !== serverId) {
-                this.log.warn(
+                // Wird bereits automatisch behandelt (Session-Refresh + Reconnect) ->
+                // kein Handlungsbedarf, daher info statt warn.
+                this.log.info(
                     `WAIP-Server meldet neue Version/Instanz-ID (${this.lastServerVersion} -> ${serverId}) - vermutlich Server-Neustart`,
                 );
                 this.appendMonitorAudit({
@@ -1192,7 +1218,8 @@ class WaipWeb extends utils.Adapter {
                 this.safeWarn('einsatz.routenGesamt.setState', e);
             }
         } catch (e) {
-            this.safeWarn('handleRoutes', e);
+            // Ein Routen-Event konnte nicht verarbeitet werden -> echter Datenverlust.
+            this.safeLog('error', 'handleRoutes', e);
         }
     }
 
@@ -1218,7 +1245,8 @@ class WaipWeb extends utils.Adapter {
                 this.safeWarn('tts.history10.setState', e);
             }
         } catch (e) {
-            this.safeWarn('handleTTS', e);
+            // Ein TTS-Event konnte nicht verarbeitet werden -> echter Datenverlust.
+            this.safeLog('error', 'handleTTS', e);
         }
     }
 
@@ -1246,7 +1274,8 @@ class WaipWeb extends utils.Adapter {
                 /* ignore */
             }
         } catch (e) {
-            this.safeWarn('cleanupSocket', e);
+            // Reines Aufräumen der alten Socket-Instanz, kein Datenverlust -> debug statt warn.
+            this.safeLog('debug', 'cleanupSocket', e);
         } finally {
             this.socket = null;
             this.connecting = false;
@@ -1364,7 +1393,8 @@ class WaipWeb extends utils.Adapter {
         this.connecting = false;
         this.setState('status.connected', false, true);
         this.setState('info.connection', false, true);
-        this.safeWarn('connect_error', err);
+        // War zuvor doppelt geloggt (safeWarn zusätzlich zu logDisconnect für dasselbe
+        // Event) - logDisconnect() unten reicht aus.
         this.logDisconnect(`connect_error: ${String(err)}`);
         this.cleanupSocket();
         this.reconnectTimer = this.setTimeout(() => {
