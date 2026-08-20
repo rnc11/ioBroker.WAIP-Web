@@ -1,5 +1,7 @@
 # ioBroker.WAIP-Web
 
+[![Test and Release](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml)
+
 Inoffizieller ioBroker-Adapter für **Wachalarm IP-Web (WAIP-Web)**
 
 Verbindet sich per Socket.IO mit einem WAIP-Web-Wachalarm-Monitor und bildet
@@ -191,7 +193,7 @@ Objekteigenschaften im JSON-Wert, keine eigenen ioBroker-States.
 
 ## Installation / Entwicklung
 
-Node.js (>=16) und npm werden benötigt:
+Node.js (>=18) und npm werden benötigt:
 
 ```bash
 npm install
@@ -200,7 +202,38 @@ npm install
 Adapter danach z. B. über den ioBroker-Admin (Custom-URL-Installation von
 GitHub) oder per `iobroker url <github-url>` einbinden.
 
+### Tests / CI
+
+```bash
+npm run lint            # ESLint (@iobroker/eslint-config)
+npm run test:package    # prüft package.json / io-package.json auf Konsistenz
+npm run test:integration  # startet den Adapter gegen einen echten js-controller
+```
+
+Alle drei laufen automatisch per GitHub Actions bei jedem Push/PR
+(`.github/workflows/test-and-release.yml`), über die zentral von ioBroker
+gepflegten Actions `testing-action-check` und `testing-action-adapter`
+(Matrix: Node 20/22/24 auf Ubuntu/Windows/macOS). Der optionale
+`deploy`-Job (automatische npm-Veröffentlichung bei Versions-Tags) ist
+auskommentiert, bis npm Trusted Publishing eingerichtet ist.
+
 ## Changelog
+
+### 0.4.4 (2026-08-20)
+
+- CI-Pipeline eingerichtet (`.github/workflows/test-and-release.yml`),
+  nach dem Standard-Muster des offiziellen `@iobroker/create-adapter`-
+  Templates: `check-and-lint`-Job (ESLint via `@iobroker/eslint-config`)
+  und `adapter-tests`-Matrix (Node 20/22/24 × Ubuntu/Windows/macOS) über
+  die zentralen Actions `testing-action-check`/`testing-action-adapter`.
+  Dafür `test/package.js` und `test/integration.js` (`@iobroker/testing`)
+  sowie `eslint.config.mjs` ergänzt; `@iobroker/testing` auf `^5.2.2`
+  angehoben. Da noch kein `package-lock.json` im Repo liegt, nutzt die
+  Pipeline `npm install` statt `npm ci`.
+- `engines.node` in `package.json` auf `>=18` angehoben (passend zu den
+  getesteten Node-Versionen und den Anforderungen von `@iobroker/testing` 5.x)
+- `deploy`-Job (automatische npm-Veröffentlichung) liegt vorbereitet, aber
+  auskommentiert vor, bis npm Trusted Publishing eingerichtet ist
 
 ### 0.4.3 (2026-08-20)
 
