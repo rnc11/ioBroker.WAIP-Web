@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "news": {
+      "0.3.2": {
+        "en": "Registration timeout and reconnect delay config fields changed from milliseconds to seconds",
+        "de": "Konfigurationsfelder für Registrierungs-Timeout und Wiederverbindungs-Verzögerung von Millisekunden auf Sekunden umgestellt"
+      },
       "0.3.1": {
         "en": "Session keepalive interval config field changed from milliseconds to seconds",
         "de": "Konfigurationsfeld für das Session-Keepalive-Intervall von Millisekunden auf Sekunden umgestellt"
@@ -78,8 +82,8 @@
   "native": {
     "url": "https://wachalarm.leitstelle-lausitz.de",
     "monitorID": "",
-    "registrationTimeout": 10000,
-    "reconnectDelay": 5000,
+    "registrationTimeoutSec": 10,
+    "reconnectDelaySec": 5,
     "sessionKeepaliveIntervalSec": 300
   },
   "objects": [],

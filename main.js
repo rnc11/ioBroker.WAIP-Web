@@ -270,8 +270,8 @@ class WaipWeb extends utils.Adapter {
     }
 
     async onReady() {
-        this.REGISTRATION_TIMEOUT_MS = Number(this.config.registrationTimeout) || 10000;
-        this.RECONNECT_DELAY_MS = Number(this.config.reconnectDelay) || 5000;
+        this.REGISTRATION_TIMEOUT_MS = (Number(this.config.registrationTimeoutSec) || 10) * 1000;
+        this.RECONNECT_DELAY_MS = (Number(this.config.reconnectDelaySec) || 5) * 1000;
         this.SESSION_KEEPALIVE_MS = (Number(this.config.sessionKeepaliveIntervalSec) || DEFAULT_SESSION_KEEPALIVE_SEC) * 1000;
         this.url = (this.config.url || DEFAULT_URL).trim();
         this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';

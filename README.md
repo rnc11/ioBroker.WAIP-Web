@@ -42,8 +42,8 @@ In der Admin-Oberfläche der Adapterinstanz:
 | --- | --- | --- |
 | WAIP-Server-URL | Basis-URL des WAIP-Servers | `https://wachalarm.leitstelle-lausitz.de` |
 | Monitor-ID | Monitor-Kennung; leer/`0` = globaler Monitor | *(leer)* |
-| Registrierungs-Timeout (ms) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10000` |
-| Wiederverbindungs-Verzögerung (ms) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5000` |
+| Registrierungs-Timeout (s) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10` |
+| Wiederverbindungs-Verzögerung (s) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5` |
 | Session-Keepalive-Intervall (s) | Wie oft der Session-Cookie per `GET /session/keepalive` erneuert wird | `300` (5 Min) |
 
 ## States (Auszug, unter `waip-web.0.*`)
@@ -76,6 +76,14 @@ Verzeichnis installieren`) oder per Symlink in die ioBroker-`node_modules`
 einbinden.
 
 ## Changelog
+
+### 0.3.2 (2026-08-20)
+
+- Konfigurationsfelder „Registrierungs-Timeout" und „Wiederverbindungs-
+  Verzögerung" ebenfalls von Millisekunden auf Sekunden umgestellt
+  (`registrationTimeout` → `registrationTimeoutSec`, Default `10`;
+  `reconnectDelay` → `reconnectDelaySec`, Default `5`). Bestehende
+  Instanzen ohne neu gesetzten Wert nutzen automatisch die Defaults.
 
 ### 0.3.1 (2026-08-20)
 
