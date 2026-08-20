@@ -219,6 +219,14 @@ auskommentiert, bis npm Trusted Publishing eingerichtet ist.
 
 ## Changelog
 
+### 0.4.5 (2026-08-20)
+
+- **CI-Fix:** Erster Pipeline-Lauf schlug mit „Dependencies lock file is
+  not found" fehl. Ursache: `actions/setup-node`s eingebautes npm-Caching
+  braucht unabhängig vom Install-Befehl eine `package-lock.json` für den
+  Cache-Key. Da noch keine im Repo liegt, jetzt `package-cache: 'false'`
+  in beiden Jobs gesetzt.
+
 ### 0.4.4 (2026-08-20)
 
 - CI-Pipeline eingerichtet (`.github/workflows/test-and-release.yml`),

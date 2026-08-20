@@ -29,8 +29,10 @@ jobs:
       - uses: ioBroker/testing-action-check@v1
         with:
           node-version: '20.x'
-          # kein package-lock.json im Repo vorhanden -> npm ci wuerde fehlschlagen
+          # kein package-lock.json im Repo vorhanden -> npm ci wuerde fehlschlagen,
+          # und auch das eingebaute setup-node-Caching braucht dafuer eine Lockfile
           install-command: 'npm install'
+          package-cache: 'false'
           lint: true
 
   # Runs adapter tests on all supported node versions and OSes
@@ -48,8 +50,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           os: ${{ matrix.os }}
-          # kein package-lock.json im Repo vorhanden -> npm ci wuerde fehlschlagen
+          # kein package-lock.json im Repo vorhanden -> npm ci wuerde fehlschlagen,
+          # und auch das eingebaute setup-node-Caching braucht dafuer eine Lockfile
           install-command: 'npm install'
+          package-cache: 'false'
 
 # TODO: Um automatische npm-Releases zu aktivieren, "trusted publishing" im
 # npm-Account einrichten (https://docs.npmjs.com/trusted-publishers) und den

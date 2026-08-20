@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "news": {
+      "0.4.5": {
+        "en": "Fixed CI pipeline failing with 'Dependencies lock file is not found' by disabling setup-node's built-in npm cache (which needs a lockfile independently of the install command), since no package-lock.json is committed yet",
+        "de": "CI-Pipeline-Fehler 'Dependencies lock file is not found' behoben, indem das eingebaute npm-Caching von setup-node deaktiviert wurde (das unabhängig vom Install-Befehl eine Lockfile braucht), da noch kein package-lock.json im Repo liegt"
+      },
       "0.4.4": {
         "en": "Added a standard ioBroker CI pipeline (GitHub Actions: lint + package/integration tests on Node 20/22/24 across Ubuntu/Windows/macOS) - developer tooling only, no runtime changes",
         "de": "Standard-ioBroker-CI-Pipeline eingerichtet (GitHub Actions: Lint + Package-/Integrationstests auf Node 20/22/24 unter Ubuntu/Windows/macOS) - reines Entwickler-Tooling, keine Laufzeit-Änderungen"
