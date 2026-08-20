@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "news": {
+      "0.3.1": {
+        "en": "Session keepalive interval config field changed from milliseconds to seconds",
+        "de": "Konfigurationsfeld für das Session-Keepalive-Intervall von Millisekunden auf Sekunden umgestellt"
+      },
       "0.3.0": {
         "en": "Fixed swapped lat/lon coordinates, added io.standby/io.error/io.version handling, more Einsatz fields (Objekt, Adresse, Besonderheiten, alarmierte Einsatzmittel) and aggregated Rückmeldung counters per role",
         "de": "Vertauschte Koordinaten (lat/lon) behoben, io.standby/io.error/io.version werden jetzt behandelt, weitere Einsatzfelder (Objekt, Adresse, Besonderheiten, alarmierte Einsatzmittel) sowie aggregierte Rückmeldungs-Zähler pro Rolle"
@@ -76,7 +80,7 @@
     "monitorID": "",
     "registrationTimeout": 10000,
     "reconnectDelay": 5000,
-    "sessionKeepaliveInterval": 300000
+    "sessionKeepaliveIntervalSec": 300
   },
   "objects": [],
   "instanceObjects": [

@@ -44,7 +44,7 @@ In der Admin-Oberfläche der Adapterinstanz:
 | Monitor-ID | Monitor-Kennung; leer/`0` = globaler Monitor | *(leer)* |
 | Registrierungs-Timeout (ms) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10000` |
 | Wiederverbindungs-Verzögerung (ms) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5000` |
-| Session-Keepalive-Intervall (ms) | Wie oft der Session-Cookie per `GET /session/keepalive` erneuert wird | `300000` (5 Min) |
+| Session-Keepalive-Intervall (s) | Wie oft der Session-Cookie per `GET /session/keepalive` erneuert wird | `300` (5 Min) |
 
 ## States (Auszug, unter `waip-web.0.*`)
 
@@ -76,6 +76,13 @@ Verzeichnis installieren`) oder per Symlink in die ioBroker-`node_modules`
 einbinden.
 
 ## Changelog
+
+### 0.3.1 (2026-08-20)
+
+- Konfigurationsfeld „Session-Keepalive-Intervall" von Millisekunden auf
+  Sekunden umgestellt (`sessionKeepaliveInterval` → `sessionKeepaliveIntervalSec`,
+  Default weiterhin 5 Min = `300`). Bestehende Instanzen ohne neu gesetzten
+  Wert nutzen automatisch den Default.
 
 ### 0.3.0 (2026-08-20)
 
