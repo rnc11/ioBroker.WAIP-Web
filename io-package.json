@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "news": {
+      "0.4.4": {
+        "en": "Added a standard ioBroker CI pipeline (GitHub Actions: lint + package/integration tests on Node 20/22/24 across Ubuntu/Windows/macOS) - developer tooling only, no runtime changes",
+        "de": "Standard-ioBroker-CI-Pipeline eingerichtet (GitHub Actions: Lint + Package-/Integrationstests auf Node 20/22/24 unter Ubuntu/Windows/macOS) - reines Entwickler-Tooling, keine Laufzeit-Änderungen"
+      },
       "0.4.3": {
         "en": "Fixed einsatz.id and einsatz.sondersignal state type (string -> number, matching what the server actually sends); existing objects with the wrong type are migrated automatically on update",
         "de": "Datentyp von einsatz.id und einsatz.sondersignal korrigiert (string -> number, entspricht dem, was der Server tatsächlich sendet); bestehende Objekte mit falschem Typ werden beim Update automatisch migriert"
