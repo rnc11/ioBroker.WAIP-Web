@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "news": {
+      "0.3.0": {
+        "en": "Fixed swapped lat/lon coordinates, added io.standby/io.error/io.version handling, more Einsatz fields (Objekt, Adresse, Besonderheiten, alarmierte Einsatzmittel) and aggregated Rückmeldung counters per role",
+        "de": "Vertauschte Koordinaten (lat/lon) behoben, io.standby/io.error/io.version werden jetzt behandelt, weitere Einsatzfelder (Objekt, Adresse, Besonderheiten, alarmierte Einsatzmittel) sowie aggregierte Rückmeldungs-Zähler pro Rolle"
+      },
       "0.2.1": {
         "en": "Detect session cookie rotation and force a socket reconnect so the connection doesn't silently die on an invalidated server session",
         "de": "Session-Cookie-Rotation wird erkannt und erzwingt einen Socket-Reconnect, damit die Verbindung nicht still an einer ungültig gewordenen Server-Session stirbt"

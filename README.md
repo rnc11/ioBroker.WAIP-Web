@@ -24,6 +24,15 @@ Routen und TTS-Ansagen als ioBroker-States ab.
   selbst per `GET /session/keepalive`, hängt ihn an die Socket.IO-Verbindung
   an und erneuert ihn periodisch – damit läuft die Alarm-Zustellung auch
   ohne echte Browsersitzung dauerhaft weiter
+- Zusätzliche Handler für `io.standby` (Einsatz beendet → `status.alarmAktiv`
+  wird zurückgesetzt), `io.error` (Server-Fehlermeldungen → `debug.lastError`)
+  und `io.version` (Server-Neustart-Erkennung → Session-Refresh + Reconnect)
+- Vollständige Einsatzdaten laut offiziellem Web-Frontend (`client_waip.js`):
+  Alarmzeitstempel, Einsatznummer, Objekt/Objektteil, Adresse, Besonderheiten,
+  alarmierte Einsatzmittel (`vis.fahrzeugTabelle`)
+- Aggregierte Rückmeldungs-Zähler pro Rolle/Fähigkeit (EK/GF/ZF/VF/AGT/FZF/MA/MED
+  + Gesamt) sowie vollständige Rückmeldungsliste des aktuellen Einsatzes
+  (`vis.rueckmeldungenTabelle`), analog zu den Live-Zählern der Weboberfläche
 
 ## Konfiguration
 
@@ -44,9 +53,14 @@ In der Admin-Oberfläche der Adapterinstanz:
 - `json.raw`, `json.einsatz`
 - `geo.latitude`, `geo.longitude`, `geo.position`
 - `einsatz.id` / `uuid` / `einsatzart` / `stichwort` / `ort` / `ortsteil` / `ablaufzeit` / `sondersignal`
-- `rueckmeldung.last.json`, `routen.json`, `routen.count`, `tts.last`, `tts.lastTimestamp`
+- `einsatz.zeitstempel` / `einsatznummer` / `objekt` / `objektteil` / `strasse` / `hausnummer` /
+  `einsatzdetails` / `besonderheiten` / `permissions` / `emWeitere`
+- `vis.fahrzeugTabelle` (alarmierte Einsatzmittel), `vis.rueckmeldungenTabelle` (alle Rückmeldungen des Einsatzes)
+- `rueckmeldung.last.json`, `rueckmeldung.counts.ek` / `gf` / `zf` / `vf` / `agt` / `fzf` / `ma` / `med` / `gesamt`
+- `routen.json`, `routen.count`, `tts.last`, `tts.lastTimestamp`
 - `history.last10`
-- `debug.lastEvent`, `debug.normalizedPosition`, `debug.rawPayloadShort`, `debug.ignoredCount`, `debug.monitorAudit`, `debug.sessionExpires`
+- `debug.lastEvent`, `debug.normalizedPosition`, `debug.rawPayloadShort`, `debug.ignoredCount`,
+  `debug.monitorAudit`, `debug.sessionExpires`, `debug.lastError`, `debug.serverVersion`
 
 ## Installation / Entwicklung
 
@@ -62,6 +76,29 @@ Verzeichnis installieren`) oder per Symlink in die ioBroker-`node_modules`
 einbinden.
 
 ## Changelog
+
+### 0.3.0 (2026-08-20)
+
+- **Bugfix:** `wgs84_x`/`wgs84_y` waren vertauscht (Breiten-/Längengrad).
+  Laut offiziellem Web-Frontend (`client_waip.js`) gilt
+  `wgs84_x = Breitengrad, wgs84_y = Längengrad` – entgegen der üblichen
+  GIS-Konvention. `geo.latitude`/`geo.longitude` waren dadurch bei direkt
+  übermittelten Koordinaten (nicht GeoJSON-Fallback) vertauscht.
+- Fehlender `io.standby`-Handler ergänzt: `status.alarmAktiv` wurde bisher
+  nie zurückgesetzt, wenn ein Einsatz beendet ist
+- Neue Einsatz-Felder erfasst (bisher nur im rohen `json.raw`/`json.einsatz`
+  enthalten, jetzt als eigene States): `zeitstempel`, `einsatznummer`,
+  `objekt`, `objektteil`, `strasse`, `hausnummer`, `einsatzdetails`,
+  `besonderheiten`, `permissions`
+- `em_alarmiert` (alarmierte Einsatzmittel) wird jetzt in
+  `vis.fahrzeugTabelle` abgelegt, `em_weitere` in `einsatz.emWeitere`
+- Rückmeldungen werden jetzt pro Einsatz gesammelt (`vis.rueckmeldungenTabelle`)
+  und zu Zählern pro Rolle/Fähigkeit aggregiert (`rueckmeldung.counts.*`),
+  analog zu den Live-Badges (EK/GF/ZF/VF/AGT/FZF/MA/MED) der Weboberfläche
+- Neue Handler für `io.error` (→ `debug.lastError`) und `io.version`
+  (Server-Neustart-Erkennung → Session-Cookie-Refresh + erzwungener Reconnect)
+- `reconnectForRotatedSession()` zu generischem `forceReconnect(reason)`
+  verallgemeinert (wird jetzt auch bei Server-Versionswechsel genutzt)
 
 ### 0.2.1 (2026-08-20)
 

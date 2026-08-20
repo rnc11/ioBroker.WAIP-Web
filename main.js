@@ -20,7 +20,26 @@ const { io } = require('socket.io-client');
 const DEFAULT_URL = 'https://wachalarm.leitstelle-lausitz.de';
 const DEFAULT_SESSION_KEEPALIVE_MS = 5 * 60 * 1000; // 5 Minuten, wie /js/session_keepalive.js der Seite selbst
 const HISTORY_SIZE = 10;
-const ALLOWED_EINSATZ_FIELDS = ['id', 'uuid', 'einsatzart', 'stichwort', 'ort', 'ortsteil', 'ablaufzeit', 'sondersignal'];
+const ALLOWED_EINSATZ_FIELDS = [
+    'id',
+    'uuid',
+    'einsatzart',
+    'stichwort',
+    'ort',
+    'ortsteil',
+    'ablaufzeit',
+    'sondersignal',
+    // laut client_waip.js (offizielles Frontend) zusätzlich vorhandene Felder:
+    'zeitstempel',
+    'einsatznummer',
+    'objekt',
+    'objektteil',
+    'strasse',
+    'hausnummer',
+    'einsatzdetails',
+    'besonderheiten',
+    'permissions',
+];
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
 const WARN_DEDUPE_MS = 5000;
 
@@ -33,9 +52,9 @@ const STATE_DEFS = [
     { id: 'status.registrationAccepted', type: 'mixed', role: 'indicator', name: 'Registration accepted (true/false/pending)' },
     { id: 'json.raw', type: 'string', role: 'json', name: 'Raw normalized last payload' },
     { id: 'json.einsatz', type: 'string', role: 'json', name: 'Last Einsatz payload (JSON)' },
-    { id: 'vis.fahrzeugTabelle', type: 'string', role: 'json', name: 'Fahrzeugtabelle (VIS, reserviert)' },
-    { id: 'vis.einsatzTabelle', type: 'string', role: 'json', name: 'Einsatztabelle (VIS, reserviert)' },
-    { id: 'vis.rueckmeldungenTabelle', type: 'string', role: 'json', name: 'Rückmeldungentabelle (VIS, reserviert)' },
+    { id: 'vis.fahrzeugTabelle', type: 'string', role: 'json', name: 'Alarmierte Einsatzmittel (em_alarmiert, JSON-Array)' },
+    { id: 'vis.einsatzTabelle', type: 'string', role: 'json', name: 'Einsatztabelle (VIS, reserviert für künftige Dashboard-Integration)' },
+    { id: 'vis.rueckmeldungenTabelle', type: 'string', role: 'json', name: 'Alle Rückmeldungen des aktuellen Einsatzes (JSON-Array)' },
     { id: 'geo.latitude', type: 'number', role: 'value.gps.latitude', name: 'Latitude' },
     { id: 'geo.longitude', type: 'number', role: 'value.gps.longitude', name: 'Longitude' },
     { id: 'geo.position', type: 'string', role: 'json', name: 'Position {lat, lon}' },
@@ -54,9 +73,30 @@ const STATE_DEFS = [
     { id: 'einsatz.ortsteil', type: 'string', role: 'text', name: 'Ortsteil' },
     { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
     { id: 'einsatz.sondersignal', type: 'string', role: 'text', name: 'Sondersignal' },
+    { id: 'einsatz.zeitstempel', type: 'string', role: 'date', name: 'Alarmzeitstempel' },
+    { id: 'einsatz.einsatznummer', type: 'string', role: 'text', name: 'Einsatznummer' },
+    { id: 'einsatz.objekt', type: 'string', role: 'text', name: 'Objekt' },
+    { id: 'einsatz.objektteil', type: 'string', role: 'text', name: 'Objektteil' },
+    { id: 'einsatz.strasse', type: 'string', role: 'text', name: 'Straße' },
+    { id: 'einsatz.hausnummer', type: 'string', role: 'text', name: 'Hausnummer' },
+    { id: 'einsatz.einsatzdetails', type: 'string', role: 'text', name: 'Einsatzdetails' },
+    { id: 'einsatz.besonderheiten', type: 'string', role: 'text', name: 'Besonderheiten' },
+    { id: 'einsatz.permissions', type: 'mixed', role: 'json', name: 'Permissions-Flag der Registrierung' },
+    { id: 'einsatz.emWeitere', type: 'string', role: 'json', name: 'Weitere/überzählige alarmierte Einsatzmittel (JSON)' },
     { id: 'rueckmeldung.last.json', type: 'string', role: 'json', name: 'Letzte Rückmeldung (JSON)' },
+    { id: 'rueckmeldung.counts.ek', type: 'number', role: 'value', name: 'Rückmeldungen: Einsatzkräfte', def: 0 },
+    { id: 'rueckmeldung.counts.gf', type: 'number', role: 'value', name: 'Rückmeldungen: Gruppenführer', def: 0 },
+    { id: 'rueckmeldung.counts.zf', type: 'number', role: 'value', name: 'Rückmeldungen: Zugführer', def: 0 },
+    { id: 'rueckmeldung.counts.vf', type: 'number', role: 'value', name: 'Rückmeldungen: Verbandsführer', def: 0 },
+    { id: 'rueckmeldung.counts.agt', type: 'number', role: 'value', name: 'Rückmeldungen: Atemschutzgeräteträger', def: 0 },
+    { id: 'rueckmeldung.counts.fzf', type: 'number', role: 'value', name: 'Rückmeldungen: Fahrzeugführer', def: 0 },
+    { id: 'rueckmeldung.counts.ma', type: 'number', role: 'value', name: 'Rückmeldungen: Maschinisten', def: 0 },
+    { id: 'rueckmeldung.counts.med', type: 'number', role: 'value', name: 'Rückmeldungen: Medizinisch/Sanitäter', def: 0 },
+    { id: 'rueckmeldung.counts.gesamt', type: 'number', role: 'value', name: 'Rückmeldungen: Gesamt', def: 0 },
     { id: 'routen.json', type: 'string', role: 'json', name: 'Routen (JSON)' },
     { id: 'routen.count', type: 'number', role: 'value', name: 'Anzahl Routen', def: 0 },
+    { id: 'debug.lastError', type: 'string', role: 'json', name: 'Letzte Server-Fehlermeldung (io.error)' },
+    { id: 'debug.serverVersion', type: 'string', role: 'text', name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)' },
     { id: 'tts.last', type: 'string', role: 'json', name: 'Letzte TTS-Ansage (JSON)' },
     { id: 'tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
 ];
@@ -161,8 +201,12 @@ function normalizeData(obj) {
         let center = null;
 
         if (data.wgs84_x !== undefined && data.wgs84_y !== undefined) {
-            const lon = Number(data.wgs84_x);
-            const lat = Number(data.wgs84_y);
+            // WAIP-Server-Konvention (bestätigt über client_waip.js des offiziellen
+            // Frontends: "const lat = data.wgs84_x; const lng = data.wgs84_y;"):
+            // wgs84_x = Breitengrad, wgs84_y = Längengrad - NICHT die übliche
+            // GIS-Konvention (x=Länge/y=Breite). Absichtlich so übernommen.
+            const lat = Number(data.wgs84_x);
+            const lon = Number(data.wgs84_y);
             if (!isNaN(lat) && !isNaN(lon) && !(lat === 0 && lon === 0)) center = { lat, lon };
         }
 
@@ -211,6 +255,9 @@ class WaipWeb extends utils.Adapter {
         this.restzeitInterval = null;
         this.sessionKeepaliveInterval = null;
         this.sessionCookie = null;
+        this.currentEinsatzUuid = null;
+        this.currentRueckmeldungen = [];
+        this.lastServerVersion = null;
 
         this._lastDisconnectMsg = null;
         this._lastDisconnectTs = 0;
@@ -363,27 +410,28 @@ class WaipWeb extends utils.Adapter {
         }
     }
 
-    /* Erzwingt einen Socket-Reconnect, falls gerade eine Verbindung aktiv/im Aufbau ist,
-       damit sie mit dem frisch rotierten Session-Cookie neu aufgebaut wird. Läuft gerade
-       kein Socket (z.B. während der Wartezeit vor einem geplanten Reconnect), ist nichts
-       zu tun - der nächste connect() liest this.sessionCookie ohnehin frisch aus. */
-    reconnectForRotatedSession() {
+    /* Erzwingt einen Socket-Reconnect, falls gerade eine Verbindung aktiv/im Aufbau ist
+       (z.B. weil der Session-Cookie rotiert ist oder der Server laut io.version neu
+       gestartet wurde). Läuft gerade kein Socket (z.B. während der Wartezeit vor einem
+       geplanten Reconnect), ist nichts zu tun - der nächste connect() erledigt das
+       ohnehin mit den dann aktuellen Daten (Cookie etc.). */
+    forceReconnect(reason) {
         if (this.connecting) {
-            this.log.debug('reconnectForRotatedSession: connect() läuft bereits, überspringe erzwungenen Reconnect');
+            this.log.debug(`forceReconnect(${reason}): connect() läuft bereits, überspringe erzwungenen Reconnect`);
             return;
         }
         if (!this.socket) {
-            this.log.debug('reconnectForRotatedSession: aktuell keine offene Verbindung, nächster connect() nutzt den neuen Cookie automatisch');
+            this.log.debug(`forceReconnect(${reason}): aktuell keine offene Verbindung, nächster connect() erledigt das automatisch`);
             return;
         }
-        this.log.info('Baue Socket.IO-Verbindung mit erneuerter Session neu auf');
+        this.log.info(`Baue Socket.IO-Verbindung neu auf (${reason})`);
         this.connect(true);
     }
 
     startSessionKeepalive() {
         this.sessionKeepaliveInterval = this.setInterval(async () => {
             const { rotated } = await this.refreshSessionCookie();
-            if (rotated) this.reconnectForRotatedSession();
+            if (rotated) this.forceReconnect('Session-Cookie rotiert');
         }, this.SESSION_KEEPALIVE_MS);
     }
 
@@ -564,6 +612,15 @@ class WaipWeb extends utils.Adapter {
                 /* ignore */
             }
 
+            // Neuer Einsatz (andere uuid als der aktuell verfolgte) -> Rückmeldungsliste/Zähler
+            // zurücksetzen. Bei einer bloßen Aktualisierung desselben Einsatzes (gleiche uuid,
+            // z.B. Korrektur der Besonderheiten) bleiben bereits erfasste Rückmeldungen bewusst
+            // erhalten - anders als die Live-Webseite, die bei JEDEM io.new_waip zurücksetzt.
+            if (data.uuid && data.uuid !== this.currentEinsatzUuid) {
+                this.currentEinsatzUuid = data.uuid;
+                await this.resetRueckmeldungen();
+            }
+
             let lat = null;
             let lon = null;
             if (data.position && data.position.lat !== undefined && data.position.lon !== undefined) {
@@ -609,6 +666,9 @@ class WaipWeb extends utils.Adapter {
             const tasks = Object.keys(data)
                 .filter((k) => this.ALLOWED_EINSATZ_FIELDS.includes(k))
                 .map((k) => this.setField(`einsatz.${k}`, data[k]));
+            // Alarmierte Einsatzmittel (Fahrzeuge/Kräfte) getrennt ablegen
+            if (data.em_alarmiert !== undefined) tasks.push(this.setField('vis.fahrzeugTabelle', data.em_alarmiert));
+            if (data.em_weitere !== undefined) tasks.push(this.setField('einsatz.emWeitere', data.em_weitere));
             const results = await Promise.allSettled(tasks);
             for (const r of results) {
                 if (r.status === 'rejected') this.safeWarn('Einsatz-Feld setzen', r.reason);
@@ -618,13 +678,109 @@ class WaipWeb extends utils.Adapter {
         }
     }
 
+    /* Setzt Rückmeldungsliste und -Zähler für den aktuell verfolgten Einsatz zurück
+       (bei neuem Einsatz oder io.standby). */
+    async resetRueckmeldungen() {
+        this.currentRueckmeldungen = [];
+        await this.setField('vis.rueckmeldungenTabelle', []);
+        await this.updateRueckmeldungCounts();
+    }
+
+    /* Berechnet aus this.currentRueckmeldungen die Zähler pro Rolle/Fähigkeit
+       (analog zu den Badges EK/GF/ZF/VF/AGT/FZF/MA/MED/Gesamt der Weboberfläche). */
+    async updateRueckmeldungCounts() {
+        const counts = { ek: 0, gf: 0, zf: 0, vf: 0, agt: 0, fzf: 0, ma: 0, med: 0 };
+        for (const r of this.currentRueckmeldungen) {
+            if (r.rmld_role === 'team_member') counts.ek++;
+            else if (r.rmld_role === 'crew_leader') counts.gf++;
+            else if (r.rmld_role === 'division_chief') counts.zf++;
+            else if (r.rmld_role === 'group_commander') counts.vf++;
+            if (Number(r.rmld_capability_agt) > 0) counts.agt++;
+            if (Number(r.rmld_capability_fzf) > 0) counts.fzf++;
+            if (Number(r.rmld_capability_ma) > 0) counts.ma++;
+            if (Number(r.rmld_capability_med) > 0) counts.med++;
+        }
+        const tasks = Object.keys(counts).map((k) => this.setStateAsync(`rueckmeldung.counts.${k}`, counts[k], true));
+        tasks.push(this.setStateAsync('rueckmeldung.counts.gesamt', this.currentRueckmeldungen.length, true));
+        const results = await Promise.allSettled(tasks);
+        for (const r of results) {
+            if (r.status === 'rejected') this.safeWarn('Rückmeldung-Zähler setzen', r.reason);
+        }
+    }
+
     /* Handler für Rückmeldungen (io.new_rmld). */
     async handleRueckmeldung(incoming) {
         try {
             const data = normalizeData(incoming || {});
             await this.setField('rueckmeldung.last.json', data);
+
+            // Rückmeldungen für einen anderen (alten) Einsatz nicht in die aktuelle
+            // Liste/Zähler mit aufnehmen (last.json wird trotzdem immer aktualisiert).
+            if (data.waip_uuid && this.currentEinsatzUuid && data.waip_uuid !== this.currentEinsatzUuid) {
+                this.log.debug(`Rückmeldung für abweichenden Einsatz ${data.waip_uuid} ignoriert (aktuell=${this.currentEinsatzUuid})`);
+                return;
+            }
+
+            if (data.rmld_uuid) {
+                const idx = this.currentRueckmeldungen.findIndex((r) => r.rmld_uuid === data.rmld_uuid);
+                if (idx >= 0) this.currentRueckmeldungen[idx] = data;
+                else this.currentRueckmeldungen.push(data);
+            } else {
+                this.currentRueckmeldungen.push(data);
+            }
+            await this.setField('vis.rueckmeldungenTabelle', this.currentRueckmeldungen);
+            await this.updateRueckmeldungCounts();
         } catch (e) {
             this.safeWarn('handleRueckmeldung', e);
+        }
+    }
+
+    /* Handler für Standby (io.standby) - Einsatz beendet / Monitor im Ruhezustand. */
+    async handleStandby() {
+        try {
+            this.log.info('Standby empfangen - Einsatz beendet bzw. Monitor im Ruhezustand');
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'standby' }).catch(() => {});
+            try {
+                await this.setStateAsync('status.alarmAktiv', false, true);
+            } catch (e) {
+                this.safeWarn('status.alarmAktiv.setState', e);
+            }
+            this.currentEinsatzUuid = null;
+            await this.resetRueckmeldungen();
+        } catch (e) {
+            this.safeWarn('handleStandby', e);
+        }
+    }
+
+    /* Handler für Server-Fehlermeldungen (io.error). */
+    async handleServerError(data) {
+        try {
+            this.safeWarn('io.error (Server)', typeof data === 'string' ? data : JSON.stringify(data));
+            await this.setField('debug.lastError', data);
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    /* Handler für io.version - Server-Identität/Version. Ändert sich die vom Server
+       gemeldete ID zur Laufzeit, ist der Server vermutlich neu gestartet (das offizielle
+       Frontend lädt in diesem Fall die Seite komplett neu). Für uns bedeutet das u.a.,
+       dass eine In-Memory-Session serverseitig verloren gegangen sein kann - daher Cookie
+       auffrischen und die Verbindung vorsorglich neu aufbauen. */
+    async handleServerVersion(serverId) {
+        try {
+            await this.setStateAsync('debug.serverVersion', String(serverId), true);
+            if (this.lastServerVersion && this.lastServerVersion !== serverId) {
+                this.log.warn(`WAIP-Server meldet neue Version/Instanz-ID (${this.lastServerVersion} -> ${serverId}) - vermutlich Server-Neustart`);
+                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'server_version_changed', from: this.lastServerVersion, to: serverId }).catch(() => {});
+                this.lastServerVersion = serverId;
+                await this.refreshSessionCookie();
+                this.forceReconnect('Server-Version geändert');
+                return;
+            }
+            this.lastServerVersion = serverId;
+        } catch (e) {
+            this.safeWarn('handleServerVersion', e);
         }
     }
 
@@ -870,6 +1026,11 @@ class WaipWeb extends utils.Adapter {
             this.socket.on('io.new_rmld', this.wrapHandlerWithMonitorCheck(this.handleRueckmeldung.bind(this)));
             this.socket.on('io.routes', this.wrapHandlerWithMonitorCheck(this.handleRoutes.bind(this)));
             this.socket.on('io.playtts', this.wrapHandlerWithMonitorCheck(this.handleTTS.bind(this)));
+            this.socket.on('io.standby', this.wrapHandlerWithMonitorCheck(this.handleStandby.bind(this)));
+            // io.error/io.version sind serverweite, nicht monitor-gebundene Signale ->
+            // bewusst ohne wrapHandlerWithMonitorCheck registriert.
+            this.socket.on('io.error', (data) => this.handleServerError(data));
+            this.socket.on('io.version', (serverId) => this.handleServerVersion(serverId));
 
             this.socket.onAny((event, ...args) => {
                 try {
