@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "news": {
+      "0.4.2": {
+        "en": "Removed the session keepalive config field - the upper bound is now fixed at 5 minutes, matching the site's own /js/session_keepalive.js exactly, since the interval is fully automatic anyway",
+        "de": "Konfigurationsfeld für das Session-Keepalive entfernt - die Obergrenze ist jetzt fix auf 5 Minuten gesetzt (wie /js/session_keepalive.js der Website selbst), da das Intervall ohnehin vollautomatisch ermittelt wird"
+      },
       "0.4.1": {
         "en": "Session keepalive interval is now derived adaptively from the server-reported cookie lifetime instead of a fixed assumption (WAIP-Web's cookie lifetime is configurable per instance, default 60s per its source code); corrected an inaccurate code comment about in-memory session storage",
         "de": "Session-Keepalive-Intervall wird jetzt adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet statt fest angenommen (die Cookie-Laufzeit ist laut Quellcode je WAIP-Web-Instanz konfigurierbar, Standard 60s); ungenauer Code-Kommentar zu In-Memory-Sessions korrigiert"
@@ -99,8 +103,7 @@
     "url": "https://wachalarm.leitstelle-lausitz.de",
     "monitorID": "",
     "registrationTimeoutSec": 10,
-    "reconnectDelaySec": 5,
-    "sessionKeepaliveIntervalSec": 300
+    "reconnectDelaySec": 5
   },
   "objects": [],
   "instanceObjects": [

@@ -98,7 +98,11 @@ In der Admin-Oberfläche der Adapterinstanz:
 | Monitor-ID | Monitor-Kennung; leer/`0` = globaler Monitor | *(leer)* |
 | Registrierungs-Timeout (s) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10` |
 | Wiederverbindungs-Verzögerung (s) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5` |
-| Session-Keepalive-Intervall – Obergrenze (s) | Maximales Intervall für die Erneuerung des Session-Cookies; das tatsächliche Intervall wird adaptiv aus der vom Server gemeldeten Cookie-Laufzeit abgeleitet (min. 55s) | `300` (5 Min) |
+
+Das Session-Keepalive-Intervall ist **nicht konfigurierbar** – es wird bei
+jeder Erneuerung vollautomatisch aus der vom Server gemeldeten Cookie-
+Laufzeit abgeleitet (min. 55s, max. 5 Min., analog zu
+`/js/session_keepalive.js` der Website selbst).
 
 ## States (unter `waip-web.0.*`)
 
@@ -197,6 +201,15 @@ Adapter danach z. B. über den ioBroker-Admin (Custom-URL-Installation von
 GitHub) oder per `iobroker url <github-url>` einbinden.
 
 ## Changelog
+
+### 0.4.2 (2026-08-20)
+
+- Konfigurationsfeld „Session-Keepalive-Intervall – Obergrenze" wieder
+  entfernt: Das offizielle `/js/session_keepalive.js` der Website hat
+  diese Obergrenze fest auf 5 Minuten einprogrammiert, nicht einstellbar.
+  Ein Adminfeld dafür suggerierte fälschlich ein festes Intervall, obwohl
+  die eigentliche Erneuerung längst vollautomatisch läuft (siehe 0.4.1).
+  Die Obergrenze ist jetzt ebenfalls fix auf 5 Minuten gesetzt.
 
 ### 0.4.1 (2026-08-20)
 
