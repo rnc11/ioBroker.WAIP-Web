@@ -84,19 +84,48 @@ const OBSOLETE_OBJECT_IDS = [
 
 // Definition aller States, die beim Start sichergestellt werden.
 const STATE_DEFS = [
-    { id: 'status.connected', type: 'boolean', role: 'indicator.reachable', name: 'Verbunden mit WAIP-Server', def: false },
+    {
+        id: 'status.connected',
+        type: 'boolean',
+        role: 'indicator.reachable',
+        name: 'Verbunden mit WAIP-Server',
+        def: false,
+    },
     { id: 'status.alarmAktiv', type: 'boolean', role: 'indicator.alarm', name: 'Alarm aktiv', def: false },
-    { id: 'status.restzeit', type: 'number', role: 'value.interval', name: 'Restzeit bis Einsatzende', unit: 's', def: 0 },
+    {
+        id: 'status.restzeit',
+        type: 'number',
+        role: 'value.interval',
+        name: 'Restzeit bis Einsatzende',
+        unit: 's',
+        def: 0,
+    },
     { id: 'status.registeredMonitor', type: 'string', role: 'text', name: 'Aktuell registrierte Monitor-ID' },
-    { id: 'status.registrationAccepted', type: 'mixed', role: 'indicator', name: 'Registrierung bestätigt (true/false/pending)' },
+    {
+        id: 'status.registrationAccepted',
+        type: 'mixed',
+        role: 'indicator',
+        name: 'Registrierung bestätigt (true/false/pending)',
+    },
     { id: 'debug.lastEvent', type: 'string', role: 'json', name: 'Letztes empfangenes Socket-Event' },
     { id: 'debug.normalizedPosition', type: 'string', role: 'json', name: 'Letzte normalisierte Position' },
     { id: 'debug.rawPayloadShort', type: 'string', role: 'text', name: 'Rohdaten-Vorschau (500 Zeichen)' },
-    { id: 'debug.ignoredCount', type: 'number', role: 'value', name: 'Anzahl ignorierter Events (explizit falsches Monitor-Feld im Payload)', def: 0 },
+    {
+        id: 'debug.ignoredCount',
+        type: 'number',
+        role: 'value',
+        name: 'Anzahl ignorierter Events (explizit falsches Monitor-Feld im Payload)',
+        def: 0,
+    },
     { id: 'debug.monitorAudit', type: 'string', role: 'json', name: 'Monitor-Audit-Log (letzte 200 Einträge)' },
     { id: 'debug.sessionExpires', type: 'string', role: 'date', name: 'Session-Cookie gültig bis (letzte Erneuerung)' },
     { id: 'debug.lastError', type: 'string', role: 'json', name: 'Letzte Server-Fehlermeldung (io.error)' },
-    { id: 'debug.serverVersion', type: 'string', role: 'text', name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)' },
+    {
+        id: 'debug.serverVersion',
+        type: 'string',
+        role: 'text',
+        name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)',
+    },
     // flache Felder des aktuellen Einsatzes
     { id: 'einsatz.id', type: 'number', role: 'value', name: 'Einsatz ID' },
     { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
@@ -118,19 +147,71 @@ const STATE_DEFS = [
     { id: 'einsatz.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
     { id: 'einsatz.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
     // verschachteltes Gesamtobjekt + Historie
-    { id: 'einsatz.json', type: 'string', role: 'json', name: 'Vollständiger aktueller Einsatz inkl. Einsatzmittel/Routen/Rückmeldungen (JSON)' },
-    { id: 'einsatz.history10', type: 'string', role: 'json', name: `Letzte ${HISTORY_SIZE} abgeschlossene Einsätze, gleicher Objekt-Shape wie einsatz.json (JSON-Array)` },
+    {
+        id: 'einsatz.json',
+        type: 'string',
+        role: 'json',
+        name: 'Vollständiger aktueller Einsatz inkl. Einsatzmittel/Routen/Rückmeldungen (JSON)',
+    },
+    {
+        id: 'einsatz.history10',
+        type: 'string',
+        role: 'json',
+        name: `Letzte ${HISTORY_SIZE} abgeschlossene Einsätze, gleicher Objekt-Shape wie einsatz.json (JSON-Array)`,
+    },
     // abgeleitete Zähler
     { id: 'einsatz.routenGesamt', type: 'number', role: 'value', name: 'Anzahl Routen im aktuellen Einsatz', def: 0 },
-    { id: 'einsatz.rueckmeldungGesamt', type: 'number', role: 'value', name: 'Rückmeldungen gesamt im aktuellen Einsatz', def: 0 },
-    { id: 'einsatz.rueckmeldungAnzahl.ek', type: 'number', role: 'value', name: 'Rückmeldungen: Einsatzkräfte', def: 0 },
-    { id: 'einsatz.rueckmeldungAnzahl.gf', type: 'number', role: 'value', name: 'Rückmeldungen: Gruppenführer', def: 0 },
+    {
+        id: 'einsatz.rueckmeldungGesamt',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen gesamt im aktuellen Einsatz',
+        def: 0,
+    },
+    {
+        id: 'einsatz.rueckmeldungAnzahl.ek',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen: Einsatzkräfte',
+        def: 0,
+    },
+    {
+        id: 'einsatz.rueckmeldungAnzahl.gf',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen: Gruppenführer',
+        def: 0,
+    },
     { id: 'einsatz.rueckmeldungAnzahl.zf', type: 'number', role: 'value', name: 'Rückmeldungen: Zugführer', def: 0 },
-    { id: 'einsatz.rueckmeldungAnzahl.vf', type: 'number', role: 'value', name: 'Rückmeldungen: Verbandsführer', def: 0 },
-    { id: 'einsatz.rueckmeldungAnzahl.agt', type: 'number', role: 'value', name: 'Rückmeldungen: Atemschutzgeräteträger', def: 0 },
-    { id: 'einsatz.rueckmeldungAnzahl.fzf', type: 'number', role: 'value', name: 'Rückmeldungen: Fahrzeugführer', def: 0 },
+    {
+        id: 'einsatz.rueckmeldungAnzahl.vf',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen: Verbandsführer',
+        def: 0,
+    },
+    {
+        id: 'einsatz.rueckmeldungAnzahl.agt',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen: Atemschutzgeräteträger',
+        def: 0,
+    },
+    {
+        id: 'einsatz.rueckmeldungAnzahl.fzf',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen: Fahrzeugführer',
+        def: 0,
+    },
     { id: 'einsatz.rueckmeldungAnzahl.ma', type: 'number', role: 'value', name: 'Rückmeldungen: Maschinisten', def: 0 },
-    { id: 'einsatz.rueckmeldungAnzahl.med', type: 'number', role: 'value', name: 'Rückmeldungen: Medizinisch/Sanitäter', def: 0 },
+    {
+        id: 'einsatz.rueckmeldungAnzahl.med',
+        type: 'number',
+        role: 'value',
+        name: 'Rückmeldungen: Medizinisch/Sanitäter',
+        def: 0,
+    },
     // TTS
     { id: 'tts.last', type: 'string', role: 'json', name: 'Letzte TTS-Ansage (JSON)' },
     { id: 'tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
@@ -139,7 +220,9 @@ const STATE_DEFS = [
 
 /* Prüft ob eine monitorID gültig ist (nicht-leer). */
 function isValidMonitor(mon) {
-    if (mon === undefined || mon === null) return false;
+    if (mon === undefined || mon === null) {
+        return false;
+    }
     return String(mon).trim() !== '';
 }
 
@@ -150,65 +233,93 @@ function isValidMonitor(mon) {
 */
 function getCenterFromGeometry(g) {
     try {
-        if (!g) return null;
+        if (!g) {
+            return null;
+        }
         let parsed = g;
         if (typeof parsed === 'string') {
             try {
                 parsed = JSON.parse(parsed);
-            } catch (e) {
+            } catch {
                 /* leave as string */
             }
         }
         const geomCandidate = parsed?.geometry ?? parsed;
         let geom = geomCandidate;
-        if (!geom) return null;
+        if (!geom) {
+            return null;
+        }
         if (typeof geom === 'string') {
             try {
                 geom = JSON.parse(geom);
-            } catch (e) {
+            } catch {
                 /* cannot parse */
             }
         }
-        if (!geom || !geom.type || !geom.coordinates) return null;
+        if (!geom || !geom.type || !geom.coordinates) {
+            return null;
+        }
 
         const coords = geom.coordinates;
         const collectPoints = (c, type) => {
             const pts = [];
-            const pushIfPoint = (p) => {
-                if (!Array.isArray(p) || p.length < 2) return;
+            const pushIfPoint = p => {
+                if (!Array.isArray(p) || p.length < 2) {
+                    return;
+                }
                 const lon = Number(p[0]);
                 const lat = Number(p[1]);
-                if (!isNaN(lat) && !isNaN(lon)) pts.push([lon, lat]);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    pts.push([lon, lat]);
+                }
             };
 
             if (type === 'Point') {
                 pushIfPoint(c);
             } else if (type === 'LineString' || type === 'MultiPoint') {
-                for (const p of c) pushIfPoint(p);
+                for (const p of c) {
+                    pushIfPoint(p);
+                }
             } else if (type === 'Polygon') {
-                for (const ring of c) for (const p of ring) pushIfPoint(p);
+                for (const ring of c) {
+                    for (const p of ring) {
+                        pushIfPoint(p);
+                    }
+                }
             } else if (type === 'MultiPolygon') {
-                for (const poly of c) for (const ring of poly) for (const p of ring) pushIfPoint(p);
+                for (const poly of c) {
+                    for (const ring of poly) {
+                        for (const p of ring) {
+                            pushIfPoint(p);
+                        }
+                    }
+                }
             } else {
                 const flat = Array.isArray(c) ? c.flat(Infinity) : [];
                 for (let i = 0; i + 1 < flat.length; i += 2) {
                     const a = Number(flat[i]);
                     const b = Number(flat[i + 1]);
-                    if (!isNaN(a) && !isNaN(b)) pts.push([a, b]);
+                    if (!isNaN(a) && !isNaN(b)) {
+                        pts.push([a, b]);
+                    }
                 }
             }
             return pts;
         };
 
         const points = collectPoints(coords, geom.type);
-        if (!points || !points.length) return null;
+        if (!points || !points.length) {
+            return null;
+        }
 
         let minLon = points[0][0];
         let maxLon = points[0][0];
         let minLat = points[0][1];
         let maxLat = points[0][1];
         for (const p of points) {
-            if (!Array.isArray(p) || p.length < 2) continue;
+            if (!Array.isArray(p) || p.length < 2) {
+                continue;
+            }
             minLon = Math.min(minLon, p[0]);
             maxLon = Math.max(maxLon, p[0]);
             minLat = Math.min(minLat, p[1]);
@@ -216,9 +327,11 @@ function getCenterFromGeometry(g) {
         }
         const lat = Number(((minLat + maxLat) / 2).toFixed(6));
         const lon = Number(((minLon + maxLon) / 2).toFixed(6));
-        if (lat === 0 && lon === 0) return null;
+        if (lat === 0 && lon === 0) {
+            return null;
+        }
         return { lat, lon };
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -232,7 +345,9 @@ function getCenterFromGeometry(g) {
 */
 function normalizeData(obj) {
     try {
-        if (!obj || typeof obj !== 'object') return obj;
+        if (!obj || typeof obj !== 'object') {
+            return obj;
+        }
         const data = JSON.parse(JSON.stringify(obj)); // deep clone
         let center = null;
 
@@ -243,18 +358,24 @@ function normalizeData(obj) {
             // GIS-Konvention (x=Länge/y=Breite). Absichtlich so übernommen.
             const lat = Number(data.wgs84_x);
             const lon = Number(data.wgs84_y);
-            if (!isNaN(lat) && !isNaN(lon) && !(lat === 0 && lon === 0)) center = { lat, lon };
+            if (!isNaN(lat) && !isNaN(lon) && !(lat === 0 && lon === 0)) {
+                center = { lat, lon };
+            }
         }
 
         if (!center && data.position && data.position.lat !== undefined && data.position.lon !== undefined) {
             const latP = Number(data.position.lat);
             const lonP = Number(data.position.lon);
-            if (!isNaN(latP) && !isNaN(lonP) && !(latP === 0 && lonP === 0)) center = { lat: latP, lon: lonP };
+            if (!isNaN(latP) && !isNaN(lonP) && !(latP === 0 && lonP === 0)) {
+                center = { lat: latP, lon: lonP };
+            }
         }
 
         if (!center && data.geometry) {
             const c = getCenterFromGeometry(data.geometry);
-            if (c) center = c;
+            if (c) {
+                center = c;
+            }
         }
 
         delete data.geometry;
@@ -263,11 +384,14 @@ function normalizeData(obj) {
         delete data.geojson;
         delete data.geometry_type;
 
-        if (center) data.position = { lat: center.lat, lon: center.lon };
-        else delete data.position;
+        if (center) {
+            data.position = { lat: center.lat, lon: center.lon };
+        } else {
+            delete data.position;
+        }
 
         return data;
-    } catch (e) {
+    } catch {
         return obj;
     }
 }
@@ -315,7 +439,10 @@ class WaipWeb extends utils.Adapter {
         // selbst. Das tatsächliche Intervall wird adaptiv ermittelt (siehe refreshSessionCookie).
         this.SESSION_KEEPALIVE_MS = DEFAULT_SESSION_KEEPALIVE_SEC * 1000;
         this.url = (this.config.url || DEFAULT_URL).trim();
-        this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
+        this.monitorID =
+            this.config.monitorID !== undefined && this.config.monitorID !== null
+                ? String(this.config.monitorID).trim()
+                : '';
 
         await this.cleanupObsoleteObjects();
         await this.migrateObjectTypes();
@@ -347,7 +474,7 @@ class WaipWeb extends utils.Adapter {
                 this.sessionKeepaliveTimer = null;
             }
             callback();
-        } catch (e) {
+        } catch {
             callback();
         }
     }
@@ -363,7 +490,7 @@ class WaipWeb extends utils.Adapter {
                     await this.delObjectAsync(id);
                     this.log.info(`Veraltetes State-Objekt aus vorheriger Version entfernt: ${id}`);
                 }
-            } catch (e) {
+            } catch {
                 /* ignore - Objekt existierte vermutlich nicht */
             }
         }
@@ -380,9 +507,11 @@ class WaipWeb extends utils.Adapter {
                 const obj = await this.getObjectAsync(def.id);
                 if (obj && obj.common && obj.common.type && obj.common.type !== def.type) {
                     await this.delObjectAsync(def.id);
-                    this.log.info(`State-Objekt mit geändertem Datentyp neu angelegt: ${def.id} (${obj.common.type} -> ${def.type})`);
+                    this.log.info(
+                        `State-Objekt mit geändertem Datentyp neu angelegt: ${def.id} (${obj.common.type} -> ${def.type})`,
+                    );
                 }
-            } catch (e) {
+            } catch {
                 /* ignore - Objekt existierte vermutlich noch nicht */
             }
         }
@@ -418,10 +547,12 @@ class WaipWeb extends utils.Adapter {
             }
             const client = parsed.protocol === 'http:' ? http : https;
             const headers = { 'User-Agent': 'ioBroker.waip-web' };
-            if (cookie) headers.Cookie = cookie;
-            const req = client.get(parsed, { headers, timeout: 15000 }, (res) => {
+            if (cookie) {
+                headers.Cookie = cookie;
+            }
+            const req = client.get(parsed, { headers, timeout: 15000 }, res => {
                 let data = '';
-                res.on('data', (chunk) => {
+                res.on('data', chunk => {
                     data += chunk;
                 });
                 res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, body: data }));
@@ -434,7 +565,7 @@ class WaipWeb extends utils.Adapter {
     /* Baut aus einem oder mehreren Set-Cookie-Headern einen sendefertigen Cookie-Header (name=value; name2=value2). */
     extractCookieHeader(setCookieHeader) {
         const arr = Array.isArray(setCookieHeader) ? setCookieHeader : setCookieHeader ? [setCookieHeader] : [];
-        const pairs = arr.map((c) => c.split(';')[0].trim()).filter(Boolean);
+        const pairs = arr.map(c => c.split(';')[0].trim()).filter(Boolean);
         return pairs.length ? pairs.join('; ') : null;
     }
 
@@ -472,13 +603,13 @@ class WaipWeb extends utils.Adapter {
                 let expires = null;
                 try {
                     expires = JSON.parse(res.body).expires || null;
-                } catch (e) {
+                } catch {
                     /* ignore, body war kein JSON */
                 }
                 if (expires) {
                     try {
                         await this.setStateAsync('debug.sessionExpires', expires, true);
-                    } catch (e) {
+                    } catch {
                         /* ignore */
                     }
                     const expiresMs = new Date(expires).getTime();
@@ -489,15 +620,24 @@ class WaipWeb extends utils.Adapter {
                             // beobachteten Laufzeit, mindestens SESSION_KEEPALIVE_MIN_MS,
                             // höchstens die konfigurierte Obergrenze (this.SESSION_KEEPALIVE_MS)
                             const ceiling = Math.max(this.SESSION_KEEPALIVE_MS, SESSION_KEEPALIVE_MIN_MS);
-                            this.nextSessionKeepaliveDelayMs = Math.min(Math.max(observedMaxAgeMs * 0.8, SESSION_KEEPALIVE_MIN_MS), ceiling);
+                            this.nextSessionKeepaliveDelayMs = Math.min(
+                                Math.max(observedMaxAgeMs * 0.8, SESSION_KEEPALIVE_MIN_MS),
+                                ceiling,
+                            );
                         }
                     }
                 }
                 if (isRotation) {
-                    this.log.warn('Session-Cookie wurde vom Server neu ausgestellt (alte Session war ungültig) – erzwinge Reconnect');
-                    this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'session_cookie_rotated' }).catch(() => {});
+                    this.log.warn(
+                        'Session-Cookie wurde vom Server neu ausgestellt (alte Session war ungültig) – erzwinge Reconnect',
+                    );
+                    this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'session_cookie_rotated' }).catch(
+                        () => {},
+                    );
                 } else {
-                    this.log.debug(`session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''}${this.nextSessionKeepaliveDelayMs ? `, nächstes Keepalive in ${Math.round(this.nextSessionKeepaliveDelayMs / 1000)}s` : ''})`);
+                    this.log.debug(
+                        `session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''}${this.nextSessionKeepaliveDelayMs ? `, nächstes Keepalive in ${Math.round(this.nextSessionKeepaliveDelayMs / 1000)}s` : ''})`,
+                    );
                 }
                 return { ok: true, rotated: isRotation };
             }
@@ -520,7 +660,9 @@ class WaipWeb extends utils.Adapter {
             return;
         }
         if (!this.socket) {
-            this.log.debug(`forceReconnect(${reason}): aktuell keine offene Verbindung, nächster connect() erledigt das automatisch`);
+            this.log.debug(
+                `forceReconnect(${reason}): aktuell keine offene Verbindung, nächster connect() erledigt das automatisch`,
+            );
             return;
         }
         this.log.info(`Baue Socket.IO-Verbindung neu auf (${reason})`);
@@ -543,7 +685,9 @@ class WaipWeb extends utils.Adapter {
         }
         this.sessionKeepaliveTimer = this.setTimeout(async () => {
             const { rotated } = await this.refreshSessionCookie();
-            if (rotated) this.forceReconnect('Session-Cookie rotiert');
+            if (rotated) {
+                this.forceReconnect('Session-Cookie rotiert');
+            }
             this.scheduleSessionKeepalive(this.nextSessionKeepaliveDelayMs || this.SESSION_KEEPALIVE_MS);
         }, delayMs);
     }
@@ -554,11 +698,13 @@ class WaipWeb extends utils.Adapter {
             const now = Date.now();
             const msg = typeof err === 'string' ? err : err && err.message ? err.message : String(err);
             const out = context ? `${context}: ${msg}` : msg;
-            if (out === this._warnCache.lastMsg && now - this._warnCache.ts < WARN_DEDUPE_MS) return;
+            if (out === this._warnCache.lastMsg && now - this._warnCache.ts < WARN_DEDUPE_MS) {
+                return;
+            }
             this._warnCache.lastMsg = out;
             this._warnCache.ts = now;
             this.log.warn(out);
-        } catch (e) {
+        } catch {
             /* silent */
         }
     }
@@ -567,11 +713,13 @@ class WaipWeb extends utils.Adapter {
     logDisconnect(msg) {
         try {
             const now = Date.now();
-            if (msg === this._lastDisconnectMsg && now - this._lastDisconnectTs < DISCONNECT_DEDUPE_MS) return;
+            if (msg === this._lastDisconnectMsg && now - this._lastDisconnectTs < DISCONNECT_DEDUPE_MS) {
+                return;
+            }
             this._lastDisconnectMsg = msg;
             this._lastDisconnectTs = now;
             this.log.info(msg);
-        } catch (e) {
+        } catch {
             /* silent */
         }
     }
@@ -583,11 +731,13 @@ class WaipWeb extends utils.Adapter {
             let arr = [];
             try {
                 arr = st && st.val ? JSON.parse(st.val) : [];
-            } catch (_) {
+            } catch {
                 arr = [];
             }
             arr.unshift(entry);
-            if (arr.length > 200) arr = arr.slice(0, 200);
+            if (arr.length > 200) {
+                arr = arr.slice(0, 200);
+            }
             await this.setStateAsync('debug.monitorAudit', JSON.stringify(arr), true);
         } catch (e) {
             this.safeWarn('appendMonitorAudit', e);
@@ -596,7 +746,7 @@ class WaipWeb extends utils.Adapter {
 
     incrementIgnoredCount() {
         this.getStateAsync('debug.ignoredCount')
-            .then((c) => this.setStateAsync('debug.ignoredCount', Number((c && c.val) || 0) + 1, true))
+            .then(c => this.setStateAsync('debug.ignoredCount', Number((c && c.val) || 0) + 1, true))
             .catch(() => {});
     }
 
@@ -617,13 +767,36 @@ class WaipWeb extends utils.Adapter {
 
     /* Prüft ob eine eingehende Payload eindeutig einem Monitor zuordenbar ist und mit currentMonitor übereinstimmt. */
     payloadMonitorMatch(p) {
-        if (!p || typeof p !== 'object') return null;
-        const keys = ['monitor', 'monitorID', 'monitor_id', 'monitorId', 'waip_monitor', 'waip_monitor_id', 'wache_nr', 'wache_id', 'wacheId', 'room', 'tenant', 'group'];
+        if (!p || typeof p !== 'object') {
+            return null;
+        }
+        const keys = [
+            'monitor',
+            'monitorID',
+            'monitor_id',
+            'monitorId',
+            'waip_monitor',
+            'waip_monitor_id',
+            'wache_nr',
+            'wache_id',
+            'wacheId',
+            'room',
+            'tenant',
+            'group',
+        ];
         for (const k of keys) {
             if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') {
                 const val = String(p[k]).trim();
-                if (val === String(this.currentMonitor)) return true;
-                if (!isNaN(Number(val)) && !isNaN(Number(this.currentMonitor)) && Number(val) === Number(this.currentMonitor)) return true;
+                if (val === String(this.currentMonitor)) {
+                    return true;
+                }
+                if (
+                    !isNaN(Number(val)) &&
+                    !isNaN(Number(this.currentMonitor)) &&
+                    Number(val) === Number(this.currentMonitor)
+                ) {
+                    return true;
+                }
                 return false;
             }
         }
@@ -648,7 +821,7 @@ class WaipWeb extends utils.Adapter {
      außer das Payload nennt EXPLIZIT eine andere Monitor-Kennung (match === false).
     */
     wrapHandlerWithMonitorCheck(handler) {
-        return (payload) => {
+        return payload => {
             try {
                 const match = this.payloadMonitorMatch(payload);
 
@@ -696,17 +869,23 @@ class WaipWeb extends utils.Adapter {
        sowohl io.standby als auch der nächste io.new_waip diese Methode auslösen. */
     async pushEinsatzToHistory() {
         try {
-            if (!this.currentEinsatzSnapshot || !this.currentEinsatzSnapshot.uuid) return;
+            if (!this.currentEinsatzSnapshot || !this.currentEinsatzSnapshot.uuid) {
+                return;
+            }
             const st = await this.getStateAsync('einsatz.history10');
             let arr = [];
             try {
                 arr = st && st.val ? JSON.parse(st.val) : [];
-            } catch (_) {
+            } catch {
                 arr = [];
             }
-            if (arr.length && arr[0] && arr[0].uuid === this.currentEinsatzSnapshot.uuid) return;
+            if (arr.length && arr[0] && arr[0].uuid === this.currentEinsatzSnapshot.uuid) {
+                return;
+            }
             arr.unshift(this.currentEinsatzSnapshot);
-            if (arr.length > this.HISTORY_SIZE) arr = arr.slice(0, this.HISTORY_SIZE);
+            if (arr.length > this.HISTORY_SIZE) {
+                arr = arr.slice(0, this.HISTORY_SIZE);
+            }
             await this.setStateAsync('einsatz.history10', JSON.stringify(arr), true);
         } catch (e) {
             this.safeWarn('pushEinsatzToHistory', e);
@@ -720,20 +899,37 @@ class WaipWeb extends utils.Adapter {
         const list = (this.currentEinsatzSnapshot && this.currentEinsatzSnapshot.rueckmeldungen) || [];
         const counts = { ek: 0, gf: 0, zf: 0, vf: 0, agt: 0, fzf: 0, ma: 0, med: 0 };
         for (const r of list) {
-            if (r.rmld_role === 'team_member') counts.ek++;
-            else if (r.rmld_role === 'crew_leader') counts.gf++;
-            else if (r.rmld_role === 'division_chief') counts.zf++;
-            else if (r.rmld_role === 'group_commander') counts.vf++;
-            if (Number(r.rmld_capability_agt) > 0) counts.agt++;
-            if (Number(r.rmld_capability_fzf) > 0) counts.fzf++;
-            if (Number(r.rmld_capability_ma) > 0) counts.ma++;
-            if (Number(r.rmld_capability_med) > 0) counts.med++;
+            if (r.rmld_role === 'team_member') {
+                counts.ek++;
+            } else if (r.rmld_role === 'crew_leader') {
+                counts.gf++;
+            } else if (r.rmld_role === 'division_chief') {
+                counts.zf++;
+            } else if (r.rmld_role === 'group_commander') {
+                counts.vf++;
+            }
+            if (Number(r.rmld_capability_agt) > 0) {
+                counts.agt++;
+            }
+            if (Number(r.rmld_capability_fzf) > 0) {
+                counts.fzf++;
+            }
+            if (Number(r.rmld_capability_ma) > 0) {
+                counts.ma++;
+            }
+            if (Number(r.rmld_capability_med) > 0) {
+                counts.med++;
+            }
         }
-        const tasks = RUECKMELDUNG_ANZAHL_KEYS.map((k) => this.setStateAsync(`einsatz.rueckmeldungAnzahl.${k}`, counts[k], true));
+        const tasks = RUECKMELDUNG_ANZAHL_KEYS.map(k =>
+            this.setStateAsync(`einsatz.rueckmeldungAnzahl.${k}`, counts[k], true),
+        );
         tasks.push(this.setStateAsync('einsatz.rueckmeldungGesamt', list.length, true));
         const results = await Promise.allSettled(tasks);
         for (const r of results) {
-            if (r.status === 'rejected') this.safeWarn('Rückmeldung-Zähler setzen', r.reason);
+            if (r.status === 'rejected') {
+                this.safeWarn('Rückmeldung-Zähler setzen', r.reason);
+            }
         }
     }
 
@@ -742,14 +938,14 @@ class WaipWeb extends utils.Adapter {
         try {
             try {
                 await this.setStateAsync('debug.rawPayloadShort', JSON.stringify(incoming).slice(0, 500), true);
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
 
             const data = normalizeData(incoming || {});
             try {
                 await this.setStateAsync('debug.normalizedPosition', JSON.stringify({ position: data.position ?? null }), true);
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
 
@@ -789,12 +985,12 @@ class WaipWeb extends utils.Adapter {
             } else {
                 try {
                     await this.setStateAsync('einsatz.latitude', null, true);
-                } catch (e) {
+                } catch {
                     /* ignore */
                 }
                 try {
                     await this.setStateAsync('einsatz.longitude', null, true);
-                } catch (e) {
+                } catch {
                     /* ignore */
                 }
                 this.currentEinsatzSnapshot.position = null;
@@ -814,12 +1010,18 @@ class WaipWeb extends utils.Adapter {
                     tasks.push(this.setField(`einsatz.${k}`, data[k]));
                 }
             }
-            if (data.em_alarmiert !== undefined) this.currentEinsatzSnapshot.emAlarmiert = data.em_alarmiert;
-            if (data.em_weitere !== undefined) this.currentEinsatzSnapshot.emWeitere = data.em_weitere;
+            if (data.em_alarmiert !== undefined) {
+                this.currentEinsatzSnapshot.emAlarmiert = data.em_alarmiert;
+            }
+            if (data.em_weitere !== undefined) {
+                this.currentEinsatzSnapshot.emWeitere = data.em_weitere;
+            }
 
             const results = await Promise.allSettled(tasks);
             for (const r of results) {
-                if (r.status === 'rejected') this.safeWarn('Einsatz-Feld setzen', r.reason);
+                if (r.status === 'rejected') {
+                    this.safeWarn('Einsatz-Feld setzen', r.reason);
+                }
             }
 
             await this.persistEinsatzSnapshot();
@@ -834,8 +1036,12 @@ class WaipWeb extends utils.Adapter {
         try {
             const data = normalizeData(incoming || {});
 
-            if (!this.currentEinsatzSnapshot) this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
-            if (!Array.isArray(this.currentEinsatzSnapshot.rueckmeldungen)) this.currentEinsatzSnapshot.rueckmeldungen = [];
+            if (!this.currentEinsatzSnapshot) {
+                this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+            }
+            if (!Array.isArray(this.currentEinsatzSnapshot.rueckmeldungen)) {
+                this.currentEinsatzSnapshot.rueckmeldungen = [];
+            }
 
             // Rückmeldungen für einen anderen (alten) Einsatz nicht mit aufnehmen.
             if (data.waip_uuid && this.currentEinsatzUuid && data.waip_uuid !== this.currentEinsatzUuid) {
@@ -845,9 +1051,12 @@ class WaipWeb extends utils.Adapter {
 
             const list = this.currentEinsatzSnapshot.rueckmeldungen;
             if (data.rmld_uuid) {
-                const idx = list.findIndex((r) => r.rmld_uuid === data.rmld_uuid);
-                if (idx >= 0) list[idx] = data;
-                else list.push(data);
+                const idx = list.findIndex(r => r.rmld_uuid === data.rmld_uuid);
+                if (idx >= 0) {
+                    list[idx] = data;
+                } else {
+                    list.push(data);
+                }
             } else {
                 list.push(data);
             }
@@ -882,7 +1091,7 @@ class WaipWeb extends utils.Adapter {
         try {
             this.safeWarn('io.error (Server)', typeof data === 'string' ? data : JSON.stringify(data));
             await this.setField('debug.lastError', data);
-        } catch (e) {
+        } catch {
             /* ignore */
         }
     }
@@ -899,7 +1108,12 @@ class WaipWeb extends utils.Adapter {
             await this.setStateAsync('debug.serverVersion', String(serverId), true);
             if (this.lastServerVersion && this.lastServerVersion !== serverId) {
                 this.log.warn(`WAIP-Server meldet neue Version/Instanz-ID (${this.lastServerVersion} -> ${serverId}) - vermutlich Server-Neustart`);
-                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'server_version_changed', from: this.lastServerVersion, to: serverId }).catch(() => {});
+                this.appendMonitorAudit({
+                    ts: new Date().toISOString(),
+                    event: 'server_version_changed',
+                    from: this.lastServerVersion,
+                    to: serverId,
+                }).catch(() => {});
                 this.lastServerVersion = serverId;
                 await this.refreshSessionCookie();
                 this.forceReconnect('Server-Version geändert');
@@ -917,10 +1131,15 @@ class WaipWeb extends utils.Adapter {
     async handleRoutes(incoming) {
         try {
             let data = incoming;
-            if (Array.isArray(incoming)) data = incoming.map((i) => normalizeData(i));
-            else if (typeof incoming === 'object' && incoming !== null) data = normalizeData(incoming);
+            if (Array.isArray(incoming)) {
+                data = incoming.map(i => normalizeData(i));
+            } else if (typeof incoming === 'object' && incoming !== null) {
+                data = normalizeData(incoming);
+            }
 
-            if (!this.currentEinsatzSnapshot) this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+            if (!this.currentEinsatzSnapshot) {
+                this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+            }
             this.currentEinsatzSnapshot.routen = Array.isArray(data) ? data : data ? [data] : [];
 
             await this.persistEinsatzSnapshot();
@@ -943,9 +1162,13 @@ class WaipWeb extends utils.Adapter {
             await this.setField('tts.last', data);
             await this.setField('tts.lastTimestamp', ts);
 
-            if (!Array.isArray(this.ttsHistory)) this.ttsHistory = [];
+            if (!Array.isArray(this.ttsHistory)) {
+                this.ttsHistory = [];
+            }
             this.ttsHistory.unshift({ zeitstempel: ts, url: data });
-            if (this.ttsHistory.length > this.HISTORY_SIZE) this.ttsHistory = this.ttsHistory.slice(0, this.HISTORY_SIZE);
+            if (this.ttsHistory.length > this.HISTORY_SIZE) {
+                this.ttsHistory = this.ttsHistory.slice(0, this.HISTORY_SIZE);
+            }
             try {
                 await this.setStateAsync('tts.history10', JSON.stringify(this.ttsHistory), true);
             } catch (e) {
@@ -959,20 +1182,24 @@ class WaipWeb extends utils.Adapter {
     /* Cleanup helper: schließt und entfernt eine vorhandene socket-Instanz vollständig. */
     cleanupSocket() {
         try {
-            if (!this.socket) return;
+            if (!this.socket) {
+                return;
+            }
             try {
                 this.socket.removeAllListeners();
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
             try {
                 this.socket.disconnect();
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
             try {
-                if (typeof this.socket.close === 'function') this.socket.close();
-            } catch (e) {
+                if (typeof this.socket.close === 'function') {
+                    this.socket.close();
+                }
+            } catch {
                 /* ignore */
             }
         } catch (e) {
@@ -1005,7 +1232,9 @@ class WaipWeb extends utils.Adapter {
             try {
                 this.log.debug(`socket.emit('WAIP', ${monStr}) [2/3]`);
                 this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 2 }).catch(() => {});
-                if (this.socket) this.socket.emit('WAIP', monStr);
+                if (this.socket) {
+                    this.socket.emit('WAIP', monStr);
+                }
             } catch (e) {
                 this.safeWarn('socket.emit.WAIP.2', e);
             }
@@ -1015,7 +1244,9 @@ class WaipWeb extends utils.Adapter {
             try {
                 this.log.debug(`socket.emit('WAIP', ${monStr}) [3/3]`);
                 this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 3 }).catch(() => {});
-                if (this.socket) this.socket.emit('WAIP', monStr);
+                if (this.socket) {
+                    this.socket.emit('WAIP', monStr);
+                }
             } catch (e) {
                 this.safeWarn('socket.emit.WAIP.3', e);
             }
@@ -1123,7 +1354,7 @@ class WaipWeb extends utils.Adapter {
                 if (this.socket && this.socket.io && this.socket.io.engine) {
                     const eng = this.socket.io.engine;
                     this.log.debug(`engine pingInterval=${eng.pingInterval} pingTimeout=${eng.pingTimeout}`);
-                    eng.on('packet', (pkt) => {
+                    eng.on('packet', pkt => {
                         try {
                             if (pkt && pkt.type) {
                                 if (['ping', 'pong', 'open', 'close'].includes(String(pkt.type))) {
@@ -1133,18 +1364,18 @@ class WaipWeb extends utils.Adapter {
                                     this.log.debug(`engine.packet.message preview: ${preview}`);
                                 }
                             }
-                        } catch (e) {
+                        } catch {
                             /* ignore */
                         }
                     });
                 }
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
 
             this.socket.on('connect', () => this.onSocketConnect(monStr));
-            this.socket.on('disconnect', (reason) => this.onSocketDisconnect(reason));
-            this.socket.on('connect_error', (err) => this.onSocketConnectError(err));
+            this.socket.on('disconnect', reason => this.onSocketDisconnect(reason));
+            this.socket.on('connect_error', err => this.onSocketConnectError(err));
 
             // Diagnostik: erste eingehende Rohdaten als Preview loggen (max. 6 Events)
             let firstCount = 0;
@@ -1156,17 +1387,19 @@ class WaipWeb extends utils.Adapter {
                     if (firstCount >= 6 && this.socket && typeof this.socket.offAny === 'function') {
                         try {
                             this.socket.offAny(anyListener);
-                        } catch (e) {
+                        } catch {
                             /* ignore */
                         }
                     }
-                } catch (e) {
+                } catch {
                     /* ignore */
                 }
             };
             try {
-                if (this.socket && typeof this.socket.onAny === 'function') this.socket.onAny(anyListener);
-            } catch (e) {
+                if (this.socket && typeof this.socket.onAny === 'function') {
+                    this.socket.onAny(anyListener);
+                }
+            } catch {
                 /* ignore */
             }
 
@@ -1177,8 +1410,8 @@ class WaipWeb extends utils.Adapter {
             this.socket.on('io.standby', this.wrapHandlerWithMonitorCheck(this.handleStandby.bind(this)));
             // io.error/io.version sind serverweite, nicht monitor-gebundene Signale ->
             // bewusst ohne wrapHandlerWithMonitorCheck registriert.
-            this.socket.on('io.error', (data) => this.handleServerError(data));
-            this.socket.on('io.version', (serverId) => this.handleServerVersion(serverId));
+            this.socket.on('io.error', data => this.handleServerError(data));
+            this.socket.on('io.version', serverId => this.handleServerVersion(serverId));
 
             this.socket.onAny((event, ...args) => {
                 try {
@@ -1187,7 +1420,7 @@ class WaipWeb extends utils.Adapter {
                         this._lastDebugEvent = { event, ts: now };
                         this.setField('debug.lastEvent', { event, ts: new Date().toISOString(), argsCount: args.length }).catch(() => {});
                     }
-                } catch (e) {
+                } catch {
                     /* ignore */
                 }
             });
@@ -1213,7 +1446,7 @@ class WaipWeb extends utils.Adapter {
                 }
                 const rest = Math.max(0, Math.floor((end.getTime() - Date.now()) / 1000));
                 await this.updateRestzeit(rest);
-            } catch (e) {
+            } catch {
                 await this.updateRestzeit(0);
             }
         }, 1000);
@@ -1224,7 +1457,7 @@ class WaipWeb extends utils.Adapter {
             this._lastRestzeit = rest;
             try {
                 await this.setStateAsync('status.restzeit', rest, true);
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
         }
@@ -1232,7 +1465,7 @@ class WaipWeb extends utils.Adapter {
 }
 
 if (require.main !== module) {
-    module.exports = (options) => new WaipWeb(options);
+    module.exports = options => new WaipWeb(options);
 } else {
     new WaipWeb();
 }

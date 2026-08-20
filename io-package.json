@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.6",
+    "version": "0.4.7",
     "news": {
+      "0.4.7": {
+        "en": "Fixed remaining lint errors (curly, no-unused-vars, arrow-parens) across the whole file; developer tooling only, no runtime changes",
+        "de": "Verbleibende Lint-Fehler behoben (curly, no-unused-vars, arrow-parens) über die gesamte Datei; reines Entwickler-Tooling, keine Laufzeit-Änderungen"
+      },
       "0.4.6": {
         "en": "Added the missing prettier.config.mjs required by @iobroker/eslint-config; without it Prettier fell back to its own defaults (double quotes) instead of the ioBroker style (single quotes), causing the lint step to fail with hundreds of formatting errors",
         "de": "Fehlende prettier.config.mjs ergänzt, die von @iobroker/eslint-config vorausgesetzt wird; ohne sie fiel Prettier auf seine eigenen Standard-Einstellungen (doppelte Anführungszeichen) statt auf den ioBroker-Stil (einfache Anführungszeichen) zurück, wodurch der Lint-Schritt mit hunderten Formatierungsfehlern fehlschlug"

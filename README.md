@@ -219,6 +219,15 @@ auskommentiert, bis npm Trusted Publishing eingerichtet ist.
 
 ## Changelog
 
+### 0.4.7 (2026-08-20)
+
+- **CI-Fix:** Restliche Lint-Fehler in `main.js` behoben – durchgängig
+  `curly` (Klammern auch bei Einzeiler-`if`/`for`), `no-unused-vars` bei
+  leeren `catch`-Blöcken (`catch (e) {}` → `catch {}` wo `e` nicht
+  verwendet wird) und `arrowParens: avoid` (Klammern bei
+  Einzelparameter-Arrow-Funktionen entfernt). Rein mechanische
+  Codestil-Korrekturen, keine Verhaltensänderung.
+
 ### 0.4.6 (2026-08-20)
 
 - **CI-Fix:** Der `lint`-Schritt schlug mit hunderten Formatierungsfehlern
