@@ -63,6 +63,15 @@ einbinden.
 
 ## Changelog
 
+### 0.2.1 (2026-08-20)
+
+- Session-Cookie-Rotation erkannt: Liefert `/session/keepalive` einen
+  anderen Cookie-Wert als zuvor (z. B. weil die alte Session serverseitig
+  bereits ungültig war – verpasster Keepalive, Server-Neustart mit
+  In-Memory-Sessionstore), wird eine bestehende Socket.IO-Verbindung jetzt
+  aktiv mit der neuen Session neu aufgebaut, statt auf einen stillen
+  Ausfall zu warten
+
 ### 0.2.0 (2026-08-20)
 
 - Session-Cookie-Management eingeführt: Der Adapter holt und erneuert

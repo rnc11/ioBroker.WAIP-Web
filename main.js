@@ -317,13 +317,22 @@ class WaipWeb extends utils.Adapter {
      analog zum /js/session_keepalive.js der WAIP-Seite selbst). Ohne aktiven Cookie
      verbindet sich der Socket sonst anonym und die Session läuft nach ~10 Minuten ab,
      wodurch die Alarm-Zustellung stoppt.
+
+     Solange die bisherige Session noch gültig ist, liefert der Server denselben
+     connect.sid zurück (nur die Ablaufzeit wird verlängert). Ist die alte Session
+     serverseitig bereits weg (z.B. Keepalive verpasst, Server-Neustart mit
+     In-Memory-Sessionstore), bekommen wir hier einen NEUEN Cookie-Wert - das wird
+     erkannt (isRotation) und meldet dem Aufrufer, ob eine bestehende Socket.IO-
+     Verbindung (die noch mit der alten Session verknüpft ist) neu aufgebaut werden sollte.
     */
     async refreshSessionCookie() {
+        const previousCookie = this.sessionCookie;
         try {
             const keepaliveUrl = `${this.url}/session/keepalive`;
             const res = await this.httpGet(keepaliveUrl, this.sessionCookie);
             const newCookie = this.extractCookieHeader(res.headers['set-cookie']);
             if (newCookie) {
+                const isRotation = !!previousCookie && newCookie !== previousCookie;
                 this.sessionCookie = newCookie;
                 let expires = null;
                 try {
@@ -338,20 +347,43 @@ class WaipWeb extends utils.Adapter {
                         /* ignore */
                     }
                 }
-                this.log.debug(`session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''})`);
-                return true;
+                if (isRotation) {
+                    this.log.warn('Session-Cookie wurde vom Server neu ausgestellt (alte Session war ungültig) – erzwinge Reconnect');
+                    this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'session_cookie_rotated' }).catch(() => {});
+                } else {
+                    this.log.debug(`session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''})`);
+                }
+                return { ok: true, rotated: isRotation };
             }
             this.safeWarn('refreshSessionCookie', `keepalive lieferte keinen Set-Cookie-Header (status ${res.statusCode})`);
-            return false;
+            return { ok: false, rotated: false };
         } catch (e) {
             this.safeWarn('refreshSessionCookie', e);
-            return false;
+            return { ok: false, rotated: false };
         }
     }
 
+    /* Erzwingt einen Socket-Reconnect, falls gerade eine Verbindung aktiv/im Aufbau ist,
+       damit sie mit dem frisch rotierten Session-Cookie neu aufgebaut wird. Läuft gerade
+       kein Socket (z.B. während der Wartezeit vor einem geplanten Reconnect), ist nichts
+       zu tun - der nächste connect() liest this.sessionCookie ohnehin frisch aus. */
+    reconnectForRotatedSession() {
+        if (this.connecting) {
+            this.log.debug('reconnectForRotatedSession: connect() läuft bereits, überspringe erzwungenen Reconnect');
+            return;
+        }
+        if (!this.socket) {
+            this.log.debug('reconnectForRotatedSession: aktuell keine offene Verbindung, nächster connect() nutzt den neuen Cookie automatisch');
+            return;
+        }
+        this.log.info('Baue Socket.IO-Verbindung mit erneuerter Session neu auf');
+        this.connect(true);
+    }
+
     startSessionKeepalive() {
-        this.sessionKeepaliveInterval = this.setInterval(() => {
-            this.refreshSessionCookie().catch(() => {});
+        this.sessionKeepaliveInterval = this.setInterval(async () => {
+            const { rotated } = await this.refreshSessionCookie();
+            if (rotated) this.reconnectForRotatedSession();
         }, this.SESSION_KEEPALIVE_MS);
     }
 
@@ -748,11 +780,11 @@ class WaipWeb extends utils.Adapter {
      WICHTIG: automatische reconnects deaktiviert (reconnection: false). Nach
      disconnect/connect_error wird manuell reconnect() nach RECONNECT_DELAY_MS aufgerufen.
     */
-    async connect() {
+    async connect(force = false) {
         try {
             const monStr = isValidMonitor(this.monitorID) ? this.monitorID : '0';
 
-            if (this.socket && this.currentMonitor === monStr && !this.connecting) {
+            if (!force && this.socket && this.currentMonitor === monStr && !this.connecting) {
                 this.log.debug(`connect(): already connected to monitor ${monStr}, skipping`);
                 return;
             }
