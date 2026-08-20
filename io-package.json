@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.5.1",
+    "version": "0.6.0",
     "news": {
+      "0.6.0": {
+        "en": "Monitor ID in the admin UI is now a live dropdown (selectSendTo), fetched from the configured server's /waip/ overview page and grouped by Leitstelle/Kreis/Träger/Wache, with 'Alle Wachalarme' (ID 0) as an explicit option; manual entry stays available if the server can't be reached. Removed the static session-keepalive info text. Added help text to the registration-timeout and reconnect-delay fields.",
+        "de": "Monitor-ID in der Admin-Oberfläche ist jetzt ein Live-Dropdown (selectSendTo), das von der /waip/-Übersichtsseite des konfigurierten Servers geladen und nach Leitstelle/Kreis/Träger/Wache gruppiert wird, inkl. 'Alle Wachalarme' (ID 0) als expliziter Option; manuelle Eingabe bleibt möglich, falls der Server nicht erreichbar ist. Statischen Session-Keepalive-Infotext entfernt. Hilfetexte für Registrierungs-Timeout und Wiederverbindungs-Verzögerung ergänzt."
+      },
       "0.5.1": {
         "en": "Reclassified log levels so warn becomes a reliable signal again: session-cookie rotation, the known session-renewal error message and server-restart detection are now info instead of warn (they're part of this instance's normal, self-healing ~10-minute session cycle); events discarded for a different monitor ID are now info; housekeeping failures (audit log, socket cleanup) are now debug; a duplicate connect_error log line was removed; failed processing of an incident/feedback/route/TTS event is now logged as error (new level) instead of warn",
         "de": "Log-Level neu klassifiziert, damit warn wieder ein verlässliches Signal ist: Session-Cookie-Rotation, die bekannte Session-Renewal-Fehlermeldung und die Server-Neustart-Erkennung sind jetzt info statt warn (Teil des normalen, selbstheilenden ~10-Minuten-Session-Zyklus dieser Instanz); für eine andere Monitor-ID verworfene Events sind jetzt info; Housekeeping-Fehler (Audit-Log, Socket-Cleanup) sind jetzt debug; doppeltes connect_error-Logging entfernt; fehlgeschlagene Verarbeitung eines Einsatz-/Rückmeldungs-/Routen-/TTS-Events wird jetzt als error (neues Level) statt warn geloggt"
@@ -118,6 +122,7 @@
     "mode": "daemon",
     "type": "alarm",
     "compact": true,
+    "messagebox": true,
     "connectionType": "cloud",
     "dataSource": "push",
     "materialize": false,

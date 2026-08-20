@@ -99,7 +99,7 @@ In the admin UI of the adapter instance:
 | Field | Description | Default |
 | --- | --- | --- |
 | WAIP server URL | Base URL of the WAIP-Web instance | `https://wachalarm.leitstelle-lausitz.de` |
-| Monitor ID | Monitor identifier; empty/`0` = global monitor | *(empty)* |
+| Monitor ID | Picked from a live dropdown, fetched from the configured server's `/waip/` overview page and grouped by Leitstelle/Kreis/Träger/Wache; manual entry stays possible if the server can't be reached. Empty/`0` = global monitor (all incidents) | *(empty)* |
 | Registration timeout (s) | Time until a missing registration confirmation is logged | `10` |
 | Reconnect delay (s) | Wait time before a manual reconnect after disconnect/error | `5` |
 
@@ -292,7 +292,7 @@ In der Admin-Oberfläche der Adapterinstanz:
 | Feld | Beschreibung | Default |
 | --- | --- | --- |
 | WAIP-Server-URL | Basis-URL der WAIP-Web-Instanz | `https://wachalarm.leitstelle-lausitz.de` |
-| Monitor-ID | Monitor-Kennung; leer/`0` = globaler Monitor | *(leer)* |
+| Monitor-ID | Auswahl per Live-Dropdown, geladen von der `/waip/`-Übersichtsseite des konfigurierten Servers und gruppiert nach Leitstelle/Kreis/Träger/Wache; manuelle Eingabe bleibt möglich, falls der Server nicht erreichbar ist. Leer/`0` = globaler Monitor (alle Einsätze) | *(leer)* |
 | Registrierungs-Timeout (s) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10` |
 | Wiederverbindungs-Verzögerung (s) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5` |
 
@@ -418,6 +418,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.6.0 (2026-08-21)
+
+- **Admin UI:** Monitor ID is now a live dropdown (`selectSendTo`) instead
+  of a plain text field. The adapter fetches the configured server's
+  public `/waip/` overview page on demand and offers every monitor it
+  finds there, grouped by Leitstelle/Kreis/Träger/Wache, with "Alle
+  Wachalarme" (ID `0`) as an explicit first option. Manual entry remains
+  available if the server can't be reached or uses a different page
+  layout, so existing configurations keep working unchanged.
+- Removed the static "session keepalive interval" info text from the
+  admin UI (the behavior itself is unchanged - see [Why a session cookie
+  is needed](#why-a-session-cookie-is-needed)).
+- Added help text to the "Registration timeout" and "Reconnect delay"
+  fields.
 
 ### 0.5.1 (2026-08-21)
 
