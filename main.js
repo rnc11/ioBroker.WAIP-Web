@@ -1401,8 +1401,7 @@ class WaipWeb extends utils.Adapter {
                                 if (['ping', 'pong', 'open', 'close'].includes(String(pkt.type))) {
                                     this.log.debug(`engine.packet: ${JSON.stringify(pkt)}`);
                                 } else if (pkt.data && typeof pkt.data === 'string') {
-                                    const preview =
-                                        pkt.data.length > 200 ? `${pkt.data.slice(0, 200)}...` : pkt.data;
+                                    const preview = pkt.data.length > 200 ? `${pkt.data.slice(0, 200)}...` : pkt.data;
                                     this.log.debug(`engine.packet.message preview: ${preview}`);
                                 }
                             }

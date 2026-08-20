@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.4.8",
+    "version": "0.4.9",
     "news": {
+      "0.4.9": {
+        "en": "Reverted an unnecessary line wrap that was itself flagged by prettier/prettier (the line actually fits within printWidth)",
+        "de": "Unnötigen Zeilenumbruch rückgängig gemacht, der selbst von prettier/prettier bemängelt wurde (Zeile passt tatsächlich in die printWidth)"
+      },
       "0.4.8": {
         "en": "Fixed the final 16 lint errors (line-wrapping, prefer-template) using the exact CI-reported replacements; lint should now be fully clean",
         "de": "Letzte 16 Lint-Fehler behoben (Zeilenumbrüche, prefer-template) anhand der von der CI exakt gemeldeten Ersetzungen; Lint sollte jetzt vollständig sauber sein"

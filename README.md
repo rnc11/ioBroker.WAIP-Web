@@ -219,6 +219,13 @@ auskommentiert, bis npm Trusted Publishing eingerichtet ist.
 
 ## Changelog
 
+### 0.4.9 (2026-08-20)
+
+- **CI-Fix:** Einen selbst eingeführten, unnötigen Zeilenumbruch in
+  `connect()` (Engine-Packet-Preview) rückgängig gemacht – der wurde von
+  `prettier/prettier` als überflüssig bemängelt, die Zeile passt
+  tatsächlich einzeilig in die printWidth.
+
 ### 0.4.8 (2026-08-20)
 
 - **CI-Fix:** Letzte 16 Lint-Fehler behoben – diesmal lag die vollständige,
