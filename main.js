@@ -1,0 +1,798 @@
+'use strict';
+
+/*
+ * ioBroker.WAIP-Web
+ *
+ * Verbindet sich mit einem WAIP-Wachalarm-Monitor (Socket.IO) und bildet
+ * Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab.
+ *
+ * Ported from the original "WAIP Instrumented" ioBroker-JavaScript-Adapter
+ * script into a standalone adapter: URL/Monitor-ID kommen jetzt aus der
+ * Admin-Konfiguration statt aus einem Laufzeit-State.
+ */
+
+const utils = require('@iobroker/adapter-core');
+const { io } = require('socket.io-client');
+
+const DEFAULT_URL = 'https://wachalarm.leitstelle-lausitz.de';
+const HISTORY_SIZE = 10;
+const ALLOWED_EINSATZ_FIELDS = ['id', 'uuid', 'einsatzart', 'stichwort', 'ort', 'ortsteil', 'ablaufzeit', 'sondersignal'];
+const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
+const WARN_DEDUPE_MS = 5000;
+
+// Definition aller States, die beim Start sichergestellt werden.
+const STATE_DEFS = [
+    { id: 'status.connected', type: 'boolean', role: 'indicator.reachable', name: 'Connected to WAIP server', def: false },
+    { id: 'status.alarmAktiv', type: 'boolean', role: 'indicator.alarm', name: 'Alarm active', def: false },
+    { id: 'status.restzeit', type: 'number', role: 'value.interval', name: 'Remaining time until Einsatz end', unit: 's', def: 0 },
+    { id: 'status.registeredMonitor', type: 'string', role: 'text', name: 'Currently registered monitor ID' },
+    { id: 'status.registrationAccepted', type: 'mixed', role: 'indicator', name: 'Registration accepted (true/false/pending)' },
+    { id: 'json.raw', type: 'string', role: 'json', name: 'Raw normalized last payload' },
+    { id: 'json.einsatz', type: 'string', role: 'json', name: 'Last Einsatz payload (JSON)' },
+    { id: 'vis.fahrzeugTabelle', type: 'string', role: 'json', name: 'Fahrzeugtabelle (VIS, reserviert)' },
+    { id: 'vis.einsatzTabelle', type: 'string', role: 'json', name: 'Einsatztabelle (VIS, reserviert)' },
+    { id: 'vis.rueckmeldungenTabelle', type: 'string', role: 'json', name: 'Rückmeldungentabelle (VIS, reserviert)' },
+    { id: 'geo.latitude', type: 'number', role: 'value.gps.latitude', name: 'Latitude' },
+    { id: 'geo.longitude', type: 'number', role: 'value.gps.longitude', name: 'Longitude' },
+    { id: 'geo.position', type: 'string', role: 'json', name: 'Position {lat, lon}' },
+    { id: 'debug.lastEvent', type: 'string', role: 'json', name: 'Last received socket event' },
+    { id: 'debug.normalizedPosition', type: 'string', role: 'json', name: 'Last normalized position' },
+    { id: 'debug.rawPayloadShort', type: 'string', role: 'text', name: 'Raw payload preview (500 chars)' },
+    { id: 'debug.ignoredCount', type: 'number', role: 'value', name: 'Count of ignored events (wrong/unknown monitor)', def: 0 },
+    { id: 'debug.monitorAudit', type: 'string', role: 'json', name: 'Monitor audit log (last 200 entries)' },
+    { id: 'history.last10', type: 'string', role: 'json', name: `Last ${HISTORY_SIZE} Einsätze` },
+    { id: 'einsatz.id', type: 'string', role: 'text', name: 'Einsatz ID' },
+    { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
+    { id: 'einsatz.einsatzart', type: 'string', role: 'text', name: 'Einsatzart' },
+    { id: 'einsatz.stichwort', type: 'string', role: 'text', name: 'Alarmstichwort' },
+    { id: 'einsatz.ort', type: 'string', role: 'text', name: 'Ort' },
+    { id: 'einsatz.ortsteil', type: 'string', role: 'text', name: 'Ortsteil' },
+    { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
+    { id: 'einsatz.sondersignal', type: 'string', role: 'text', name: 'Sondersignal' },
+    { id: 'rueckmeldung.last.json', type: 'string', role: 'json', name: 'Letzte Rückmeldung (JSON)' },
+    { id: 'routen.json', type: 'string', role: 'json', name: 'Routen (JSON)' },
+    { id: 'routen.count', type: 'number', role: 'value', name: 'Anzahl Routen', def: 0 },
+    { id: 'tts.last', type: 'string', role: 'json', name: 'Letzte TTS-Ansage (JSON)' },
+    { id: 'tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
+];
+
+/* Prüft ob eine monitorID gültig ist (nicht-leer). */
+function isValidMonitor(mon) {
+    if (mon === undefined || mon === null) return false;
+    return String(mon).trim() !== '';
+}
+
+/*
+ Robust: akzeptiert Geometry-Objekt oder JSON-String, Feature oder Geometry,
+ und handhabt Fälle, in denen geometry.geometry als String kodiert ist.
+ Gibt null zurück, wenn keine valide Position gefunden oder 0/0 ermittelt wurde.
+*/
+function getCenterFromGeometry(g) {
+    try {
+        if (!g) return null;
+        let parsed = g;
+        if (typeof parsed === 'string') {
+            try {
+                parsed = JSON.parse(parsed);
+            } catch (e) {
+                /* leave as string */
+            }
+        }
+        const geomCandidate = parsed?.geometry ?? parsed;
+        let geom = geomCandidate;
+        if (!geom) return null;
+        if (typeof geom === 'string') {
+            try {
+                geom = JSON.parse(geom);
+            } catch (e) {
+                /* cannot parse */
+            }
+        }
+        if (!geom || !geom.type || !geom.coordinates) return null;
+
+        const coords = geom.coordinates;
+        const collectPoints = (c, type) => {
+            const pts = [];
+            const pushIfPoint = (p) => {
+                if (!Array.isArray(p) || p.length < 2) return;
+                const lon = Number(p[0]);
+                const lat = Number(p[1]);
+                if (!isNaN(lat) && !isNaN(lon)) pts.push([lon, lat]);
+            };
+
+            if (type === 'Point') {
+                pushIfPoint(c);
+            } else if (type === 'LineString' || type === 'MultiPoint') {
+                for (const p of c) pushIfPoint(p);
+            } else if (type === 'Polygon') {
+                for (const ring of c) for (const p of ring) pushIfPoint(p);
+            } else if (type === 'MultiPolygon') {
+                for (const poly of c) for (const ring of poly) for (const p of ring) pushIfPoint(p);
+            } else {
+                const flat = Array.isArray(c) ? c.flat(Infinity) : [];
+                for (let i = 0; i + 1 < flat.length; i += 2) {
+                    const a = Number(flat[i]);
+                    const b = Number(flat[i + 1]);
+                    if (!isNaN(a) && !isNaN(b)) pts.push([a, b]);
+                }
+            }
+            return pts;
+        };
+
+        const points = collectPoints(coords, geom.type);
+        if (!points || !points.length) return null;
+
+        let minLon = points[0][0];
+        let maxLon = points[0][0];
+        let minLat = points[0][1];
+        let maxLat = points[0][1];
+        for (const p of points) {
+            if (!Array.isArray(p) || p.length < 2) continue;
+            minLon = Math.min(minLon, p[0]);
+            maxLon = Math.max(maxLon, p[0]);
+            minLat = Math.min(minLat, p[1]);
+            maxLat = Math.max(maxLat, p[1]);
+        }
+        const lat = Number(((minLat + maxLat) / 2).toFixed(6));
+        const lon = Number(((minLon + maxLon) / 2).toFixed(6));
+        if (lat === 0 && lon === 0) return null;
+        return { lat, lon };
+    } catch (e) {
+        return null;
+    }
+}
+
+/*
+ Normalisiert Payload:
+ - priorisiert wgs84_x/wgs84_y (wenn nicht 0/0),
+ - akzeptiert data.position falls nicht 0/0,
+ - fällt auf geometry (auch stringified) zurück.
+ - entfernt roh-geo Felder und setzt position nur, wenn valide.
+*/
+function normalizeData(obj) {
+    try {
+        if (!obj || typeof obj !== 'object') return obj;
+        const data = JSON.parse(JSON.stringify(obj)); // deep clone
+        let center = null;
+
+        if (data.wgs84_x !== undefined && data.wgs84_y !== undefined) {
+            const lon = Number(data.wgs84_x);
+            const lat = Number(data.wgs84_y);
+            if (!isNaN(lat) && !isNaN(lon) && !(lat === 0 && lon === 0)) center = { lat, lon };
+        }
+
+        if (!center && data.position && data.position.lat !== undefined && data.position.lon !== undefined) {
+            const latP = Number(data.position.lat);
+            const lonP = Number(data.position.lon);
+            if (!isNaN(latP) && !isNaN(lonP) && !(latP === 0 && lonP === 0)) center = { lat: latP, lon: lonP };
+        }
+
+        if (!center && data.geometry) {
+            const c = getCenterFromGeometry(data.geometry);
+            if (c) center = c;
+        }
+
+        delete data.geometry;
+        delete data.wgs84_x;
+        delete data.wgs84_y;
+        delete data.geojson;
+        delete data.geometry_type;
+
+        if (center) data.position = { lat: center.lat, lon: center.lon };
+        else delete data.position;
+
+        return data;
+    } catch (e) {
+        return obj;
+    }
+}
+
+class WaipWeb extends utils.Adapter {
+    constructor(options) {
+        super({
+            ...options,
+            name: 'waip-web',
+        });
+
+        this.on('ready', this.onReady.bind(this));
+        this.on('unload', this.onUnload.bind(this));
+
+        this.socket = null;
+        this.currentMonitor = '';
+        this.connecting = false;
+        this.registrationPending = false;
+        this.registrationTimer = null;
+        this.reconnectTimer = null;
+        this.restzeitInterval = null;
+
+        this._lastDisconnectMsg = null;
+        this._lastDisconnectTs = 0;
+        this._warnCache = { lastMsg: null, ts: 0 };
+        this._lastRestzeit = null;
+        this._lastDebugEvent = { event: null, ts: 0 };
+
+        this.HISTORY_SIZE = HISTORY_SIZE;
+        this.ALLOWED_EINSATZ_FIELDS = ALLOWED_EINSATZ_FIELDS;
+    }
+
+    async onReady() {
+        this.REGISTRATION_TIMEOUT_MS = Number(this.config.registrationTimeout) || 10000;
+        this.RECONNECT_DELAY_MS = Number(this.config.reconnectDelay) || 5000;
+        this.url = (this.config.url || DEFAULT_URL).trim();
+        this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
+
+        await this.initObjects();
+        this.startRestzeitInterval();
+        this.connect();
+    }
+
+    onUnload(callback) {
+        try {
+            this.cleanupSocket();
+            if (this.registrationTimer) {
+                this.clearTimeout(this.registrationTimer);
+                this.registrationTimer = null;
+            }
+            if (this.reconnectTimer) {
+                this.clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = null;
+            }
+            if (this.restzeitInterval) {
+                this.clearInterval(this.restzeitInterval);
+                this.restzeitInterval = null;
+            }
+            callback();
+        } catch (e) {
+            callback();
+        }
+    }
+
+    async initObjects() {
+        for (const def of STATE_DEFS) {
+            await this.setObjectNotExistsAsync(def.id, {
+                type: 'state',
+                common: {
+                    name: def.name,
+                    type: def.type,
+                    role: def.role,
+                    read: true,
+                    write: false,
+                    unit: def.unit,
+                    def: def.def !== undefined ? def.def : null,
+                },
+                native: {},
+            });
+        }
+    }
+
+    /* Sicheres, deduplizierendes Warn-Logging. */
+    safeWarn(context, err) {
+        try {
+            const now = Date.now();
+            const msg = typeof err === 'string' ? err : err && err.message ? err.message : String(err);
+            const out = context ? `${context}: ${msg}` : msg;
+            if (out === this._warnCache.lastMsg && now - this._warnCache.ts < WARN_DEDUPE_MS) return;
+            this._warnCache.lastMsg = out;
+            this._warnCache.ts = now;
+            this.log.warn(out);
+        } catch (e) {
+            /* silent */
+        }
+    }
+
+    /* Dedupliziertes Info-Logging für Disconnects. */
+    logDisconnect(msg) {
+        try {
+            const now = Date.now();
+            if (msg === this._lastDisconnectMsg && now - this._lastDisconnectTs < DISCONNECT_DEDUPE_MS) return;
+            this._lastDisconnectMsg = msg;
+            this._lastDisconnectTs = now;
+            this.log.info(msg);
+        } catch (e) {
+            /* silent */
+        }
+    }
+
+    /* Hängt einen Eintrag an das Monitor-Audit-Log an (max. 200 Einträge). */
+    async appendMonitorAudit(entry) {
+        try {
+            const st = await this.getStateAsync('debug.monitorAudit');
+            let arr = [];
+            try {
+                arr = st && st.val ? JSON.parse(st.val) : [];
+            } catch (_) {
+                arr = [];
+            }
+            arr.unshift(entry);
+            if (arr.length > 200) arr = arr.slice(0, 200);
+            await this.setStateAsync('debug.monitorAudit', JSON.stringify(arr), true);
+        } catch (e) {
+            this.safeWarn('appendMonitorAudit', e);
+        }
+    }
+
+    incrementIgnoredCount() {
+        this.getStateAsync('debug.ignoredCount')
+            .then((c) => this.setStateAsync('debug.ignoredCount', Number((c && c.val) || 0) + 1, true))
+            .catch(() => {});
+    }
+
+    /* Setzt einen State; Objekte/Arrays werden JSON-stringifiziert. */
+    async setField(path, val) {
+        try {
+            let toSet;
+            if (val === null || typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+                toSet = val;
+            } else {
+                toSet = JSON.stringify(val);
+            }
+            await this.setStateAsync(path, toSet, true);
+        } catch (e) {
+            this.safeWarn(`setField ${path}`, e);
+        }
+    }
+
+    /* Schiebt einen Eintrag in die History (last10). */
+    async historyPush(data, lat, lon) {
+        let h = [];
+        try {
+            const st = await this.getStateAsync('history.last10');
+            const raw = st && st.val ? st.val : '[]';
+            h = JSON.parse(raw || '[]');
+        } catch (e) {
+            h = [];
+        }
+        const entry = {
+            time: new Date().toISOString(),
+            id: data?.id || '',
+            stichwort: data?.stichwort || '',
+            ort: data?.ort || '',
+            lat: lat === null || lat === undefined ? null : lat,
+            lon: lon === null || lon === undefined ? null : lon,
+        };
+        h.unshift(entry);
+        h = h.slice(0, this.HISTORY_SIZE);
+        try {
+            await this.setStateAsync('history.last10', JSON.stringify(h), true);
+        } catch (e) {
+            this.safeWarn('historyPush.setState', e);
+        }
+    }
+
+    /* Prüft ob eine eingehende Payload eindeutig einem Monitor zuordenbar ist und mit currentMonitor übereinstimmt. */
+    payloadMonitorMatch(p) {
+        if (!p || typeof p !== 'object') return null;
+        const keys = ['monitor', 'monitorID', 'monitor_id', 'monitorId', 'waip_monitor', 'waip_monitor_id', 'wache_nr', 'wache_id', 'wacheId', 'room', 'tenant', 'group'];
+        for (const k of keys) {
+            if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') {
+                const val = String(p[k]).trim();
+                if (val === String(this.currentMonitor)) return true;
+                if (!isNaN(Number(val)) && !isNaN(Number(this.currentMonitor)) && Number(val) === Number(this.currentMonitor)) return true;
+                return false;
+            }
+        }
+        return null; // no monitor-identifying field found
+    }
+
+    /* Handler-Wrapper: prüft Monitor-Match bevor der eigentliche Handler ausgeführt wird. */
+    wrapHandlerWithMonitorCheck(handler) {
+        return (payload) => {
+            try {
+                const match = this.payloadMonitorMatch(payload);
+
+                if (match === false) {
+                    this.safeWarn('ignoredEvent.wrongMonitor', `Event für anderen Monitor empfangen (current=${this.currentMonitor})`);
+                    this.incrementIgnoredCount();
+                    return;
+                }
+
+                if (match === true) {
+                    this.setState('status.registrationAccepted', true, true);
+                    this.setState('status.registeredMonitor', this.currentMonitor, true);
+                    if (this.registrationTimer) {
+                        this.clearTimeout(this.registrationTimer);
+                        this.registrationTimer = null;
+                    }
+                    this.registrationPending = false;
+                    try {
+                        handler(payload);
+                    } catch (e) {
+                        this.safeWarn('handler.exec', e);
+                    }
+                    return;
+                }
+
+                // match === null (kein Monitor-Feld im Payload)
+                if (String(this.currentMonitor) === '0') {
+                    // globaler Monitor -> akzeptieren
+                    try {
+                        handler(payload);
+                    } catch (e) {
+                        this.safeWarn('handler.exec', e);
+                    }
+                    return;
+                }
+
+                if (this.registrationPending) {
+                    this.incrementIgnoredCount();
+                    return;
+                }
+
+                this.safeWarn('ignoredEvent.unknownMonitor', `Event ohne Monitor-Info verworfen (current=${this.currentMonitor})`);
+                this.incrementIgnoredCount();
+            } catch (e) {
+                this.safeWarn('wrapHandlerWithMonitorCheck', e);
+            }
+        };
+    }
+
+    /* Handler für eingehende Alarme (io.new_waip). */
+    async handleAlarm(incoming) {
+        try {
+            try {
+                await this.setStateAsync('debug.rawPayloadShort', JSON.stringify(incoming).slice(0, 500), true);
+            } catch (e) {
+                /* ignore */
+            }
+
+            const data = normalizeData(incoming || {});
+            try {
+                await this.setStateAsync('debug.normalizedPosition', JSON.stringify({ position: data.position ?? null }), true);
+            } catch (e) {
+                /* ignore */
+            }
+
+            let lat = null;
+            let lon = null;
+            if (data.position && data.position.lat !== undefined && data.position.lon !== undefined) {
+                lat = Number(data.position.lat);
+                lon = Number(data.position.lon);
+            }
+
+            if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
+                try {
+                    await this.setStateAsync('geo.latitude', lat, true);
+                } catch (e) {
+                    this.safeWarn('geo.latitude.setState', e);
+                }
+                try {
+                    await this.setStateAsync('geo.longitude', lon, true);
+                } catch (e) {
+                    this.safeWarn('geo.longitude.setState', e);
+                }
+                await this.setField('geo.position', { lat, lon });
+            } else {
+                try {
+                    await this.setStateAsync('geo.latitude', null, true);
+                } catch (e) {
+                    /* ignore */
+                }
+                try {
+                    await this.setStateAsync('geo.longitude', null, true);
+                } catch (e) {
+                    /* ignore */
+                }
+                await this.setField('geo.position', null);
+            }
+
+            try {
+                await this.setStateAsync('status.alarmAktiv', true, true);
+            } catch (e) {
+                this.safeWarn('status.alarmAktiv.setState', e);
+            }
+            await this.setField('json.raw', data);
+            await this.setField('json.einsatz', data);
+            await this.historyPush(data, lat, lon);
+
+            const tasks = Object.keys(data)
+                .filter((k) => this.ALLOWED_EINSATZ_FIELDS.includes(k))
+                .map((k) => this.setField(`einsatz.${k}`, data[k]));
+            const results = await Promise.allSettled(tasks);
+            for (const r of results) {
+                if (r.status === 'rejected') this.safeWarn('Einsatz-Feld setzen', r.reason);
+            }
+        } catch (e) {
+            this.safeWarn('handleAlarm', e);
+        }
+    }
+
+    /* Handler für Rückmeldungen (io.new_rmld). */
+    async handleRueckmeldung(incoming) {
+        try {
+            const data = normalizeData(incoming || {});
+            await this.setField('rueckmeldung.last.json', data);
+        } catch (e) {
+            this.safeWarn('handleRueckmeldung', e);
+        }
+    }
+
+    /* Handler für Routen (io.routes). */
+    async handleRoutes(incoming) {
+        try {
+            let data = incoming;
+            if (Array.isArray(incoming)) data = incoming.map((i) => normalizeData(i));
+            else if (typeof incoming === 'object') data = normalizeData(incoming);
+            await this.setField('routen.json', data);
+            await this.setField('routen.count', Array.isArray(data) ? data.length : 0);
+        } catch (e) {
+            this.safeWarn('handleRoutes', e);
+        }
+    }
+
+    /* Handler für TTS-Events (io.playtts). */
+    async handleTTS(incoming) {
+        try {
+            const data = normalizeData(incoming || {});
+            await this.setField('tts.last', data);
+            await this.setField('tts.lastTimestamp', new Date().toISOString());
+        } catch (e) {
+            this.safeWarn('handleTTS', e);
+        }
+    }
+
+    /* Cleanup helper: schließt und entfernt eine vorhandene socket-Instanz vollständig. */
+    cleanupSocket() {
+        try {
+            if (!this.socket) return;
+            try {
+                this.socket.removeAllListeners();
+            } catch (e) {
+                /* ignore */
+            }
+            try {
+                this.socket.disconnect();
+            } catch (e) {
+                /* ignore */
+            }
+            try {
+                if (typeof this.socket.close === 'function') this.socket.close();
+            } catch (e) {
+                /* ignore */
+            }
+        } catch (e) {
+            this.safeWarn('cleanupSocket', e);
+        } finally {
+            this.socket = null;
+            this.connecting = false;
+            this.registrationPending = false;
+            if (this.registrationTimer) {
+                this.clearTimeout(this.registrationTimer);
+                this.registrationTimer = null;
+            }
+        }
+    }
+
+    onSocketConnect(monStr) {
+        this.connecting = false;
+        this.setState('status.connected', true, true);
+        this.setState('info.connection', true, true);
+
+        try {
+            this.log.info(`socket.emit('WAIP', ${monStr}) [1/3]`);
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 1 }).catch(() => {});
+            this.socket.emit('WAIP', monStr);
+        } catch (e) {
+            this.safeWarn('socket.emit.WAIP', e);
+        }
+
+        this.setTimeout(() => {
+            try {
+                this.log.debug(`socket.emit('WAIP', ${monStr}) [2/3]`);
+                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 2 }).catch(() => {});
+                if (this.socket) this.socket.emit('WAIP', monStr);
+            } catch (e) {
+                this.safeWarn('socket.emit.WAIP.2', e);
+            }
+        }, 1000);
+
+        this.setTimeout(() => {
+            try {
+                this.log.debug(`socket.emit('WAIP', ${monStr}) [3/3]`);
+                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr, attempt: 3 }).catch(() => {});
+                if (this.socket) this.socket.emit('WAIP', monStr);
+            } catch (e) {
+                this.safeWarn('socket.emit.WAIP.3', e);
+            }
+        }, 3000);
+
+        this.registrationPending = true;
+        this.setState('status.registeredMonitor', monStr, true);
+        this.setState('status.registrationAccepted', 'pending', true);
+        if (this.registrationTimer) {
+            this.clearTimeout(this.registrationTimer);
+            this.registrationTimer = null;
+        }
+        this.registrationTimer = this.setTimeout(async () => {
+            this.registrationPending = false;
+            const accState = await this.getStateAsync('status.registrationAccepted');
+            const acc = accState ? accState.val : null;
+            if (acc !== true) {
+                await this.setStateAsync('status.registrationAccepted', false, true);
+                this.log.warn(`WAIP registration for monitor ${this.currentMonitor} not confirmed within ${this.REGISTRATION_TIMEOUT_MS}ms`);
+                this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'registration_timeout', monitor: this.currentMonitor }).catch(() => {});
+            }
+            this.registrationTimer = null;
+        }, this.REGISTRATION_TIMEOUT_MS);
+
+        this.log.info(`Verbunden Monitor ${monStr} -> namespace /waip (registered via WAIP emit)`);
+    }
+
+    onSocketDisconnect(reason) {
+        this.connecting = false;
+        this.setState('status.connected', false, true);
+        this.setState('info.connection', false, true);
+        this.logDisconnect(`Socket disconnected: ${reason}`);
+        this.registrationPending = false;
+        this.setState('status.registrationAccepted', false, true);
+        if (this.registrationTimer) {
+            this.clearTimeout(this.registrationTimer);
+            this.registrationTimer = null;
+        }
+
+        this.cleanupSocket();
+        this.reconnectTimer = this.setTimeout(() => {
+            this.log.info(`manual reconnect triggered for monitor '${this.currentMonitor}'`);
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'manual_reconnect_triggered' }).catch(() => {});
+            this.connect();
+        }, this.RECONNECT_DELAY_MS);
+    }
+
+    onSocketConnectError(err) {
+        this.connecting = false;
+        this.setState('status.connected', false, true);
+        this.setState('info.connection', false, true);
+        this.safeWarn('connect_error', err);
+        this.logDisconnect(`connect_error: ${String(err)}`);
+        this.cleanupSocket();
+        this.reconnectTimer = this.setTimeout(() => {
+            this.log.info(`manual reconnect after connect_error for monitor '${this.currentMonitor}'`);
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'manual_reconnect_after_error' }).catch(() => {});
+            this.connect();
+        }, this.RECONNECT_DELAY_MS);
+    }
+
+    /*
+     Connect: verbindet zur socket.io-namespace '/waip' (über path '/socket.io'),
+     registriert sich per emit('WAIP', monitor).
+
+     WICHTIG: automatische reconnects deaktiviert (reconnection: false). Nach
+     disconnect/connect_error wird manuell reconnect() nach RECONNECT_DELAY_MS aufgerufen.
+    */
+    connect() {
+        try {
+            const monStr = isValidMonitor(this.monitorID) ? this.monitorID : '0';
+
+            if (this.socket && this.currentMonitor === monStr && !this.connecting) {
+                this.log.debug(`connect(): already connected to monitor ${monStr}, skipping`);
+                return;
+            }
+
+            this.cleanupSocket();
+            this.connecting = true;
+            this.currentMonitor = monStr;
+
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'connect_called', using: monStr }).catch(() => {});
+            this.log.info(`connect(): using monitor '${monStr}'`);
+
+            const namespaceUrl = `${this.url}/waip`;
+            this.socket = io(namespaceUrl, {
+                path: '/socket.io',
+                forceNew: true,
+                transports: ['websocket', 'polling'],
+                reconnection: false,
+                timeout: 20000,
+                query: { monitor: monStr },
+            });
+
+            try {
+                if (this.socket && this.socket.io && this.socket.io.engine) {
+                    const eng = this.socket.io.engine;
+                    this.log.debug(`engine pingInterval=${eng.pingInterval} pingTimeout=${eng.pingTimeout}`);
+                    eng.on('packet', (pkt) => {
+                        try {
+                            if (pkt && pkt.type) {
+                                if (['ping', 'pong', 'open', 'close'].includes(String(pkt.type))) {
+                                    this.log.debug(`engine.packet: ${JSON.stringify(pkt)}`);
+                                } else if (pkt.data && typeof pkt.data === 'string') {
+                                    const preview = pkt.data.length > 200 ? pkt.data.slice(0, 200) + '...' : pkt.data;
+                                    this.log.debug(`engine.packet.message preview: ${preview}`);
+                                }
+                            }
+                        } catch (e) {
+                            /* ignore */
+                        }
+                    });
+                }
+            } catch (e) {
+                /* ignore */
+            }
+
+            this.socket.on('connect', () => this.onSocketConnect(monStr));
+            this.socket.on('disconnect', (reason) => this.onSocketDisconnect(reason));
+            this.socket.on('connect_error', (err) => this.onSocketConnectError(err));
+
+            // Diagnostik: erste eingehende Rohdaten als Preview loggen (max. 6 Events)
+            let firstCount = 0;
+            const anyListener = (event, ...args) => {
+                try {
+                    firstCount++;
+                    const previewArgs = args && args.length ? (typeof args[0] === 'string' ? args[0].slice(0, 500) : JSON.stringify(args[0]).slice(0, 500)) : '';
+                    this.log.debug(`incoming event '${event}' preview: ${previewArgs}`);
+                    if (firstCount >= 6 && this.socket && typeof this.socket.offAny === 'function') {
+                        try {
+                            this.socket.offAny(anyListener);
+                        } catch (e) {
+                            /* ignore */
+                        }
+                    }
+                } catch (e) {
+                    /* ignore */
+                }
+            };
+            try {
+                if (this.socket && typeof this.socket.onAny === 'function') this.socket.onAny(anyListener);
+            } catch (e) {
+                /* ignore */
+            }
+
+            this.socket.on('io.new_waip', this.wrapHandlerWithMonitorCheck(this.handleAlarm.bind(this)));
+            this.socket.on('io.new_rmld', this.wrapHandlerWithMonitorCheck(this.handleRueckmeldung.bind(this)));
+            this.socket.on('io.routes', this.wrapHandlerWithMonitorCheck(this.handleRoutes.bind(this)));
+            this.socket.on('io.playtts', this.wrapHandlerWithMonitorCheck(this.handleTTS.bind(this)));
+
+            this.socket.onAny((event, ...args) => {
+                try {
+                    const now = Date.now();
+                    if (event !== this._lastDebugEvent.event || now - this._lastDebugEvent.ts > 5000) {
+                        this._lastDebugEvent = { event, ts: now };
+                        this.setField('debug.lastEvent', { event, ts: new Date().toISOString(), argsCount: args.length }).catch(() => {});
+                    }
+                } catch (e) {
+                    /* ignore */
+                }
+            });
+        } catch (e) {
+            this.safeWarn('connect', e);
+            this.connecting = false;
+        }
+    }
+
+    /* Intervall: Restzeit bis Einsatzende. */
+    startRestzeitInterval() {
+        this.restzeitInterval = this.setInterval(async () => {
+            try {
+                const s = await this.getStateAsync('einsatz.ablaufzeit');
+                if (!s || s.val === undefined || s.val === null || s.val === '') {
+                    await this.updateRestzeit(0);
+                    return;
+                }
+                const end = new Date(s.val);
+                if (isNaN(end.getTime())) {
+                    await this.updateRestzeit(0);
+                    return;
+                }
+                const rest = Math.max(0, Math.floor((end.getTime() - Date.now()) / 1000));
+                await this.updateRestzeit(rest);
+            } catch (e) {
+                await this.updateRestzeit(0);
+            }
+        }, 1000);
+    }
+
+    async updateRestzeit(rest) {
+        if (this._lastRestzeit !== rest) {
+            this._lastRestzeit = rest;
+            try {
+                await this.setStateAsync('status.restzeit', rest, true);
+            } catch (e) {
+                /* ignore */
+            }
+        }
+    }
+}
+
+if (require.main !== module) {
+    module.exports = (options) => new WaipWeb(options);
+} else {
+    new WaipWeb();
+}

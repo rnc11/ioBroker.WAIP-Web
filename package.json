@@ -1,0 +1,47 @@
+{
+  "name": "iobroker.waip-web",
+  "version": "0.1.0",
+  "description": "Wachalarm IP-Web (WAIP) Adapter für ioBroker – bindet Alarmierungen, Rückmeldungen, Routen und TTS-Ansagen per Socket.IO an ioBroker an.",
+  "author": {
+    "name": "rnc11",
+    "email": "rocco.noetzel@gmx.de"
+  },
+  "homepage": "https://github.com/rnc11/ioBroker.WAIP-Web",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "waip",
+    "wachalarm",
+    "feuerwehr",
+    "alarmierung",
+    "leitstelle"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rnc11/ioBroker.WAIP-Web.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rnc11/ioBroker.WAIP-Web/issues"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "main": "main.js",
+  "files": [
+    "admin/",
+    "lib/",
+    "io-package.json",
+    "main.js",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@iobroker/adapter-core": "^3.1.6",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@iobroker/testing": "^4.1.3"
+  },
+  "scripts": {
+    "test": "mocha --exit test/**/*.test.js"
+  }
+}

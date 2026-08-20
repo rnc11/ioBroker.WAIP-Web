@@ -1,0 +1,60 @@
+{
+    "type": "panel",
+    "items": {
+        "url": {
+            "type": "text",
+            "label": {
+                "en": "WAIP server URL",
+                "de": "WAIP-Server-URL"
+            },
+            "help": {
+                "en": "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)",
+                "de": "Basis-URL des WAIP-Leitstellenservers (Socket.IO-Endpunkt, Namespace /waip wird automatisch angehängt)"
+            },
+            "sm": 12,
+            "md": 8,
+            "lg": 6
+        },
+        "monitorID": {
+            "type": "text",
+            "label": {
+                "en": "Monitor ID",
+                "de": "Monitor-ID"
+            },
+            "help": {
+                "en": "Leave empty or use '0' to register as global monitor",
+                "de": "Leer lassen oder '0' verwenden, um sich als globaler Monitor zu registrieren"
+            },
+            "sm": 12,
+            "md": 8,
+            "lg": 6
+        },
+        "_divider1": {
+            "type": "divider"
+        },
+        "registrationTimeout": {
+            "type": "number",
+            "label": {
+                "en": "Registration timeout (ms)",
+                "de": "Registrierungs-Timeout (ms)"
+            },
+            "min": 1000,
+            "max": 120000,
+            "sm": 12,
+            "md": 6,
+            "lg": 4
+        },
+        "reconnectDelay": {
+            "type": "number",
+            "label": {
+                "en": "Reconnect delay (ms)",
+                "de": "Wiederverbindungs-Verzögerung (ms)"
+            },
+            "min": 1000,
+            "max": 120000,
+            "sm": 12,
+            "md": 6,
+            "lg": 4
+        }
+    }
+}
