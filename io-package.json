@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "news": {
+      "0.3.3": {
+        "en": "Fixed a bug where events could be silently dropped after the registration timeout for non-global monitor IDs, since real WAIP payloads never carry a monitor field; registrationAccepted now reflects reality",
+        "de": "Bug behoben: Events konnten bei nicht-globalen Monitor-IDs nach dem Registrierungs-Timeout still verworfen werden, da reale WAIP-Payloads nie ein Monitor-Feld enthalten; registrationAccepted spiegelt jetzt die Realität wider"
+      },
       "0.3.2": {
         "en": "Registration timeout and reconnect delay config fields changed from milliseconds to seconds",
         "de": "Konfigurationsfelder für Registrierungs-Timeout und Wiederverbindungs-Verzögerung von Millisekunden auf Sekunden umgestellt"

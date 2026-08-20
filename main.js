@@ -61,7 +61,7 @@ const STATE_DEFS = [
     { id: 'debug.lastEvent', type: 'string', role: 'json', name: 'Last received socket event' },
     { id: 'debug.normalizedPosition', type: 'string', role: 'json', name: 'Last normalized position' },
     { id: 'debug.rawPayloadShort', type: 'string', role: 'text', name: 'Raw payload preview (500 chars)' },
-    { id: 'debug.ignoredCount', type: 'number', role: 'value', name: 'Count of ignored events (wrong/unknown monitor)', def: 0 },
+    { id: 'debug.ignoredCount', type: 'number', role: 'value', name: 'Count of ignored events (explicit wrong-monitor field in payload)', def: 0 },
     { id: 'debug.monitorAudit', type: 'string', role: 'json', name: 'Monitor audit log (last 200 entries)' },
     { id: 'debug.sessionExpires', type: 'string', role: 'date', name: 'Session-Cookie gültig bis (letzte Erneuerung)' },
     { id: 'history.last10', type: 'string', role: 'json', name: `Last ${HISTORY_SIZE} Einsätze` },
@@ -544,7 +544,23 @@ class WaipWeb extends utils.Adapter {
         return null; // no monitor-identifying field found
     }
 
-    /* Handler-Wrapper: prüft Monitor-Match bevor der eigentliche Handler ausgeführt wird. */
+    /*
+     Handler-Wrapper: prüft Monitor-Match bevor der eigentliche Handler ausgeführt wird.
+
+     WICHTIG (siehe client_waip.js des offiziellen Frontends): Die Monitor-Zuordnung
+     passiert vollständig serverseitig über eine Socket.IO-Room-Registrierung
+     (ausgelöst durch emit('WAIP', monitorId) in onSocketConnect). Kein einziges
+     reales Event (io.new_waip/io.new_rmld/io.routes/io.playtts/io.standby) trägt ein
+     eigenes Monitor-Kennungsfeld im Payload - das offizielle Frontend prüft beim
+     Empfang auch gar nichts. payloadMonitorMatch() liefert für reale Payloads daher
+     praktisch immer null.
+
+     Frühere Version verwarf Events ohne Monitor-Feld nach Ablauf des Registrierungs-
+     Timeouts als "unknownMonitor" - das hat bei jeder nicht-globalen Monitor-ID (≠ '0')
+     die komplette Alarm-Zustellung nach dem Timeout stillschweigend gestoppt. Jetzt
+     gilt: jedes empfangene Event bestätigt die Registrierung und wird verarbeitet,
+     außer das Payload nennt EXPLIZIT eine andere Monitor-Kennung (match === false).
+    */
     wrapHandlerWithMonitorCheck(handler) {
         return (payload) => {
             try {
@@ -556,7 +572,9 @@ class WaipWeb extends utils.Adapter {
                     return;
                 }
 
-                if (match === true) {
+                // match === true (Monitor-Feld passt) oder match === null (kein
+                // Monitor-Feld im Payload, der Normalfall) -> Registrierung bestätigt.
+                if (this.registrationPending || match === true) {
                     this.setState('status.registrationAccepted', true, true);
                     this.setState('status.registeredMonitor', this.currentMonitor, true);
                     if (this.registrationTimer) {
@@ -564,32 +582,13 @@ class WaipWeb extends utils.Adapter {
                         this.registrationTimer = null;
                     }
                     this.registrationPending = false;
-                    try {
-                        handler(payload);
-                    } catch (e) {
-                        this.safeWarn('handler.exec', e);
-                    }
-                    return;
                 }
 
-                // match === null (kein Monitor-Feld im Payload)
-                if (String(this.currentMonitor) === '0') {
-                    // globaler Monitor -> akzeptieren
-                    try {
-                        handler(payload);
-                    } catch (e) {
-                        this.safeWarn('handler.exec', e);
-                    }
-                    return;
+                try {
+                    handler(payload);
+                } catch (e) {
+                    this.safeWarn('handler.exec', e);
                 }
-
-                if (this.registrationPending) {
-                    this.incrementIgnoredCount();
-                    return;
-                }
-
-                this.safeWarn('ignoredEvent.unknownMonitor', `Event ohne Monitor-Info verworfen (current=${this.currentMonitor})`);
-                this.incrementIgnoredCount();
             } catch (e) {
                 this.safeWarn('wrapHandlerWithMonitorCheck', e);
             }
