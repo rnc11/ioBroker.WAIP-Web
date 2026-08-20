@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.2",
+    "version": "0.6.3",
     "news": {
+      "0.6.3": {
+        "en": "Monitor ID field is now always full-width, placed on its own row below the WAIP server URL, so the (sometimes long) dropdown entries have enough room",
+        "de": "Feld Monitor-ID ist jetzt immer vollzeilig und steht in einer eigenen Zeile unterhalb der WAIP-Server-URL, damit die teils langen Dropdown-Einträge genug Platz haben"
+      },
       "0.6.2": {
         "en": "Monitor dropdown entries are now sorted by numeric monitor ID instead of the source page's order",
         "de": "Einträge im Monitor-Dropdown werden jetzt nach numerischer Monitor-ID sortiert statt in der Reihenfolge der Quellseite"
@@ -78,10 +82,6 @@
       "0.3.1": {
         "en": "Session keepalive interval config field changed from milliseconds to seconds",
         "de": "Konfigurationsfeld für das Session-Keepalive-Intervall von Millisekunden auf Sekunden umgestellt"
-      },
-      "0.3.0": {
-        "en": "Fixed swapped lat/lon coordinates, added io.standby/io.error/io.version handling, more Einsatz fields (Objekt, Adresse, Besonderheiten, alarmierte Einsatzmittel) and aggregated Rückmeldung counters per role",
-        "de": "Vertauschte Koordinaten (lat/lon) behoben, io.standby/io.error/io.version werden jetzt behandelt, weitere Einsatzfelder (Objekt, Adresse, Besonderheiten, alarmierte Einsatzmittel) sowie aggregierte Rückmeldungs-Zähler pro Rolle"
       }
     },
     "title": "WAIP-Web",

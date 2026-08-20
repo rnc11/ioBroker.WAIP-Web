@@ -30,8 +30,8 @@
                 "de": "Wird live von der /waip/-Übersichtsseite des konfigurierten Servers geladen - Auswahl nach Leitstelle, Kreis, Träger oder Wache, oder 'Alle Wachalarme' (ID 0) für jeden Einsatz. Ist der Server nicht erreichbar, kann die ID weiterhin manuell eingegeben werden."
             },
             "sm": 12,
-            "md": 8,
-            "lg": 6
+            "md": 12,
+            "lg": 12
         },
         "_divider1": {
             "type": "divider"
