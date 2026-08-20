@@ -9,6 +9,12 @@
  * Ported from the original "WAIP Instrumented" ioBroker-JavaScript-Adapter
  * script into a standalone adapter: URL/Monitor-ID kommen jetzt aus der
  * Admin-Konfiguration statt aus einem Laufzeit-State.
+ *
+ * Objektstruktur (Stand 0.4.0): Rückmeldungen und Routen sind pro Einsatz
+ * Listen (1:n) und liegen deshalb als verschachtelte JSON-Arrays innerhalb
+ * von einsatz.json bzw. jedem Eintrag von einsatz.history10 - ergänzt um
+ * schnell bindbare Zähler (einsatz.routenGesamt, einsatz.rueckmeldungGesamt,
+ * einsatz.rueckmeldungAnzahl.*). Der frühere vis.*-Kanal entfällt komplett.
  */
 
 const https = require('https');
@@ -40,8 +46,35 @@ const ALLOWED_EINSATZ_FIELDS = [
     'besonderheiten',
     'permissions',
 ];
+const RUECKMELDUNG_ANZAHL_KEYS = ['ek', 'gf', 'zf', 'vf', 'agt', 'fzf', 'ma', 'med'];
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
 const WARN_DEDUPE_MS = 5000;
+
+// State-Objekte, die beim Start aus früheren Versionen entfernt werden (Struktur-Migration).
+const OBSOLETE_OBJECT_IDS = [
+    'json.raw',
+    'json.einsatz',
+    'vis.fahrzeugTabelle',
+    'vis.einsatzTabelle',
+    'vis.rueckmeldungenTabelle',
+    'geo.latitude',
+    'geo.longitude',
+    'geo.position',
+    'history.last10',
+    'einsatz.emWeitere',
+    'rueckmeldung.last.json',
+    'rueckmeldung.counts.ek',
+    'rueckmeldung.counts.gf',
+    'rueckmeldung.counts.zf',
+    'rueckmeldung.counts.vf',
+    'rueckmeldung.counts.agt',
+    'rueckmeldung.counts.fzf',
+    'rueckmeldung.counts.ma',
+    'rueckmeldung.counts.med',
+    'rueckmeldung.counts.gesamt',
+    'routen.json',
+    'routen.count',
+];
 
 // Definition aller States, die beim Start sichergestellt werden.
 const STATE_DEFS = [
@@ -50,55 +83,52 @@ const STATE_DEFS = [
     { id: 'status.restzeit', type: 'number', role: 'value.interval', name: 'Restzeit bis Einsatzende', unit: 's', def: 0 },
     { id: 'status.registeredMonitor', type: 'string', role: 'text', name: 'Aktuell registrierte Monitor-ID' },
     { id: 'status.registrationAccepted', type: 'mixed', role: 'indicator', name: 'Registrierung bestätigt (true/false/pending)' },
-    { id: 'json.raw', type: 'string', role: 'json', name: 'Letzte normalisierte Rohdaten' },
-    { id: 'json.einsatz', type: 'string', role: 'json', name: 'Letzte Einsatzdaten (JSON)' },
-    { id: 'vis.fahrzeugTabelle', type: 'string', role: 'json', name: 'Alarmierte Einsatzmittel (em_alarmiert, JSON-Array)' },
-    { id: 'vis.einsatzTabelle', type: 'string', role: 'json', name: 'Einsatztabelle (VIS, reserviert für künftige Dashboard-Integration)' },
-    { id: 'vis.rueckmeldungenTabelle', type: 'string', role: 'json', name: 'Alle Rückmeldungen des aktuellen Einsatzes (JSON-Array)' },
-    { id: 'geo.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
-    { id: 'geo.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
-    { id: 'geo.position', type: 'string', role: 'json', name: 'Position (Breiten-/Längengrad)' },
     { id: 'debug.lastEvent', type: 'string', role: 'json', name: 'Letztes empfangenes Socket-Event' },
     { id: 'debug.normalizedPosition', type: 'string', role: 'json', name: 'Letzte normalisierte Position' },
     { id: 'debug.rawPayloadShort', type: 'string', role: 'text', name: 'Rohdaten-Vorschau (500 Zeichen)' },
     { id: 'debug.ignoredCount', type: 'number', role: 'value', name: 'Anzahl ignorierter Events (explizit falsches Monitor-Feld im Payload)', def: 0 },
     { id: 'debug.monitorAudit', type: 'string', role: 'json', name: 'Monitor-Audit-Log (letzte 200 Einträge)' },
     { id: 'debug.sessionExpires', type: 'string', role: 'date', name: 'Session-Cookie gültig bis (letzte Erneuerung)' },
-    { id: 'history.last10', type: 'string', role: 'json', name: `Letzte ${HISTORY_SIZE} Einsätze` },
+    { id: 'debug.lastError', type: 'string', role: 'json', name: 'Letzte Server-Fehlermeldung (io.error)' },
+    { id: 'debug.serverVersion', type: 'string', role: 'text', name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)' },
+    // flache Felder des aktuellen Einsatzes
     { id: 'einsatz.id', type: 'string', role: 'text', name: 'Einsatz ID' },
     { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
     { id: 'einsatz.einsatzart', type: 'string', role: 'text', name: 'Einsatzart' },
     { id: 'einsatz.stichwort', type: 'string', role: 'text', name: 'Alarmstichwort' },
     { id: 'einsatz.ort', type: 'string', role: 'text', name: 'Ort' },
     { id: 'einsatz.ortsteil', type: 'string', role: 'text', name: 'Ortsteil' },
-    { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
-    { id: 'einsatz.sondersignal', type: 'string', role: 'text', name: 'Sondersignal' },
-    { id: 'einsatz.zeitstempel', type: 'string', role: 'date', name: 'Alarmzeitstempel' },
-    { id: 'einsatz.einsatznummer', type: 'string', role: 'text', name: 'Einsatznummer' },
-    { id: 'einsatz.objekt', type: 'string', role: 'text', name: 'Objekt' },
-    { id: 'einsatz.objektteil', type: 'string', role: 'text', name: 'Objektteil' },
     { id: 'einsatz.strasse', type: 'string', role: 'text', name: 'Straße' },
     { id: 'einsatz.hausnummer', type: 'string', role: 'text', name: 'Hausnummer' },
+    { id: 'einsatz.objekt', type: 'string', role: 'text', name: 'Objekt' },
+    { id: 'einsatz.objektteil', type: 'string', role: 'text', name: 'Objektteil' },
     { id: 'einsatz.einsatzdetails', type: 'string', role: 'text', name: 'Einsatzdetails' },
     { id: 'einsatz.besonderheiten', type: 'string', role: 'text', name: 'Besonderheiten' },
+    { id: 'einsatz.zeitstempel', type: 'string', role: 'date', name: 'Alarmzeitstempel' },
+    { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
+    { id: 'einsatz.einsatznummer', type: 'string', role: 'text', name: 'Einsatznummer' },
+    { id: 'einsatz.sondersignal', type: 'string', role: 'text', name: 'Sondersignal' },
     { id: 'einsatz.permissions', type: 'mixed', role: 'json', name: 'Berechtigungs-Flag der Registrierung' },
-    { id: 'einsatz.emWeitere', type: 'string', role: 'json', name: 'Weitere/überzählige alarmierte Einsatzmittel (JSON)' },
-    { id: 'rueckmeldung.last.json', type: 'string', role: 'json', name: 'Letzte Rückmeldung (JSON)' },
-    { id: 'rueckmeldung.counts.ek', type: 'number', role: 'value', name: 'Rückmeldungen: Einsatzkräfte', def: 0 },
-    { id: 'rueckmeldung.counts.gf', type: 'number', role: 'value', name: 'Rückmeldungen: Gruppenführer', def: 0 },
-    { id: 'rueckmeldung.counts.zf', type: 'number', role: 'value', name: 'Rückmeldungen: Zugführer', def: 0 },
-    { id: 'rueckmeldung.counts.vf', type: 'number', role: 'value', name: 'Rückmeldungen: Verbandsführer', def: 0 },
-    { id: 'rueckmeldung.counts.agt', type: 'number', role: 'value', name: 'Rückmeldungen: Atemschutzgeräteträger', def: 0 },
-    { id: 'rueckmeldung.counts.fzf', type: 'number', role: 'value', name: 'Rückmeldungen: Fahrzeugführer', def: 0 },
-    { id: 'rueckmeldung.counts.ma', type: 'number', role: 'value', name: 'Rückmeldungen: Maschinisten', def: 0 },
-    { id: 'rueckmeldung.counts.med', type: 'number', role: 'value', name: 'Rückmeldungen: Medizinisch/Sanitäter', def: 0 },
-    { id: 'rueckmeldung.counts.gesamt', type: 'number', role: 'value', name: 'Rückmeldungen: Gesamt', def: 0 },
-    { id: 'routen.json', type: 'string', role: 'json', name: 'Routen (JSON)' },
-    { id: 'routen.count', type: 'number', role: 'value', name: 'Anzahl Routen', def: 0 },
-    { id: 'debug.lastError', type: 'string', role: 'json', name: 'Letzte Server-Fehlermeldung (io.error)' },
-    { id: 'debug.serverVersion', type: 'string', role: 'text', name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)' },
+    { id: 'einsatz.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
+    { id: 'einsatz.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
+    // verschachteltes Gesamtobjekt + Historie
+    { id: 'einsatz.json', type: 'string', role: 'json', name: 'Vollständiger aktueller Einsatz inkl. Einsatzmittel/Routen/Rückmeldungen (JSON)' },
+    { id: 'einsatz.history10', type: 'string', role: 'json', name: `Letzte ${HISTORY_SIZE} abgeschlossene Einsätze, gleicher Objekt-Shape wie einsatz.json (JSON-Array)` },
+    // abgeleitete Zähler
+    { id: 'einsatz.routenGesamt', type: 'number', role: 'value', name: 'Anzahl Routen im aktuellen Einsatz', def: 0 },
+    { id: 'einsatz.rueckmeldungGesamt', type: 'number', role: 'value', name: 'Rückmeldungen gesamt im aktuellen Einsatz', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.ek', type: 'number', role: 'value', name: 'Rückmeldungen: Einsatzkräfte', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.gf', type: 'number', role: 'value', name: 'Rückmeldungen: Gruppenführer', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.zf', type: 'number', role: 'value', name: 'Rückmeldungen: Zugführer', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.vf', type: 'number', role: 'value', name: 'Rückmeldungen: Verbandsführer', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.agt', type: 'number', role: 'value', name: 'Rückmeldungen: Atemschutzgeräteträger', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.fzf', type: 'number', role: 'value', name: 'Rückmeldungen: Fahrzeugführer', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.ma', type: 'number', role: 'value', name: 'Rückmeldungen: Maschinisten', def: 0 },
+    { id: 'einsatz.rueckmeldungAnzahl.med', type: 'number', role: 'value', name: 'Rückmeldungen: Medizinisch/Sanitäter', def: 0 },
+    // TTS
     { id: 'tts.last', type: 'string', role: 'json', name: 'Letzte TTS-Ansage (JSON)' },
     { id: 'tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
+    { id: 'tts.history10', type: 'string', role: 'json', name: `Letzte ${HISTORY_SIZE} TTS-Ansagen (JSON-Array)` },
 ];
 
 /* Prüft ob eine monitorID gültig ist (nicht-leer). */
@@ -256,7 +286,8 @@ class WaipWeb extends utils.Adapter {
         this.sessionKeepaliveInterval = null;
         this.sessionCookie = null;
         this.currentEinsatzUuid = null;
-        this.currentRueckmeldungen = [];
+        this.currentEinsatzSnapshot = null; // verschachteltes Objekt -> einsatz.json
+        this.ttsHistory = [];
         this.lastServerVersion = null;
 
         this._lastDisconnectMsg = null;
@@ -276,6 +307,7 @@ class WaipWeb extends utils.Adapter {
         this.url = (this.config.url || DEFAULT_URL).trim();
         this.monitorID = this.config.monitorID !== undefined && this.config.monitorID !== null ? String(this.config.monitorID).trim() : '';
 
+        await this.cleanupObsoleteObjects();
         await this.initObjects();
         // Session-Cookie holen, bevor die erste Socket.IO-Verbindung aufgebaut wird
         await this.refreshSessionCookie();
@@ -306,6 +338,23 @@ class WaipWeb extends utils.Adapter {
             callback();
         } catch (e) {
             callback();
+        }
+    }
+
+    /* Entfernt State-Objekte aus früheren Versionen (vis.*, json.*, geo.*, rueckmeldung.counts.*, ...),
+       die durch die Umstrukturierung in 0.4.0 ersetzt wurden. setObjectNotExistsAsync legt neue
+       Objekte an, löscht aber nie alte - das übernehmen wir hier einmalig beim Start. */
+    async cleanupObsoleteObjects() {
+        for (const id of OBSOLETE_OBJECT_IDS) {
+            try {
+                const obj = await this.getObjectAsync(id);
+                if (obj) {
+                    await this.delObjectAsync(id);
+                    this.log.info(`Veraltetes State-Objekt aus vorheriger Version entfernt: ${id}`);
+                }
+            } catch (e) {
+                /* ignore - Objekt existierte vermutlich nicht */
+            }
         }
     }
 
@@ -502,33 +551,6 @@ class WaipWeb extends utils.Adapter {
         }
     }
 
-    /* Schiebt einen Eintrag in die History (last10). */
-    async historyPush(data, lat, lon) {
-        let h = [];
-        try {
-            const st = await this.getStateAsync('history.last10');
-            const raw = st && st.val ? st.val : '[]';
-            h = JSON.parse(raw || '[]');
-        } catch (e) {
-            h = [];
-        }
-        const entry = {
-            time: new Date().toISOString(),
-            id: data?.id || '',
-            stichwort: data?.stichwort || '',
-            ort: data?.ort || '',
-            lat: lat === null || lat === undefined ? null : lat,
-            lon: lon === null || lon === undefined ? null : lon,
-        };
-        h.unshift(entry);
-        h = h.slice(0, this.HISTORY_SIZE);
-        try {
-            await this.setStateAsync('history.last10', JSON.stringify(h), true);
-        } catch (e) {
-            this.safeWarn('historyPush.setState', e);
-        }
-    }
-
     /* Prüft ob eine eingehende Payload eindeutig einem Monitor zuordenbar ist und mit currentMonitor übereinstimmt. */
     payloadMonitorMatch(p) {
         if (!p || typeof p !== 'object') return null;
@@ -595,6 +617,62 @@ class WaipWeb extends utils.Adapter {
         };
     }
 
+    /* Schreibt this.currentEinsatzSnapshot komplett (inkl. verschachtelter Arrays) nach einsatz.json. */
+    async persistEinsatzSnapshot() {
+        try {
+            await this.setStateAsync('einsatz.json', JSON.stringify(this.currentEinsatzSnapshot), true);
+        } catch (e) {
+            this.safeWarn('persistEinsatzSnapshot', e);
+        }
+    }
+
+    /* Legt den aktuellen Einsatz-Snapshot als abgeschlossenen Eintrag vorne in einsatz.history10 ab
+       (z.B. bei io.standby oder wenn ein neuer Einsatz beginnt, ohne dass zuvor io.standby kam).
+       Dedupliziert über die uuid, damit derselbe Einsatz nicht doppelt eingetragen wird, falls
+       sowohl io.standby als auch der nächste io.new_waip diese Methode auslösen. */
+    async pushEinsatzToHistory() {
+        try {
+            if (!this.currentEinsatzSnapshot || !this.currentEinsatzSnapshot.uuid) return;
+            const st = await this.getStateAsync('einsatz.history10');
+            let arr = [];
+            try {
+                arr = st && st.val ? JSON.parse(st.val) : [];
+            } catch (_) {
+                arr = [];
+            }
+            if (arr.length && arr[0] && arr[0].uuid === this.currentEinsatzSnapshot.uuid) return;
+            arr.unshift(this.currentEinsatzSnapshot);
+            if (arr.length > this.HISTORY_SIZE) arr = arr.slice(0, this.HISTORY_SIZE);
+            await this.setStateAsync('einsatz.history10', JSON.stringify(arr), true);
+        } catch (e) {
+            this.safeWarn('pushEinsatzToHistory', e);
+        }
+    }
+
+    /* Berechnet aus den im Snapshot gesammelten Rückmeldungen die Zähler pro Rolle/Fähigkeit
+       (analog zu den Badges EK/GF/ZF/VF/AGT/FZF/MA/MED/Gesamt der Weboberfläche) und
+       aktualisiert einsatz.rueckmeldungAnzahl.* sowie einsatz.rueckmeldungGesamt. */
+    async updateRueckmeldungCounts() {
+        const list = (this.currentEinsatzSnapshot && this.currentEinsatzSnapshot.rueckmeldungen) || [];
+        const counts = { ek: 0, gf: 0, zf: 0, vf: 0, agt: 0, fzf: 0, ma: 0, med: 0 };
+        for (const r of list) {
+            if (r.rmld_role === 'team_member') counts.ek++;
+            else if (r.rmld_role === 'crew_leader') counts.gf++;
+            else if (r.rmld_role === 'division_chief') counts.zf++;
+            else if (r.rmld_role === 'group_commander') counts.vf++;
+            if (Number(r.rmld_capability_agt) > 0) counts.agt++;
+            if (Number(r.rmld_capability_fzf) > 0) counts.fzf++;
+            if (Number(r.rmld_capability_ma) > 0) counts.ma++;
+            if (Number(r.rmld_capability_med) > 0) counts.med++;
+        }
+        const tasks = RUECKMELDUNG_ANZAHL_KEYS.map((k) => this.setStateAsync(`einsatz.rueckmeldungAnzahl.${k}`, counts[k], true));
+        tasks.push(this.setStateAsync('einsatz.rueckmeldungGesamt', list.length, true));
+        const results = await Promise.allSettled(tasks);
+        for (const r of results) {
+            if (r.status === 'rejected') this.safeWarn('Rückmeldung-Zähler setzen', r.reason);
+        }
+    }
+
     /* Handler für eingehende Alarme (io.new_waip). */
     async handleAlarm(incoming) {
         try {
@@ -611,13 +689,18 @@ class WaipWeb extends utils.Adapter {
                 /* ignore */
             }
 
-            // Neuer Einsatz (andere uuid als der aktuell verfolgte) -> Rückmeldungsliste/Zähler
-            // zurücksetzen. Bei einer bloßen Aktualisierung desselben Einsatzes (gleiche uuid,
-            // z.B. Korrektur der Besonderheiten) bleiben bereits erfasste Rückmeldungen bewusst
-            // erhalten - anders als die Live-Webseite, die bei JEDEM io.new_waip zurücksetzt.
-            if (data.uuid && data.uuid !== this.currentEinsatzUuid) {
+            // Neuer Einsatz (andere uuid als der aktuell verfolgte) -> vorherigen Snapshot (falls
+            // noch nicht per io.standby archiviert) sichern und mit leeren Listen neu beginnen.
+            // Bei einer bloßen Aktualisierung desselben Einsatzes (gleiche uuid, z.B. Korrektur
+            // der Besonderheiten) bleiben bereits erfasste Routen/Rückmeldungen bewusst erhalten -
+            // anders als die Live-Webseite, die bei JEDEM io.new_waip zurücksetzt.
+            const isNewEinsatz = data.uuid && data.uuid !== this.currentEinsatzUuid;
+            if (isNewEinsatz) {
+                await this.pushEinsatzToHistory();
                 this.currentEinsatzUuid = data.uuid;
-                await this.resetRueckmeldungen();
+                this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+            } else if (!this.currentEinsatzSnapshot) {
+                this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
             }
 
             let lat = null;
@@ -629,28 +712,28 @@ class WaipWeb extends utils.Adapter {
 
             if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
                 try {
-                    await this.setStateAsync('geo.latitude', lat, true);
+                    await this.setStateAsync('einsatz.latitude', lat, true);
                 } catch (e) {
-                    this.safeWarn('geo.latitude.setState', e);
+                    this.safeWarn('einsatz.latitude.setState', e);
                 }
                 try {
-                    await this.setStateAsync('geo.longitude', lon, true);
+                    await this.setStateAsync('einsatz.longitude', lon, true);
                 } catch (e) {
-                    this.safeWarn('geo.longitude.setState', e);
+                    this.safeWarn('einsatz.longitude.setState', e);
                 }
-                await this.setField('geo.position', { lat, lon });
+                this.currentEinsatzSnapshot.position = { lat, lon };
             } else {
                 try {
-                    await this.setStateAsync('geo.latitude', null, true);
+                    await this.setStateAsync('einsatz.latitude', null, true);
                 } catch (e) {
                     /* ignore */
                 }
                 try {
-                    await this.setStateAsync('geo.longitude', null, true);
+                    await this.setStateAsync('einsatz.longitude', null, true);
                 } catch (e) {
                     /* ignore */
                 }
-                await this.setField('geo.position', null);
+                this.currentEinsatzSnapshot.position = null;
             }
 
             try {
@@ -658,83 +741,63 @@ class WaipWeb extends utils.Adapter {
             } catch (e) {
                 this.safeWarn('status.alarmAktiv.setState', e);
             }
-            await this.setField('json.raw', data);
-            await this.setField('json.einsatz', data);
-            await this.historyPush(data, lat, lon);
 
-            const tasks = Object.keys(data)
-                .filter((k) => this.ALLOWED_EINSATZ_FIELDS.includes(k))
-                .map((k) => this.setField(`einsatz.${k}`, data[k]));
-            // Alarmierte Einsatzmittel (Fahrzeuge/Kräfte) getrennt ablegen
-            if (data.em_alarmiert !== undefined) tasks.push(this.setField('vis.fahrzeugTabelle', data.em_alarmiert));
-            if (data.em_weitere !== undefined) tasks.push(this.setField('einsatz.emWeitere', data.em_weitere));
+            // flache Felder setzen und gleichzeitig im Snapshot mitführen
+            const tasks = [];
+            for (const k of this.ALLOWED_EINSATZ_FIELDS) {
+                if (Object.prototype.hasOwnProperty.call(data, k)) {
+                    this.currentEinsatzSnapshot[k] = data[k];
+                    tasks.push(this.setField(`einsatz.${k}`, data[k]));
+                }
+            }
+            if (data.em_alarmiert !== undefined) this.currentEinsatzSnapshot.emAlarmiert = data.em_alarmiert;
+            if (data.em_weitere !== undefined) this.currentEinsatzSnapshot.emWeitere = data.em_weitere;
+
             const results = await Promise.allSettled(tasks);
             for (const r of results) {
                 if (r.status === 'rejected') this.safeWarn('Einsatz-Feld setzen', r.reason);
             }
+
+            await this.persistEinsatzSnapshot();
         } catch (e) {
             this.safeWarn('handleAlarm', e);
         }
     }
 
-    /* Setzt Rückmeldungsliste und -Zähler für den aktuell verfolgten Einsatz zurück
-       (bei neuem Einsatz oder io.standby). */
-    async resetRueckmeldungen() {
-        this.currentRueckmeldungen = [];
-        await this.setField('vis.rueckmeldungenTabelle', []);
-        await this.updateRueckmeldungCounts();
-    }
-
-    /* Berechnet aus this.currentRueckmeldungen die Zähler pro Rolle/Fähigkeit
-       (analog zu den Badges EK/GF/ZF/VF/AGT/FZF/MA/MED/Gesamt der Weboberfläche). */
-    async updateRueckmeldungCounts() {
-        const counts = { ek: 0, gf: 0, zf: 0, vf: 0, agt: 0, fzf: 0, ma: 0, med: 0 };
-        for (const r of this.currentRueckmeldungen) {
-            if (r.rmld_role === 'team_member') counts.ek++;
-            else if (r.rmld_role === 'crew_leader') counts.gf++;
-            else if (r.rmld_role === 'division_chief') counts.zf++;
-            else if (r.rmld_role === 'group_commander') counts.vf++;
-            if (Number(r.rmld_capability_agt) > 0) counts.agt++;
-            if (Number(r.rmld_capability_fzf) > 0) counts.fzf++;
-            if (Number(r.rmld_capability_ma) > 0) counts.ma++;
-            if (Number(r.rmld_capability_med) > 0) counts.med++;
-        }
-        const tasks = Object.keys(counts).map((k) => this.setStateAsync(`rueckmeldung.counts.${k}`, counts[k], true));
-        tasks.push(this.setStateAsync('rueckmeldung.counts.gesamt', this.currentRueckmeldungen.length, true));
-        const results = await Promise.allSettled(tasks);
-        for (const r of results) {
-            if (r.status === 'rejected') this.safeWarn('Rückmeldung-Zähler setzen', r.reason);
-        }
-    }
-
-    /* Handler für Rückmeldungen (io.new_rmld). */
+    /* Handler für Rückmeldungen (io.new_rmld). Werden im Snapshot des aktuellen Einsatzes
+       gesammelt (dedupliziert über rmld_uuid) statt in einem separaten "letzte Rückmeldung"-State. */
     async handleRueckmeldung(incoming) {
         try {
             const data = normalizeData(incoming || {});
-            await this.setField('rueckmeldung.last.json', data);
 
-            // Rückmeldungen für einen anderen (alten) Einsatz nicht in die aktuelle
-            // Liste/Zähler mit aufnehmen (last.json wird trotzdem immer aktualisiert).
+            if (!this.currentEinsatzSnapshot) this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+            if (!Array.isArray(this.currentEinsatzSnapshot.rueckmeldungen)) this.currentEinsatzSnapshot.rueckmeldungen = [];
+
+            // Rückmeldungen für einen anderen (alten) Einsatz nicht mit aufnehmen.
             if (data.waip_uuid && this.currentEinsatzUuid && data.waip_uuid !== this.currentEinsatzUuid) {
                 this.log.debug(`Rückmeldung für abweichenden Einsatz ${data.waip_uuid} ignoriert (aktuell=${this.currentEinsatzUuid})`);
                 return;
             }
 
+            const list = this.currentEinsatzSnapshot.rueckmeldungen;
             if (data.rmld_uuid) {
-                const idx = this.currentRueckmeldungen.findIndex((r) => r.rmld_uuid === data.rmld_uuid);
-                if (idx >= 0) this.currentRueckmeldungen[idx] = data;
-                else this.currentRueckmeldungen.push(data);
+                const idx = list.findIndex((r) => r.rmld_uuid === data.rmld_uuid);
+                if (idx >= 0) list[idx] = data;
+                else list.push(data);
             } else {
-                this.currentRueckmeldungen.push(data);
+                list.push(data);
             }
-            await this.setField('vis.rueckmeldungenTabelle', this.currentRueckmeldungen);
+
+            await this.persistEinsatzSnapshot();
             await this.updateRueckmeldungCounts();
         } catch (e) {
             this.safeWarn('handleRueckmeldung', e);
         }
     }
 
-    /* Handler für Standby (io.standby) - Einsatz beendet / Monitor im Ruhezustand. */
+    /* Handler für Standby (io.standby) - Einsatz beendet / Monitor im Ruhezustand.
+       Die zuletzt bekannten Einsatzdaten (einsatz.*, einsatz.json, Zähler) bleiben bewusst
+       stehen, bis ein neuer Einsatz eintrifft - nur alarmAktiv wird zurückgesetzt. */
     async handleStandby() {
         try {
             this.log.info('Standby empfangen - Einsatz beendet bzw. Monitor im Ruhezustand');
@@ -744,8 +807,7 @@ class WaipWeb extends utils.Adapter {
             } catch (e) {
                 this.safeWarn('status.alarmAktiv.setState', e);
             }
-            this.currentEinsatzUuid = null;
-            await this.resetRueckmeldungen();
+            await this.pushEinsatzToHistory();
         } catch (e) {
             this.safeWarn('handleStandby', e);
         }
@@ -783,25 +845,46 @@ class WaipWeb extends utils.Adapter {
         }
     }
 
-    /* Handler für Routen (io.routes). */
+    /* Handler für Routen (io.routes). Routen sind der aktuell gültige Satz für den laufenden
+       Einsatz (wird bei jedem Event ersetzt, nicht akkumuliert) und liegt daher als Array
+       innerhalb von einsatz.json.routen[]. */
     async handleRoutes(incoming) {
         try {
             let data = incoming;
             if (Array.isArray(incoming)) data = incoming.map((i) => normalizeData(i));
-            else if (typeof incoming === 'object') data = normalizeData(incoming);
-            await this.setField('routen.json', data);
-            await this.setField('routen.count', Array.isArray(data) ? data.length : 0);
+            else if (typeof incoming === 'object' && incoming !== null) data = normalizeData(incoming);
+
+            if (!this.currentEinsatzSnapshot) this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+            this.currentEinsatzSnapshot.routen = Array.isArray(data) ? data : data ? [data] : [];
+
+            await this.persistEinsatzSnapshot();
+            try {
+                await this.setStateAsync('einsatz.routenGesamt', this.currentEinsatzSnapshot.routen.length, true);
+            } catch (e) {
+                this.safeWarn('einsatz.routenGesamt.setState', e);
+            }
         } catch (e) {
             this.safeWarn('handleRoutes', e);
         }
     }
 
-    /* Handler für TTS-Events (io.playtts). */
+    /* Handler für TTS-Events (io.playtts). Payload ist laut client_waip.js nur eine URL
+       (direkt als audio.src verwendet), daher kein Einsatzbezug/keine weiteren Felder. */
     async handleTTS(incoming) {
         try {
             const data = normalizeData(incoming || {});
+            const ts = new Date().toISOString();
             await this.setField('tts.last', data);
-            await this.setField('tts.lastTimestamp', new Date().toISOString());
+            await this.setField('tts.lastTimestamp', ts);
+
+            if (!Array.isArray(this.ttsHistory)) this.ttsHistory = [];
+            this.ttsHistory.unshift({ zeitstempel: ts, url: data });
+            if (this.ttsHistory.length > this.HISTORY_SIZE) this.ttsHistory = this.ttsHistory.slice(0, this.HISTORY_SIZE);
+            try {
+                await this.setStateAsync('tts.history10', JSON.stringify(this.ttsHistory), true);
+            } catch (e) {
+                this.safeWarn('tts.history10.setState', e);
+            }
         } catch (e) {
             this.safeWarn('handleTTS', e);
         }

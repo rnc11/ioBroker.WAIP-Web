@@ -15,7 +15,7 @@ Routen und TTS-Ansagen als ioBroker-States ab.
 - Registrierungs-Timeout mit Audit-Log (`debug.monitorAudit`)
 - Normalisierung von Geodaten (wgs84-Felder, `position` oder
   GeoJSON-`geometry` → Mittelpunkt)
-- History der letzten 10 Einsätze (`history.last10`)
+- History der letzten 10 abgeschlossenen Einsätze (`einsatz.history10`)
 - Getrennte Handler für Alarm (`io.new_waip`), Rückmeldung (`io.new_rmld`),
   Routen (`io.routes`) und TTS (`io.playtts`)
 - Automatisches Session-Cookie-Management: Der WAIP-Server erwartet einen
@@ -28,11 +28,13 @@ Routen und TTS-Ansagen als ioBroker-States ab.
   wird zurückgesetzt), `io.error` (Server-Fehlermeldungen → `debug.lastError`)
   und `io.version` (Server-Neustart-Erkennung → Session-Refresh + Reconnect)
 - Vollständige Einsatzdaten laut offiziellem Web-Frontend (`client_waip.js`):
-  Alarmzeitstempel, Einsatznummer, Objekt/Objektteil, Adresse, Besonderheiten,
-  alarmierte Einsatzmittel (`vis.fahrzeugTabelle`)
-- Aggregierte Rückmeldungs-Zähler pro Rolle/Fähigkeit (EK/GF/ZF/VF/AGT/FZF/MA/MED
-  + Gesamt) sowie vollständige Rückmeldungsliste des aktuellen Einsatzes
-  (`vis.rueckmeldungenTabelle`), analog zu den Live-Zählern der Weboberfläche
+  Alarmzeitstempel, Einsatznummer, Objekt/Objektteil, Adresse, Besonderheiten
+  als eigene flache States, plus ein verschachteltes Gesamtobjekt (`einsatz.json`)
+  mit alarmierten Einsatzmitteln, Routen und allen Rückmeldungen als JSON-Arrays
+  (Rückmeldungen und Routen sind pro Einsatz Listen – 1:n-Beziehung)
+- Aggregierte Rückmeldungs-Zähler pro Rolle/Fähigkeit (`einsatz.rueckmeldungAnzahl.*`
+  für EK/GF/ZF/VF/AGT/FZF/MA/MED, `einsatz.rueckmeldungGesamt`) und
+  `einsatz.routenGesamt`, analog zu den Live-Zählern der Weboberfläche
 
 ## Konfiguration
 
@@ -46,21 +48,37 @@ In der Admin-Oberfläche der Adapterinstanz:
 | Wiederverbindungs-Verzögerung (s) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5` |
 | Session-Keepalive-Intervall (s) | Wie oft der Session-Cookie per `GET /session/keepalive` erneuert wird | `300` (5 Min) |
 
-## States (Auszug, unter `waip-web.0.*`)
+## States (unter `waip-web.0.*`)
 
-- `info.connection`, `status.connected`, `status.alarmAktiv`, `status.restzeit`
-- `status.registeredMonitor`, `status.registrationAccepted`
-- `json.raw`, `json.einsatz`
-- `geo.latitude`, `geo.longitude`, `geo.position`
-- `einsatz.id` / `uuid` / `einsatzart` / `stichwort` / `ort` / `ortsteil` / `ablaufzeit` / `sondersignal`
-- `einsatz.zeitstempel` / `einsatznummer` / `objekt` / `objektteil` / `strasse` / `hausnummer` /
-  `einsatzdetails` / `besonderheiten` / `permissions` / `emWeitere`
-- `vis.fahrzeugTabelle` (alarmierte Einsatzmittel), `vis.rueckmeldungenTabelle` (alle Rückmeldungen des Einsatzes)
-- `rueckmeldung.last.json`, `rueckmeldung.counts.ek` / `gf` / `zf` / `vf` / `agt` / `fzf` / `ma` / `med` / `gesamt`
-- `routen.json`, `routen.count`, `tts.last`, `tts.lastTimestamp`
-- `history.last10`
-- `debug.lastEvent`, `debug.normalizedPosition`, `debug.rawPayloadShort`, `debug.ignoredCount`,
-  `debug.monitorAudit`, `debug.sessionExpires`, `debug.lastError`, `debug.serverVersion`
+Rückmeldungen und Routen sind pro Einsatz Listen (1:n) und liegen deshalb als
+verschachtelte JSON-Arrays in `einsatz.json` bzw. in jedem Eintrag von
+`einsatz.history10` – ergänzt um schnell bindbare Zähler, damit VIS-Bindings
+und Trigger ohne JSON-Parsing auskommen.
+
+**info** – `connection`
+
+**status** – `connected`, `alarmAktiv`, `restzeit`, `registeredMonitor`, `registrationAccepted`
+
+**einsatz** – flache Felder des aktuellen Einsatzes:
+`id`, `uuid`, `einsatzart`, `stichwort`, `ort`, `ortsteil`, `strasse`, `hausnummer`,
+`objekt`, `objektteil`, `einsatzdetails`, `besonderheiten`, `zeitstempel`, `ablaufzeit`,
+`einsatznummer`, `sondersignal`, `permissions`, `latitude`, `longitude`
+
+- `einsatz.json` – vollständiges Einsatz-Objekt inkl. `emAlarmiert[]`, `emWeitere[]`,
+  `routen[]`, `rueckmeldungen[]` (JSON)
+- `einsatz.history10` – letzte 10 abgeschlossene Einsätze, gleicher Objekt-Shape wie
+  `einsatz.json` (JSON-Array, geschrieben bei `io.standby` bzw. beim nächsten neuen Einsatz)
+- `einsatz.routenGesamt`, `einsatz.rueckmeldungGesamt` – Zähler
+- `einsatz.rueckmeldungAnzahl.ek` / `gf` / `zf` / `vf` / `agt` / `fzf` / `ma` / `med`
+
+**tts** – `last`, `lastTimestamp`, `history10`
+
+**debug** – `lastEvent`, `normalizedPosition`, `rawPayloadShort`, `ignoredCount`,
+`monitorAudit`, `sessionExpires`, `lastError`, `serverVersion`
+
+JSON-interne Schlüssel innerhalb von `einsatz.json` (`emAlarmiert`, `emWeitere`, `routen`,
+`rueckmeldungen`) bleiben kleingeschrieben – das sind Objekteigenschaften im JSON-Wert,
+keine eigenen ioBroker-States.
 
 ## Installation / Entwicklung
 
@@ -76,6 +94,25 @@ Verzeichnis installieren`) oder per Symlink in die ioBroker-`node_modules`
 einbinden.
 
 ## Changelog
+
+### 0.4.0 (2026-08-20)
+
+- **Objektstruktur überarbeitet:** Rückmeldungen und Routen sind pro Einsatz
+  Listen (1:n) und liegen jetzt als verschachtelte JSON-Arrays in einem
+  Gesamtobjekt `einsatz.json` (inkl. `emAlarmiert[]`, `emWeitere[]`, `routen[]`,
+  `rueckmeldungen[]`) statt in mehreren losen States.
+- `einsatz.history10` ersetzt `history.last10` – jetzt mit dem **vollständigen**
+  verschachtelten Einsatz-Objekt pro Eintrag statt nur 6 reduzierten Feldern.
+- Neue Zähler direkt unter `einsatz.*`: `routenGesamt`, `rueckmeldungGesamt`,
+  `rueckmeldungAnzahl.{ek,gf,zf,vf,agt,fzf,ma,med}` (ersetzt `rueckmeldung.counts.*`).
+- `einsatz.latitude`/`einsatz.longitude` ersetzen `geo.latitude`/`geo.longitude`
+  (Position liegt zusätzlich in `einsatz.json.position`).
+- Neuer State `tts.history10` (letzte 10 TTS-Ansagen).
+- **Entfernt:** kompletter `vis.*`-Kanal, `json.raw`, `json.einsatz`,
+  `geo.position`, `rueckmeldung.last.json`, `routen.json`, `routen.count`,
+  `einsatz.emWeitere` (jetzt Teil von `einsatz.json`).
+- Der Adapter entfernt beim ersten Start nach dem Update alle veralteten
+  Objekte aus der vorherigen Struktur automatisch (`cleanupObsoleteObjects()`).
 
 ### 0.3.4 (2026-08-20)
 
