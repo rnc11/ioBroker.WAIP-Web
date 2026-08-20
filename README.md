@@ -56,6 +56,15 @@ einbinden.
 
 ## Changelog
 
+### 0.1.1 (2026-08-20)
+
+- Favicon von `wachalarm.leitstelle-lausitz.de` als Adapter-Icon
+  (`admin/waip-web.png`) übernommen, ersetzt den bisherigen Platzhalter
+- Repository auf GitHub von `ioBroker.WAIP-Web` auf `ioBroker.waip-web`
+  umbenannt (Großbuchstaben im Repo-Namen verhinderten die Installation
+  per `iobroker url` mit `Process exited with code 25`); alle URLs in
+  `package.json`/`io-package.json` entsprechend angepasst
+
 ### 0.1.0 (2026-08-20)
 
 - Erste Version: Portierung des ursprünglichen "WAIP Instrumented v3.9"
