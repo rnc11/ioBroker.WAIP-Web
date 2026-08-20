@@ -82,14 +82,6 @@
       "0.2.0": {
         "en": "Automatic session cookie management (GET /session/keepalive) so the alarm feed keeps working without a real browser session",
         "de": "Automatisches Session-Cookie-Management (GET /session/keepalive), damit die Alarm-Zustellung auch ohne echte Browsersitzung weiterläuft"
-      },
-      "0.1.1": {
-        "en": "Use the WAIP site favicon as adapter icon; fix repository casing in URLs",
-        "de": "Favicon der WAIP-Seite als Adapter-Icon übernommen; Repository-Schreibweise in URLs korrigiert"
-      },
-      "0.1.0": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung"
       }
     },
     "title": "WAIP-Web",
