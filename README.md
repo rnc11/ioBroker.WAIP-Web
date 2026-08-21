@@ -165,7 +165,7 @@ live data. The most recently finished incident remains available via
 | `ablaufzeit` | string (date) | End of the standby display duration, basis for `status.restzeit` |
 | `einsatznummer` | string | Incident number (if assigned by the server) |
 | `sondersignal` | number | `1` = special signal (lights & siren), otherwise none |
-| `permissions` | string | The registration's permission flag (full access to the detail map yes/no); stringified/JSON if the server sends a non-primitive value |
+| `permissions` | string | The registration's permission flag (full access to the detail map yes/no); always stringified (e.g. `"true"`), since the server sends it as a raw boolean |
 | `latitude` / `longitude` | number | Incident location (normalized from wgs84 fields or GeoJSON centroid) |
 | `json` | string (JSON) | Complete incident object: all fields above plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
 | `history10` | string (JSON array) | Last 10 completed incidents, same object shape as `json`, written on `io.standby` |
@@ -206,6 +206,17 @@ JSON-internal keys inside `einsatz.json` (`emAlarmiert`, `emWeitere`,
 inside the JSON value, not their own ioBroker states.
 
 ## Changelog
+
+### 0.7.12 (2026-08-21)
+
+- Fixed **[E3005]**: `einsatz.permissions` is declared as
+  `common.type: "string"`, but `setField()` passed raw
+  booleans/numbers through unchanged (the WAIP server sends this
+  field as a raw boolean flag), so the stored `val` didn't match the
+  declared type. `setField()` now looks up the declared type and
+  always stringifies values for string-typed states, regardless of
+  the incoming JS type - found by the `ioBroker.repositories` object
+  structure check.
 
 ### 0.7.11 (2026-08-21)
 

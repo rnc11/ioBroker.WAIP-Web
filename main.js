@@ -255,6 +255,8 @@ const STATE_DEFS = [
     { id: 'tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
     { id: 'tts.history10', type: 'string', role: 'json', name: `Letzte ${HISTORY_SIZE} TTS-Ansagen (JSON-Array)` },
 ];
+// Schneller Zugriff von setField() auf den deklarierten Typ eines States (siehe dort).
+const STATE_DEF_BY_ID = new Map(STATE_DEFS.map(def => [def.id, def]));
 
 /* Prüft ob eine monitorID gültig ist (nicht-leer). */
 function isValidMonitor(mon) {
@@ -960,7 +962,16 @@ class WaipWeb extends utils.Adapter {
     async setField(path, val) {
         try {
             let toSet;
-            if (val === null || typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+            const def = STATE_DEF_BY_ID.get(path);
+            if (val === null) {
+                toSet = null;
+            } else if (def && def.type === 'string') {
+                // Der State ist als "string" deklariert (z.B. role "json") - unabhängig vom
+                // tatsächlichen JS-Typ der Serverantwort (etwa ein rohes Boolean/Number-Flag
+                // wie bei einsatz.permissions) muss "val" den deklarierten Typ einhalten,
+                // sonst schlägt die ioBroker-Objektstrukturprüfung fehl (E3005).
+                toSet = typeof val === 'string' ? val : JSON.stringify(val);
+            } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
                 toSet = val;
             } else {
                 toSet = JSON.stringify(val);
