@@ -1,13 +1,16 @@
 {
     "type": "panel",
+    "i18n": true,
     "items": {
         "url": {
             "type": "text",
             "label": "WAIP server URL",
             "help": "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)",
+            "xs": 12,
             "sm": 12,
             "md": 8,
-            "lg": 6
+            "lg": 6,
+            "xl": 6
         },
         "monitorID": {
             "type": "selectSendTo",
@@ -17,9 +20,11 @@
             "manual": true,
             "label": "Monitor ID",
             "help": "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.",
+            "xs": 12,
             "sm": 12,
             "md": 12,
-            "lg": 12
+            "lg": 12,
+            "xl": 12
         },
         "_divider1": {
             "type": "divider"
@@ -30,9 +35,11 @@
             "help": "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.",
             "min": 1,
             "max": 120,
+            "xs": 12,
             "sm": 12,
             "md": 6,
-            "lg": 4
+            "lg": 4,
+            "xl": 4
         },
         "reconnectDelaySec": {
             "type": "number",
@@ -40,9 +47,11 @@
             "help": "Wait time before the adapter automatically reconnects after a lost connection or a connection error.",
             "min": 1,
             "max": 120,
+            "xs": 12,
             "sm": 12,
             "md": 6,
-            "lg": 4
+            "lg": 4,
+            "xl": 4
         }
     }
 }
