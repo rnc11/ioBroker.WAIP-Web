@@ -206,6 +206,13 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.8 (2026-08-21)
+
+- Fixed **[E5018]**: added the missing `.releaseconfig.json` (`plugins:
+  iobroker, license`) required now that `@alcalzone/release-script` is
+  a dev dependency - caught by the `ioBroker.repositories` "ADD TO
+  LATEST" submission check.
+
 ### 0.7.7 (2026-08-21)
 
 - Fixed **[E254]**: removed the orphaned `0.7.5` entry from
@@ -241,22 +248,6 @@ inside the JSON value, not their own ioBroker states.
   the first one filed by the `.github/dependabot.yml` added in 0.7.3).
   Purely additive on the action's side (adds an optional `test-command:
   'false'` flag), no behavior change for us.
-
-### 0.7.3 (2026-08-21)
-
-*(Never tagged/published to npm - superseded directly by 0.7.4; kept
-here for a complete history of what was worked on.)*
-
-- Addressed further findings from the official ioBroker Check and
-  Service Bot (which re-scans the repository after every push):
-  - Removed the deprecated `common.materialize` field from
-    `io-package.json` (superseded by `common.adminUI.config`)
-  - Raised `engines.node` to `>=22` and dropped Node.js 20 (reached
-    End of Life on 2026-04-30) from the CI test matrix
-  - Raised the `admin` dependency to `>=7.8.23`
-  - Moved the `check-and-lint` CI job to Node 24.x
-  - Added `.github/dependabot.yml` for automated dependency updates
-    (weekly `npm`/`github-actions` checks)
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
