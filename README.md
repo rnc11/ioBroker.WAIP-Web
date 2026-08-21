@@ -1,5 +1,11 @@
+![Logo](admin/waip-web.png)
+
 # ioBroker-Adapter (ioBroker.waip-web)
 
+[![NPM version](https://img.shields.io/npm/v/iobroker.waip-web.svg)](https://www.npmjs.com/package/iobroker.waip-web)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.waip-web.svg)](https://www.npmjs.com/package/iobroker.waip-web)
+![Number of Installations (latest)](https://iobroker.live/badges/waip-web-installed.svg)
+![Current version in stable repository](https://iobroker.live/badges/waip-web-stable.svg)
 [![Test and Release](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml)
 
 ## English
@@ -420,6 +426,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.6.10 (2026-08-21)
+
+- Added the adapter logo and npm/installation badges (NPM version,
+  downloads, installed, stable) to the README, matching standard
+  ioBroker adapter conventions. The "installed"/"stable" badges won't
+  show meaningful data until the adapter is listed in the official
+  [ioBroker.repositories](https://github.com/ioBroker/ioBroker.repositories)
+  ("latest" repository PR pending), but will populate automatically once
+  it is.
 
 ### 0.6.9 (2026-08-21)
 
