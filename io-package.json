@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.10",
+    "version": "0.6.10-beta.0",
     "news": {
-      "0.6.10": {
+      "0.6.10-beta.0": {
         "en": "Added the adapter logo and npm/installation badges (NPM version, downloads, installed, stable) to the README, matching standard ioBroker adapter conventions.",
         "de": "Adapter-Logo sowie npm-/Installations-Badges (NPM-Version, Downloads, installiert, stabil) im README ergänzt, passend zur ioBroker-Standardkonvention.",
         "ru": "В README добавлены логотип адаптера и значки npm/установки (версия NPM, загрузки, установлено, стабильная версия) в соответствии со стандартными соглашениями адаптеров ioBroker.",
