@@ -206,6 +206,13 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.7 (2026-08-21)
+
+- Fixed **[E254]**: removed the orphaned `0.7.5` entry from
+  `common.news` - like `0.7.0` and `0.7.3` before it, that version was
+  never actually tagged/published to npm (`0.7.4` was followed directly
+  by `0.7.6`, which is now confirmed live under `latest`).
+
 ### 0.7.6 (2026-08-21)
 
 - Fixed **[W6019]** and **[W0062]**: added `@alcalzone/release-script`
@@ -217,6 +224,8 @@ inside the JSON value, not their own ioBroker states.
   available but not actively used for releasing yet.
 
 ### 0.7.5 (2026-08-21)
+
+*(Also never tagged/published to npm - superseded directly by 0.7.6.)*
 
 - Fixed **[E2004]**: removed the orphaned `0.7.3` entry from
   `common.news` in `io-package.json` - that version (see below) was
@@ -248,30 +257,6 @@ here for a complete history of what was worked on.)*
   - Moved the `check-and-lint` CI job to Node 24.x
   - Added `.github/dependabot.yml` for automated dependency updates
     (weekly `npm`/`github-actions` checks)
-
-### 0.7.2 (2026-08-21)
-
-- README is now English-only (per the official ioBroker adapter checker,
-  which flags mixed-language READMEs); the German version moved to a
-  separate [README.de.md](README.de.md), linked near the top.
-- Moved the License section to the very end of the file (was before the
-  Changelog) - the checker requires License to be the last section.
-- `package.json`: raised `engines.node` to `>=20` and `@iobroker/adapter-core`
-  to `^3.4.1`.
-- `io-package.json`: raised the `js-controller` dependency to `>=6.0.11`
-  and the `admin` dependency to `>=7.6.17`; removed the `0.7.0` news
-  entry (never published to npm, only `0.7.1` and later actually are).
-- `admin/jsonConfig.json`: added the root `"i18n": true` attribute (now
-  required since the fields resolve translations from `admin/i18n/*.json`)
-  and explicit `xs`/`xl` grid sizes on all fields.
-- `main.js`: `require('http')`/`require('https')`/`require('url')` now
-  use the `node:` prefix for Node's built-in modules.
-- `.gitignore`: added `.commitinfo`.
-- Removed `.npmignore` - redundant with the `files` allowlist already
-  used in `package.json`.
-- CI: `adapter-tests` now explicitly declares `needs: check-and-lint`;
-  raised the Node.js version used by the `check-and-lint` and `deploy`
-  jobs.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
