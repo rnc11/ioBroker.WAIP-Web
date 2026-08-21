@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.9",
+    "version": "0.6.10",
     "news": {
+      "0.6.10": {
+        "en": "Added the adapter logo and npm/installation badges (NPM version, downloads, installed, stable) to the README, matching standard ioBroker adapter conventions.",
+        "de": "Adapter-Logo sowie npm-/Installations-Badges (NPM-Version, Downloads, installiert, stabil) im README ergänzt, passend zur ioBroker-Standardkonvention.",
+        "ru": "В README добавлены логотип адаптера и значки npm/установки (версия NPM, загрузки, установлено, стабильная версия) в соответствии со стандартными соглашениями адаптеров ioBroker.",
+        "pt": "Adicionados o logotipo do adaptador e os selos de npm/instalação (versão NPM, downloads, instalado, estável) ao README, seguindo as convenções padrão dos adaptadores ioBroker.",
+        "nl": "Adapterlogo en npm-/installatiebadges (NPM-versie, downloads, geïnstalleerd, stabiel) toegevoegd aan de README, conform de standaard ioBroker-adapterconventies.",
+        "fr": "Ajout du logo de l'adaptateur et des badges npm/installation (version NPM, téléchargements, installé, stable) au README, conformément aux conventions standard des adaptateurs ioBroker.",
+        "it": "Aggiunti il logo dell'adapter e i badge npm/installazione (versione NPM, download, installato, stabile) al README, in linea con le convenzioni standard degli adapter ioBroker.",
+        "es": "Se añadieron el logotipo del adaptador y las insignias de npm/instalación (versión de NPM, descargas, instalado, estable) al README, siguiendo las convenciones estándar de los adaptadores de ioBroker.",
+        "pl": "Dodano logo adaptera oraz odznaki npm/instalacji (wersja NPM, pobrania, zainstalowano, stabilna) do README, zgodnie ze standardowymi konwencjami adapterów ioBroker.",
+        "uk": "До README додано логотип адаптера та значки npm/встановлення (версія NPM, завантаження, встановлено, стабільна версія) відповідно до стандартних угод адаптерів ioBroker.",
+        "zh-cn": "已在 README 中添加适配器徽标以及 npm/安装徽章(NPM 版本、下载量、已安装数量、稳定版),符合 ioBroker 适配器的标准约定。"
+      },
       "0.6.9": {
         "en": "Removed common.news entries for versions that were never actually published to npm (0.6.1-0.6.5, 0.6.7 - only version bumps in git, no matching npm release), as reported by the official adapter checker.",
         "de": "common.news-Einträge für Versionen entfernt, die nie tatsächlich bei npm veröffentlicht wurden (0.6.1-0.6.5, 0.6.7 - nur Versionserhöhungen in git, keine passende npm-Veröffentlichung), wie vom offiziellen Adapter-Checker gemeldet.",
