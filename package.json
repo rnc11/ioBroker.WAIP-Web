@@ -24,7 +24,7 @@
     "url": "https://github.com/rnc11/ioBroker.waip-web/issues"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "main": "main.js",
   "files": [

@@ -429,6 +429,9 @@ SOFTWARE.
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+- (copilot) Adapter requires node.js >= 22 now
+
 ### 0.7.1 (2026-08-21)
 
 - Added a License badge to the README.
