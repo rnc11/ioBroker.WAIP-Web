@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.6",
+    "version": "0.7.7",
     "news": {
+      "0.7.7": {
+        "en": "Fixed [E254]: removed the orphaned 0.7.5 news entry - like 0.7.0 and 0.7.3 before it, that version was never actually tagged/published to npm (0.7.4 was followed directly by 0.7.6).",
+        "de": "[E254] behoben: verwaisten 0.7.5-News-Eintrag entfernt - wie zuvor schon 0.7.0 und 0.7.3 wurde diese Version nie tatsächlich getaggt/bei npm veröffentlicht (auf 0.7.4 folgte direkt 0.7.6).",
+        "ru": "Исправлено [E254]: удалена осиротевшая запись новостей 0.7.5 - как и ранее 0.7.0 и 0.7.3, эта версия так и не была помечена тегом/опубликована на npm (после 0.7.4 сразу последовала 0.7.6).",
+        "pt": "Corrigido [E254]: removida a entrada de notícias órfã 0.7.5 - assim como 0.7.0 e 0.7.3 antes, essa versão nunca foi de fato marcada com tag/publicada no npm (0.7.4 foi seguida diretamente por 0.7.6).",
+        "nl": "[E254] opgelost: verweesd 0.7.5-nieuwsitem verwijderd - net als eerder 0.7.0 en 0.7.3 is die versie nooit daadwerkelijk getagd/gepubliceerd op npm (op 0.7.4 volgde direct 0.7.6).",
+        "fr": "Correction de [E254] : suppression de l'entrée de nouvelles orpheline 0.7.5 - comme 0.7.0 et 0.7.3 auparavant, cette version n'a jamais été réellement taguée/publiée sur npm (0.7.4 a été directement suivie de 0.7.6).",
+        "it": "Risolto [E254]: rimossa la voce di news orfana 0.7.5 - come già 0.7.0 e 0.7.3 in precedenza, quella versione non è mai stata effettivamente taggata/pubblicata su npm (a 0.7.4 è seguita direttamente 0.7.6).",
+        "es": "Se corrigió [E254]: se eliminó la entrada de noticias huérfana 0.7.5 - al igual que 0.7.0 y 0.7.3 antes, esa versión nunca se etiquetó/publicó realmente en npm (a 0.7.4 le siguió directamente 0.7.6).",
+        "pl": "Naprawiono [E254]: usunięto osierocony wpis news 0.7.5 - podobnie jak wcześniej 0.7.0 i 0.7.3, ta wersja nigdy nie została faktycznie otagowana/opublikowana w npm (po 0.7.4 nastąpiło bezpośrednio 0.7.6).",
+        "uk": "Виправлено [E254]: видалено осиротілий запис новин 0.7.5 - як і раніше 0.7.0 та 0.7.3, цю версію так і не було позначено тегом/опубліковано на npm (після 0.7.4 одразу йшла 0.7.6).",
+        "zh-cn": "修复了 [E254]:移除了孤立的 0.7.5 新闻条目——与之前的 0.7.0 和 0.7.3 一样,该版本从未真正打过标签/发布到 npm(0.7.4 之后直接跳到了 0.7.6)。"
+      },
       "0.7.6": {
         "en": "Fixed [W6019] and [W0062]: added @alcalzone/release-script and @alcalzone/release-script-plugin-iobroker as dev dependencies (with an npm run release script), and split the README changelog - the 5 most recent entries stay in README.md, everything older moved to a new CHANGELOG_OLD.md. Our existing manual version-bump/tag workflow is unchanged; the release-script tooling is available but not actively used for releasing yet.",
         "de": "[W6019] und [W0062] behoben: @alcalzone/release-script sowie @alcalzone/release-script-plugin-iobroker als Dev-Dependencies ergänzt (mit npm run release-Skript), README-Changelog aufgeteilt - die 5 neuesten Einträge bleiben in README.md, alles Ältere ist in eine neue CHANGELOG_OLD.md ausgelagert. Unser bisheriger manueller Versions-/Tag-Workflow bleibt unverändert; das release-script-Tooling steht bereit, wird aber noch nicht aktiv zum Veröffentlichen genutzt.",
@@ -15,19 +28,6 @@
         "pl": "Naprawiono [W6019] i [W0062]: dodano @alcalzone/release-script oraz @alcalzone/release-script-plugin-iobroker jako zależności deweloperskie (ze skryptem npm run release), a changelog w README podzielono - 5 najnowszych wpisów pozostaje w README.md, wszystko starsze przeniesiono do nowego pliku CHANGELOG_OLD.md. Nasz dotychczasowy ręczny proces podnoszenia wersji/tagowania pozostaje bez zmian; narzędzie release-script jest dostępne, ale nie jest jeszcze aktywnie używane do wydawania wersji.",
         "uk": "Виправлено [W6019] і [W0062]: додано @alcalzone/release-script та @alcalzone/release-script-plugin-iobroker як dev-залежності (зі скриптом npm run release), а changelog у README розділено - 5 найновіших записів залишаються в README.md, усе старіше перенесено до нового файлу CHANGELOG_OLD.md. Наш наявний ручний процес підвищення версії/тегування не змінився; інструмент release-script доступний, але поки що активно не використовується для релізів.",
         "zh-cn": "修复了 [W6019] 和 [W0062]:添加了 @alcalzone/release-script 和 @alcalzone/release-script-plugin-iobroker 作为开发依赖(附带 npm run release 脚本),并拆分了 README 的更新日志——最近的 5 个条目保留在 README.md 中,更早的全部移至新的 CHANGELOG_OLD.md。我们现有的手动版本提升/打标签流程保持不变;release-script 工具已就绪,但目前尚未积极用于发布。"
-      },
-      "0.7.5": {
-        "en": "Fixed [E2004]: removed the orphaned 0.7.3 news entry - that version was never actually tagged/published to npm (0.7.2 was followed directly by 0.7.4). Confirmed via a bot recheck that every other finding from the last two rounds is now fixed.",
-        "de": "[E2004] behoben: verwaisten 0.7.3-News-Eintrag entfernt - diese Version wurde nie tatsächlich getaggt/bei npm veröffentlicht (auf 0.7.2 folgte direkt 0.7.4). Per Bot-Recheck bestätigt, dass alle übrigen Findings der letzten beiden Runden jetzt behoben sind.",
-        "ru": "Исправлено [E2004]: удалена осиротевшая запись новостей 0.7.3 - эта версия так и не была помечена тегом/опубликована на npm (после 0.7.2 сразу последовала 0.7.4). Повторной проверкой бота подтверждено, что все остальные замечания последних двух раундов теперь исправлены.",
-        "pt": "Corrigido [E2004]: removida a entrada de notícias órfã 0.7.3 - essa versão nunca foi de fato marcada com tag/publicada no npm (0.7.2 foi seguida diretamente por 0.7.4). Confirmado por uma nova verificação do bot que todos os outros apontamentos das últimas duas rodadas agora estão corrigidos.",
-        "nl": "[E2004] opgelost: verweesd 0.7.3-nieuwsitem verwijderd - die versie is nooit daadwerkelijk getagd/gepubliceerd op npm (op 0.7.2 volgde direct 0.7.4). Via een herscan van de bot bevestigd dat alle overige bevindingen van de laatste twee rondes nu zijn opgelost.",
-        "fr": "Correction de [E2004] : suppression de l'entrée de nouvelles orpheline 0.7.3 - cette version n'a jamais été réellement taguée/publiée sur npm (0.7.2 a été directement suivie de 0.7.4). Une nouvelle vérification du bot a confirmé que toutes les autres remarques des deux derniers cycles sont désormais corrigées.",
-        "it": "Risolto [E2004]: rimossa la voce di news orfana 0.7.3 - quella versione non è mai stata effettivamente taggata/pubblicata su npm (a 0.7.2 è seguita direttamente 0.7.4). Un nuovo controllo del bot ha confermato che tutte le altre segnalazioni degli ultimi due round sono ora risolte.",
-        "es": "Se corrigió [E2004]: se eliminó la entrada de noticias huérfana 0.7.3 - esa versión nunca se etiquetó/publicó realmente en npm (a 0.7.2 le siguió directamente 0.7.4). Una nueva verificación del bot confirmó que todos los demás hallazgos de las últimas dos rondas ya están corregidos.",
-        "pl": "Naprawiono [E2004]: usunięto osierocony wpis news 0.7.3 - ta wersja nigdy nie została faktycznie otagowana/opublikowana w npm (po 0.7.2 nastąpiło bezpośrednio 0.7.4). Ponowna kontrola bota potwierdziła, że wszystkie pozostałe ustalenia z ostatnich dwóch rund są już naprawione.",
-        "uk": "Виправлено [E2004]: видалено осиротілий запис новин 0.7.3 - цю версію так і не було позначено тегом/опубліковано на npm (після 0.7.2 одразу йшла 0.7.4). Повторна перевірка бота підтвердила, що всі інші зауваження останніх двох раундів тепер виправлені.",
-        "zh-cn": "修复了 [E2004]:移除了孤立的 0.7.3 新闻条目——该版本从未真正打过标签/发布到 npm(0.7.2 之后直接跳到了 0.7.4)。机器人的重新检查已确认最近两轮的其余所有问题现已修复。"
       },
       "0.7.4": {
         "en": "Bumped the ioBroker/testing-action-check GitHub Action used by the check-and-lint CI job from v1 to v2 (Dependabot PR #10) - purely additive (adds an optional test-command: 'false' flag), no behavior change for us.",
