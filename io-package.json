@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.0",
+    "version": "0.7.1",
     "news": {
+      "0.7.1": {
+        "en": "Added a License badge to the README.",
+        "de": "Lizenz-Badge im README ergänzt.",
+        "ru": "В README добавлен значок лицензии.",
+        "pt": "Adicionado um selo de licença ao README.",
+        "nl": "Licentiebadge toegevoegd aan de README.",
+        "fr": "Ajout d'un badge de licence au README.",
+        "it": "Aggiunto un badge di licenza al README.",
+        "es": "Se añadió una insignia de licencia al README.",
+        "pl": "Dodano odznakę licencji do README.",
+        "uk": "До README додано значок ліцензії.",
+        "zh-cn": "已在 README 中添加许可证徽章。"
+      },
       "0.7.0": {
         "en": "Prepared the admin UI for community translation via ioBroker's Weblate: added @iobroker/adapter-dev as a dev dependency, converted admin/jsonConfig.json's label/help fields from inline en/de objects to plain English keys, and added admin/i18n/{en,de,ru,pt,nl,fr,it,es,pl,uk,zh-cn}.json (German curated manually, the rest auto-translated via the official translate-adapter tool). Added a Translation status badge to the README (only shows real data once the adapter is registered on weblate.iobroker.net).",
         "de": "Admin-Oberfläche für die Community-Übersetzung über ioBrokers Weblate vorbereitet: @iobroker/adapter-dev als Dev-Dependency ergänzt, label/help-Felder in admin/jsonConfig.json von Inline-en/de-Objekten auf einfache englische Schlüssel umgestellt, sowie admin/i18n/{en,de,ru,pt,nl,fr,it,es,pl,uk,zh-cn}.json ergänzt (Deutsch manuell kuratiert, der Rest automatisch über das offizielle translate-adapter-Tool übersetzt). Übersetzungsstatus-Badge im README ergänzt (zeigt erst echte Daten, sobald der Adapter bei weblate.iobroker.net registriert ist).",
