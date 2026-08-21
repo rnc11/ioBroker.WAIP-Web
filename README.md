@@ -138,7 +138,8 @@ bindings and triggers don't need JSON parsing.
 | `restzeit` | number (s) | Remaining seconds until `einsatz.ablaufzeit`, updated every second |
 | `registeredMonitor` | string | Monitor ID last registered with the server |
 | `registeredMonitorName` | string | Display name of that monitor, without the ID (e.g. "Leitstelle: Lausitz"); resolved once at startup from the same `/waip/` overview page as the admin dropdown, `null` if it couldn't be resolved |
-| `registrationAccepted` | mixed | `"pending"` right after connecting, `true` once the first event was received, otherwise `false` once the registration timeout elapses |
+| `registrationAccepted` | boolean | `true` once the first event was received, `false` right after connecting or once the registration timeout elapses |
+| `registrationPending` | boolean | `true` right after connecting while a response from the server is still awaited, `false` once accepted or timed out |
 
 ### einsatz
 
@@ -164,7 +165,7 @@ live data. The most recently finished incident remains available via
 | `ablaufzeit` | string (date) | End of the standby display duration, basis for `status.restzeit` |
 | `einsatznummer` | string | Incident number (if assigned by the server) |
 | `sondersignal` | number | `1` = special signal (lights & siren), otherwise none |
-| `permissions` | mixed | The registration's permission flag (full access to the detail map yes/no) |
+| `permissions` | string | The registration's permission flag (full access to the detail map yes/no); stringified/JSON if the server sends a non-primitive value |
 | `latitude` / `longitude` | number | Incident location (normalized from wgs84 fields or GeoJSON centroid) |
 | `json` | string (JSON) | Complete incident object: all fields above plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
 | `history10` | string (JSON array) | Last 10 completed incidents, same object shape as `json`, written on `io.standby` |
@@ -205,6 +206,17 @@ JSON-internal keys inside `einsatz.json` (`emAlarmiert`, `emWeitere`,
 inside the JSON value, not their own ioBroker states.
 
 ## Changelog
+
+### 0.7.11 (2026-08-21)
+
+- Fixed **[E3009]** (57 findings): added the missing channel/folder
+  objects (`status`, `einsatz`, `einsatz.rueckmeldungAnzahl`, `debug`,
+  `tts`) that ioBroker requires for every state path segment - found
+  by the `ioBroker.repositories` object structure check.
+- Fixed **[E3005]**/**[E1009]**: replaced the unsupported
+  `common.type: "mixed"` on `einsatz.permissions` (now `string`) and
+  `status.registrationAccepted` (now split into two booleans:
+  `registrationAccepted` and the new `registrationPending`).
 
 ### 0.7.10 (2026-08-21)
 
