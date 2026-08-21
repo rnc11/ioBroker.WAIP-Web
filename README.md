@@ -7,6 +7,7 @@
 ![Number of Installations (latest)](https://iobroker.live/badges/waip-web-installed.svg)
 ![Current version in stable repository](https://iobroker.live/badges/waip-web-stable.svg)
 [![Test and Release](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml)
+[![Translation status](https://weblate.iobroker.net/widgets/adapters/-/waip-web/svg-badge.svg)](https://weblate.iobroker.net/engage/adapters/?utm_source=widget)
 
 ## English
 
@@ -426,6 +427,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.7.0 (2026-08-21)
+
+- Prepared the admin UI for community translation via
+  [ioBroker's Weblate](https://weblate.iobroker.net/engage/adapters/):
+  added `@iobroker/adapter-dev` as a dev dependency (`npm run
+  translate`), converted `admin/jsonConfig.json`'s `label`/`help` fields
+  from inline `en`/`de` objects to plain English keys, and added
+  `admin/i18n/{en,de,ru,pt,nl,fr,it,es,pl,uk,zh-cn}.json` (German
+  curated manually, the rest auto-translated via the official
+  `translate-adapter` tool — the same tool that already maintains the
+  `io-package.json` translations). Added a "Translation status" badge to
+  the README; like the "installed"/"stable" badges, it only shows real
+  data once the adapter is actually registered as a component on
+  weblate.iobroker.net (not done yet).
 
 ### 0.6.11 (2026-08-21)
 

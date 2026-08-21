@@ -3,14 +3,8 @@
     "items": {
         "url": {
             "type": "text",
-            "label": {
-                "en": "WAIP server URL",
-                "de": "WAIP-Server-URL"
-            },
-            "help": {
-                "en": "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)",
-                "de": "Basis-URL des WAIP-Leitstellenservers (Socket.IO-Endpunkt, Namespace /waip wird automatisch angehängt)"
-            },
+            "label": "WAIP server URL",
+            "help": "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)",
             "sm": 12,
             "md": 8,
             "lg": 6
@@ -21,14 +15,8 @@
             "jsonData": "{\"url\": \"${data.url}\"}",
             "alsoDependsOn": ["url"],
             "manual": true,
-            "label": {
-                "en": "Monitor ID",
-                "de": "Monitor-ID"
-            },
-            "help": {
-                "en": "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.",
-                "de": "Wird live von der /waip/-Übersichtsseite des konfigurierten Servers geladen - Auswahl nach Leitstelle, Kreis, Träger oder Wache, oder 'Alle Wachalarme' (ID 0) für jeden Einsatz. Ist der Server nicht erreichbar, kann die ID weiterhin manuell eingegeben werden."
-            },
+            "label": "Monitor ID",
+            "help": "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.",
             "sm": 12,
             "md": 12,
             "lg": 12
@@ -38,14 +26,8 @@
         },
         "registrationTimeoutSec": {
             "type": "number",
-            "label": {
-                "en": "Registration timeout (s)",
-                "de": "Registrierungs-Timeout (s)"
-            },
-            "help": {
-                "en": "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.",
-                "de": "Wartezeit auf die Bestätigung der Monitor-Registrierung durch den Server, bevor eine Warnung geloggt wird; die Verbindung läuft in jedem Fall weiter."
-            },
+            "label": "Registration timeout (s)",
+            "help": "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.",
             "min": 1,
             "max": 120,
             "sm": 12,
@@ -54,14 +36,8 @@
         },
         "reconnectDelaySec": {
             "type": "number",
-            "label": {
-                "en": "Reconnect delay (s)",
-                "de": "Wiederverbindungs-Verzögerung (s)"
-            },
-            "help": {
-                "en": "Wait time before the adapter automatically reconnects after a lost connection or a connection error.",
-                "de": "Wartezeit, bevor der Adapter nach einem Verbindungsabbruch oder -fehler automatisch neu verbindet."
-            },
+            "label": "Reconnect delay (s)",
+            "help": "Wait time before the adapter automatically reconnects after a lost connection or a connection error.",
             "min": 1,
             "max": 120,
             "sm": 12,

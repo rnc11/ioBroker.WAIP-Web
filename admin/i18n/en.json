@@ -1,0 +1,10 @@
+{
+    "WAIP server URL": "WAIP server URL",
+    "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)": "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)",
+    "Monitor ID": "Monitor ID",
+    "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.": "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.",
+    "Registration timeout (s)": "Registration timeout (s)",
+    "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.": "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.",
+    "Reconnect delay (s)": "Reconnect delay (s)",
+    "Wait time before the adapter automatically reconnects after a lost connection or a connection error.": "Wait time before the adapter automatically reconnects after a lost connection or a connection error."
+}
