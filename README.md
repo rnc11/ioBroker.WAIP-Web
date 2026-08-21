@@ -207,6 +207,23 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.13 (2026-08-22)
+
+- Addressed all remaining `ioBroker.repositories` checker suggestions:
+  - **[S0065]**/**[S0085]**/**[S0087]**: added devDependencies
+    `@types/node` and `@tsconfig/node22`, plus a `tsconfig.json` for
+    editor tooling (no `checkJs`, so this doesn't introduce any new
+    type-check warnings).
+  - **[S4036]**: added `.vscode/settings.json` with JSON schemas for
+    `io-package.json`/`admin/jsonConfig.json`.
+  - **[S5026]**: added the `release-script-plugin-manual-review`
+    plugin (adds a confirm-before-commit step to interactive
+    `npm run release` runs only).
+  - **[S8913]**: added a Dependabot auto-merge workflow for
+    patch/minor updates; major version bumps still require manual
+    review.
+  - No runtime changes.
+
 ### 0.7.12 (2026-08-21)
 
 - Fixed **[E3005]**: `einsatz.permissions` is declared as
