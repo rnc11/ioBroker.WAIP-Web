@@ -148,7 +148,6 @@
     "messagebox": true,
     "connectionType": "cloud",
     "dataSource": "push",
-    "materialize": false,
     "adminUI": {
       "config": "json"
     },
