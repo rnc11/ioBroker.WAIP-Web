@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.1-beta.0",
+    "version": "0.7.1",
     "news": {
-      "0.7.1-beta.0": {
+      "0.7.1": {
         "en": "Added a License badge to the README.",
         "de": "Lizenz-Badge im README ergänzt.",
         "ru": "В README добавлен значок лицензии.",
