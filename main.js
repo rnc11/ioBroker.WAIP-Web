@@ -95,6 +95,17 @@ const OBSOLETE_OBJECT_IDS = [
     'routen.count',
 ];
 
+// Übergeordnete Channel/Folder-Objekte, die für jeden State-Zweig existieren müssen.
+// ioBroker verlangt ein eigenes Objekt für jedes Segment eines State-Pfads - reine
+// State-Blätter (siehe STATE_DEFS) reichen dafür nicht aus.
+const CHANNEL_DEFS = [
+    { id: 'status', type: 'channel', name: 'Verbindungs- und Registrierungsstatus' },
+    { id: 'einsatz', type: 'channel', name: 'Aktueller Einsatz' },
+    { id: 'einsatz.rueckmeldungAnzahl', type: 'folder', name: 'Rückmeldungen nach Funktion' },
+    { id: 'debug', type: 'channel', name: 'Diagnose- und Debug-Informationen' },
+    { id: 'tts', type: 'channel', name: 'TTS-Ansagen' },
+];
+
 // Definition aller States, die beim Start sichergestellt werden.
 const STATE_DEFS = [
     {
@@ -122,9 +133,17 @@ const STATE_DEFS = [
     },
     {
         id: 'status.registrationAccepted',
-        type: 'mixed',
+        type: 'boolean',
         role: 'indicator',
-        name: 'Registrierung bestätigt (true/false/pending)',
+        name: 'Registrierung bestätigt',
+        def: false,
+    },
+    {
+        id: 'status.registrationPending',
+        type: 'boolean',
+        role: 'indicator',
+        name: 'Registrierung angefragt, Antwort vom Server steht noch aus',
+        def: false,
     },
     { id: 'debug.lastEvent', type: 'string', role: 'json', name: 'Letztes empfangenes Socket-Event' },
     { id: 'debug.normalizedPosition', type: 'string', role: 'json', name: 'Letzte normalisierte Position' },
@@ -162,7 +181,7 @@ const STATE_DEFS = [
     { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
     { id: 'einsatz.einsatznummer', type: 'string', role: 'text', name: 'Einsatznummer' },
     { id: 'einsatz.sondersignal', type: 'number', role: 'value', name: 'Sondersignal', def: 0 },
-    { id: 'einsatz.permissions', type: 'mixed', role: 'json', name: 'Berechtigungs-Flag der Registrierung' },
+    { id: 'einsatz.permissions', type: 'string', role: 'json', name: 'Berechtigungs-Flag der Registrierung' },
     { id: 'einsatz.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
     { id: 'einsatz.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
     // verschachteltes Gesamtobjekt + Historie
@@ -572,6 +591,13 @@ class WaipWeb extends utils.Adapter {
     }
 
     async initObjects() {
+        for (const def of CHANNEL_DEFS) {
+            await this.setObjectNotExistsAsync(def.id, {
+                type: def.type,
+                common: { name: def.name },
+                native: {},
+            });
+        }
         for (const def of STATE_DEFS) {
             await this.setObjectNotExistsAsync(def.id, {
                 type: 'state',
@@ -1028,6 +1054,7 @@ class WaipWeb extends utils.Adapter {
                         this.registrationTimer = null;
                     }
                     this.registrationPending = false;
+                    this.setState('status.registrationPending', false, true);
                 }
 
                 try {
@@ -1448,6 +1475,7 @@ class WaipWeb extends utils.Adapter {
             this.socket = null;
             this.connecting = false;
             this.registrationPending = false;
+            this.setState('status.registrationPending', false, true);
             if (this.registrationTimer) {
                 this.clearTimeout(this.registrationTimer);
                 this.registrationTimer = null;
@@ -1512,13 +1540,15 @@ class WaipWeb extends utils.Adapter {
         // Gecachter Anzeigename (siehe refreshMonitorName) - keine erneute HTTP-Abfrage
         // bei jedem (Re-)Connect, ist ggf. beim allerersten Connect noch null.
         this.setState('status.registeredMonitorName', this.monitorName, true);
-        this.setState('status.registrationAccepted', 'pending', true);
+        this.setState('status.registrationAccepted', false, true);
+        this.setState('status.registrationPending', true, true);
         if (this.registrationTimer) {
             this.clearTimeout(this.registrationTimer);
             this.registrationTimer = null;
         }
         this.registrationTimer = this.setTimeout(async () => {
             this.registrationPending = false;
+            this.setState('status.registrationPending', false, true);
             const accState = await this.getStateAsync('status.registrationAccepted');
             const acc = accState ? accState.val : null;
             if (acc !== true) {
@@ -1545,6 +1575,7 @@ class WaipWeb extends utils.Adapter {
         this.logDisconnect(`Socket disconnected: ${reason}`);
         this.registrationPending = false;
         this.setState('status.registrationAccepted', false, true);
+        this.setState('status.registrationPending', false, true);
         if (this.registrationTimer) {
             this.clearTimeout(this.registrationTimer);
             this.registrationTimer = null;

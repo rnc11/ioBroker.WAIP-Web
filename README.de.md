@@ -130,7 +130,8 @@ und Trigger ohne JSON-Parsing auskommen.
 | `restzeit` | number (s) | Verbleibende Sekunden bis `einsatz.ablaufzeit`, sekündlich aktualisiert |
 | `registeredMonitor` | string | Zuletzt beim Server registrierte Monitor-ID |
 | `registeredMonitorName` | string | Anzeigename dieses Monitors ohne ID (z. B. „Leitstelle: Lausitz"); wird einmalig beim Start von derselben `/waip/`-Übersichtsseite wie das Admin-Dropdown aufgelöst, `null` falls nicht auflösbar |
-| `registrationAccepted` | mixed | `"pending"` direkt nach Connect, `true` sobald das erste Event empfangen wurde, sonst `false` nach Ablauf des Registrierungs-Timeouts |
+| `registrationAccepted` | boolean | `true` sobald das erste Event empfangen wurde, sonst `false` direkt nach Connect oder nach Ablauf des Registrierungs-Timeouts |
+| `registrationPending` | boolean | `true` direkt nach Connect, solange noch auf eine Antwort vom Server gewartet wird, sonst `false` sobald bestätigt oder Timeout erreicht |
 
 ### einsatz
 
@@ -156,7 +157,7 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `ablaufzeit` | string (date) | Ende der Standby-Anzeigedauer, Basis für `status.restzeit` |
 | `einsatznummer` | string | Einsatznummer (sofern vom Server vergeben) |
 | `sondersignal` | number | `1` = Sondersignal, sonst kein Sondersignal |
-| `permissions` | mixed | Berechtigungsflag der Registrierung (Vollzugriff auf Detailkarte ja/nein) |
+| `permissions` | string | Berechtigungsflag der Registrierung (Vollzugriff auf Detailkarte ja/nein); als String bzw. JSON, falls der Server einen nicht-primitiven Wert sendet |
 | `latitude` / `longitude` | number | Position des Einsatzortes (normalisiert aus wgs84-Feldern oder GeoJSON-Mittelpunkt) |
 | `json` | string (JSON) | Vollständiges Einsatz-Objekt: alle Felder oben plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
 | `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleicher Objekt-Shape wie `json`, geschrieben bei `io.standby` |
