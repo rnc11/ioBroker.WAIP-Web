@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.8",
+    "version": "0.7.9",
     "news": {
+      "0.7.9": {
+        "en": "Fixed [E5025]/[E5036]: installed the missing @alcalzone/release-script-plugin-license devDependency required for the 'license' plugin referenced in .releaseconfig.json.",
+        "de": "[E5025]/[E5036] behoben: fehlende Dev-Dependency @alcalzone/release-script-plugin-license nachinstalliert, die für das in .releaseconfig.json referenzierte 'license'-Plugin benötigt wird.",
+        "ru": "Исправлено [E5025]/[E5036]: установлена отсутствовавшая dev-зависимость @alcalzone/release-script-plugin-license, необходимая для плагина 'license', указанного в .releaseconfig.json.",
+        "pt": "Corrigido [E5025]/[E5036]: instalada a dependência de desenvolvimento ausente @alcalzone/release-script-plugin-license, necessária para o plugin 'license' referenciado em .releaseconfig.json.",
+        "nl": "[E5025]/[E5036] opgelost: ontbrekende dev-dependency @alcalzone/release-script-plugin-license geïnstalleerd, nodig voor de 'license'-plugin waarnaar in .releaseconfig.json wordt verwezen.",
+        "fr": "Correction de [E5025]/[E5036] : installation de la dépendance de développement manquante @alcalzone/release-script-plugin-license, nécessaire pour le plugin « license » référencé dans .releaseconfig.json.",
+        "it": "Risolti [E5025]/[E5036]: installata la dev-dependency mancante @alcalzone/release-script-plugin-license, necessaria per il plugin 'license' referenziato in .releaseconfig.json.",
+        "es": "Se corrigieron [E5025]/[E5036]: se instaló la dependencia de desarrollo faltante @alcalzone/release-script-plugin-license, necesaria para el plugin 'license' referenciado en .releaseconfig.json.",
+        "pl": "Naprawiono [E5025]/[E5036]: zainstalowano brakującą zależność deweloperską @alcalzone/release-script-plugin-license, wymaganą dla wtyczki 'license' wskazanej w .releaseconfig.json.",
+        "uk": "Виправлено [E5025]/[E5036]: встановлено відсутню dev-залежність @alcalzone/release-script-plugin-license, потрібну для плагіна 'license', зазначеного в .releaseconfig.json.",
+        "zh-cn": "修复了 [E5025]/[E5036]:安装了缺失的开发依赖 @alcalzone/release-script-plugin-license,这是 .releaseconfig.json 中引用的 'license' 插件所必需的。"
+      },
       "0.7.8": {
         "en": "Fixed [E5018]: added the missing .releaseconfig.json (plugins: iobroker, license) required now that @alcalzone/release-script is a dev dependency. Caught by the ioBroker.repositories 'ADD TO LATEST' submission check.",
         "de": "[E5018] behoben: fehlende .releaseconfig.json ergänzt (plugins: iobroker, license), die nun erforderlich ist, da @alcalzone/release-script als Dev-Dependency vorhanden ist. Aufgefallen beim ioBroker.repositories-„ADD TO LATEST\"-Check.",
@@ -80,19 +93,6 @@
         "pl": "Dodano odznakę licencji do README.",
         "uk": "До README додано значок ліцензії.",
         "zh-cn": "已在 README 中添加许可证徽章。"
-      },
-      "0.6.11-beta.0": {
-        "en": "README: logo now shown enlarged (115x115, crisp pixel-scaled since the source icon is only 32x32) via a new admin/waip-web-logo.png; the actual ioBroker adapter icon (admin/waip-web.png) is unchanged. Simplified the README title back to \"ioBroker.waip-web\".",
-        "de": "README: Logo wird jetzt vergrößert angezeigt (115x115, scharf pixel-skaliert, da das Quell-Icon nur 32x32 ist) über eine neue admin/waip-web-logo.png; das eigentliche ioBroker-Adapter-Icon (admin/waip-web.png) bleibt unverändert. README-Titel wieder auf „ioBroker.waip-web\" vereinfacht.",
-        "ru": "README: логотип теперь отображается увеличенным (115x115, чёткое пиксельное масштабирование, так как исходная иконка всего 32x32) через новый файл admin/waip-web-logo.png; сама иконка адаптера ioBroker (admin/waip-web.png) не изменилась. Заголовок README снова упрощён до «ioBroker.waip-web».",
-        "pt": "README: o logotipo agora é exibido ampliado (115x115, escalonamento em pixels nítido, já que o ícone de origem tem apenas 32x32) através de um novo admin/waip-web-logo.png; o ícone real do adaptador ioBroker (admin/waip-web.png) permanece inalterado. Título do README simplificado novamente para \"ioBroker.waip-web\".",
-        "nl": "README: logo wordt nu vergroot weergegeven (115x115, scherpe pixel-schaling omdat het bronicoon slechts 32x32 is) via een nieuwe admin/waip-web-logo.png; het eigenlijke ioBroker-adapterpictogram (admin/waip-web.png) blijft ongewijzigd. README-titel weer vereenvoudigd naar \"ioBroker.waip-web\".",
-        "fr": "README : le logo s'affiche désormais agrandi (115x115, mise à l'échelle en pixels nets car l'icône source ne fait que 32x32) via un nouveau fichier admin/waip-web-logo.png ; l'icône réelle de l'adaptateur ioBroker (admin/waip-web.png) reste inchangée. Titre du README de nouveau simplifié en « ioBroker.waip-web ».",
-        "it": "README: il logo ora viene mostrato ingrandito (115x115, scalatura nitida a pixel poiché l'icona sorgente è solo 32x32) tramite un nuovo admin/waip-web-logo.png; l'icona reale dell'adapter ioBroker (admin/waip-web.png) resta invariata. Titolo del README nuovamente semplificato in \"ioBroker.waip-web\".",
-        "es": "README: el logotipo ahora se muestra ampliado (115x115, escalado nítido por píxeles ya que el icono de origen es de solo 32x32) mediante un nuevo admin/waip-web-logo.png; el icono real del adaptador de ioBroker (admin/waip-web.png) permanece sin cambios. Título del README simplificado de nuevo a \"ioBroker.waip-web\".",
-        "pl": "README: logo jest teraz wyświetlane powiększone (115x115, ostre skalowanie pikselowe, ponieważ ikona źródłowa ma tylko 32x32) za pomocą nowego pliku admin/waip-web-logo.png; rzeczywista ikona adaptera ioBroker (admin/waip-web.png) pozostaje bez zmian. Tytuł README ponownie uproszczono do \"ioBroker.waip-web\".",
-        "uk": "README: логотип тепер відображається збільшеним (115x115, чітке пікселне масштабування, оскільки вихідна іконка лише 32x32) через новий файл admin/waip-web-logo.png; фактична іконка адаптера ioBroker (admin/waip-web.png) залишається незмінною. Заголовок README знову спрощено до «ioBroker.waip-web».",
-        "zh-cn": "README:徽标现在以放大显示(115x115,由于源图标仅为 32x32,采用清晰的像素缩放)通过新的 admin/waip-web-logo.png 实现;实际的 ioBroker 适配器图标(admin/waip-web.png)保持不变。README 标题重新简化为 \"ioBroker.waip-web\"。"
       }
     },
     "titleLang": {

@@ -1,5 +1,14 @@
 # Older changes
 
+### 0.7.4 (2026-08-21)
+
+- Bumped the `ioBroker/testing-action-check` GitHub Action used by the
+  `check-and-lint` CI job from `@v1` to `@v2` (via a
+  [Dependabot](https://github.com/rnc11/ioBroker.waip-web/pull/10) PR -
+  the first one filed by the `.github/dependabot.yml` added in 0.7.3).
+  Purely additive on the action's side (adds an optional `test-command:
+  'false'` flag), no behavior change for us.
+
 ### 0.7.3 (2026-08-21)
 
 *(Never tagged/published to npm - superseded directly by 0.7.4; kept

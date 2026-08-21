@@ -206,6 +206,12 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.9 (2026-08-21)
+
+- Fixed **[E5025]**/**[E5036]**: installed the missing
+  `@alcalzone/release-script-plugin-license` dev dependency required
+  for the `"license"` plugin referenced in `.releaseconfig.json`.
+
 ### 0.7.8 (2026-08-21)
 
 - Fixed **[E5018]**: added the missing `.releaseconfig.json` (`plugins:
@@ -239,15 +245,6 @@ inside the JSON value, not their own ioBroker states.
   never actually tagged/published to npm, `0.7.2` was followed directly
   by `0.7.4`. Confirmed via a bot recheck that every other finding from
   the last two rounds is now fixed.
-
-### 0.7.4 (2026-08-21)
-
-- Bumped the `ioBroker/testing-action-check` GitHub Action used by the
-  `check-and-lint` CI job from `@v1` to `@v2` (via a
-  [Dependabot](https://github.com/rnc11/ioBroker.waip-web/pull/10) PR -
-  the first one filed by the `.github/dependabot.yml` added in 0.7.3).
-  Purely additive on the action's side (adds an optional `test-command:
-  'false'` flag), no behavior change for us.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
