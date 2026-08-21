@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.9",
+    "version": "0.7.10",
     "news": {
+      "0.7.10": {
+        "en": "Fixed [S9508]: excluded CHANGELOG_OLD.md from the npm package (removed from package.json's files allowlist) - ioBroker shows the README via a GitHub link, not from the installed npm package, so the file remains fully readable on GitHub without needing to ship inside the tarball.",
+        "de": "[S9508] behoben: CHANGELOG_OLD.md aus dem npm-Paket ausgeschlossen (aus der files-Liste in package.json entfernt) - ioBroker zeigt das README über einen GitHub-Link an, nicht aus dem installierten npm-Paket, die Datei bleibt also auf GitHub weiterhin vollständig lesbar, ohne im Tarball enthalten sein zu müssen.",
+        "ru": "Исправлено [S9508]: CHANGELOG_OLD.md исключён из npm-пакета (удалён из списка files в package.json) - ioBroker показывает README по ссылке на GitHub, а не из установленного npm-пакета, поэтому файл остаётся полностью читаемым на GitHub без необходимости включать его в архив.",
+        "pt": "Corrigido [S9508]: CHANGELOG_OLD.md excluído do pacote npm (removido da lista files em package.json) - o ioBroker exibe o README via link do GitHub, não a partir do pacote npm instalado, então o arquivo permanece totalmente legível no GitHub sem precisar estar no tarball.",
+        "nl": "[S9508] opgelost: CHANGELOG_OLD.md uitgesloten van het npm-pakket (verwijderd uit de files-lijst in package.json) - ioBroker toont het README via een GitHub-link, niet vanuit het geïnstalleerde npm-pakket, dus het bestand blijft volledig leesbaar op GitHub zonder in de tarball te hoeven zitten.",
+        "fr": "Correction de [S9508] : exclusion de CHANGELOG_OLD.md du paquet npm (retiré de la liste files dans package.json) - ioBroker affiche le README via un lien GitHub, pas depuis le paquet npm installé, le fichier reste donc entièrement lisible sur GitHub sans devoir être inclus dans l'archive.",
+        "it": "Risolto [S9508]: escluso CHANGELOG_OLD.md dal pacchetto npm (rimosso dall'elenco files in package.json) - ioBroker mostra il README tramite un link GitHub, non dal pacchetto npm installato, quindi il file resta pienamente leggibile su GitHub senza dover essere incluso nel tarball.",
+        "es": "Se corrigió [S9508]: se excluyó CHANGELOG_OLD.md del paquete npm (eliminado de la lista files en package.json) - ioBroker muestra el README mediante un enlace de GitHub, no desde el paquete npm instalado, por lo que el archivo sigue siendo totalmente legible en GitHub sin necesidad de incluirlo en el tarball.",
+        "pl": "Naprawiono [S9508]: wykluczono CHANGELOG_OLD.md z pakietu npm (usunięto z listy files w package.json) - ioBroker wyświetla README przez link do GitHub, a nie z zainstalowanego pakietu npm, więc plik pozostaje w pełni czytelny na GitHub bez konieczności umieszczania go w tarballu.",
+        "uk": "Виправлено [S9508]: виключено CHANGELOG_OLD.md з npm-пакета (видалено зі списку files у package.json) - ioBroker показує README через посилання на GitHub, а не з встановленого npm-пакета, тож файл залишається повністю доступним для читання на GitHub без потреби включати його до архіву.",
+        "zh-cn": "修复了 [S9508]:已将 CHANGELOG_OLD.md 从 npm 包中排除(从 package.json 的 files 列表中移除)——ioBroker 通过 GitHub 链接显示 README,而不是从已安装的 npm 包中读取,因此该文件在 GitHub 上仍然完全可读,无需包含在发布包中。"
+      },
       "0.7.9": {
         "en": "Fixed [E5025]/[E5036]: installed the missing @alcalzone/release-script-plugin-license devDependency required for the 'license' plugin referenced in .releaseconfig.json.",
         "de": "[E5025]/[E5036] behoben: fehlende Dev-Dependency @alcalzone/release-script-plugin-license nachinstalliert, die für das in .releaseconfig.json referenzierte 'license'-Plugin benötigt wird.",
@@ -80,19 +93,6 @@
         "pl": "Naprawiono wszystkie ustalenia oficjalnego ioBroker Check and Service Bot: podniesiono minimalne wersje (engines.node >=20, @iobroker/adapter-core ^3.4.1, js-controller >=6.0.11, admin >=7.6.17), README podzielono na anglojęzyczny README.md i niemiecki README.de.md (checker wymaga README wyłącznie po angielsku), sekcję License przeniesiono na sam koniec, dodano brakujące atrybuty i18n/rozmiaru w jsonConfig.json, przełączono na prefiks node: dla wbudowanych require, usunięto zbędny .npmignore i dodano .commitinfo do .gitignore. Usunięto też osierocony wpis news 0.7.0 (nigdy faktycznie nie opublikowany w npm).",
         "uk": "Виправлено всі зауваження офіційного ioBroker Check and Service Bot: підвищено мінімальні версії (engines.node >=20, @iobroker/adapter-core ^3.4.1, js-controller >=6.0.11, admin >=7.6.17), README розділено на англомовний README.md та німецький README.de.md (перевірник вимагає README лише англійською), розділ License переміщено в самий кінець, додано відсутні атрибути i18n/розміру в jsonConfig.json, вбудовані require переведено на префікс node:, видалено зайвий .npmignore та додано .commitinfo до .gitignore. Також видалено осиротілий запис новин 0.7.0 (ніколи не публікувався на npm).",
         "zh-cn": "修复了官方 ioBroker Check and Service Bot 报告的所有问题:提升了最低版本要求(engines.node >=20、@iobroker/adapter-core ^3.4.1、js-controller >=6.0.11、admin >=7.6.17);将 README 拆分为纯英文的 README.md 和德文的 README.de.md(检查器要求 README 仅使用英文);将 License 部分移动到文件末尾;为 jsonConfig.json 添加了缺失的 i18n/尺寸属性;将内置模块的 require 改为使用 node: 前缀;移除了多余的 .npmignore;并在 .gitignore 中添加了 .commitinfo。同时移除了从未真正发布到 npm 的孤立新闻条目 0.7.0。"
-      },
-      "0.7.1": {
-        "en": "Added a License badge to the README.",
-        "de": "Lizenz-Badge im README ergänzt.",
-        "ru": "В README добавлен значок лицензии.",
-        "pt": "Adicionado um selo de licença ao README.",
-        "nl": "Licentiebadge toegevoegd aan de README.",
-        "fr": "Ajout d'un badge de licence au README.",
-        "it": "Aggiunto un badge di licenza al README.",
-        "es": "Se añadió una insignia de licencia al README.",
-        "pl": "Dodano odznakę licencji do README.",
-        "uk": "До README додано значок ліцензії.",
-        "zh-cn": "已在 README 中添加许可证徽章。"
       }
     },
     "titleLang": {

@@ -206,6 +206,14 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.10 (2026-08-21)
+
+- Fixed **[S9508]**: excluded `CHANGELOG_OLD.md` from the npm package
+  (removed from `package.json`'s `files` allowlist) - ioBroker shows
+  the README via a GitHub link, not from the installed npm package, so
+  the file remains fully readable on GitHub without needing to ship
+  inside the tarball.
+
 ### 0.7.9 (2026-08-21)
 
 - Fixed **[E5025]**/**[E5036]**: installed the missing
@@ -235,16 +243,6 @@ inside the JSON value, not their own ioBroker states.
   [CHANGELOG_OLD.md](CHANGELOG_OLD.md). Our existing manual
   version-bump/tag workflow (see below) is unchanged; the tool is
   available but not actively used for releasing yet.
-
-### 0.7.5 (2026-08-21)
-
-*(Also never tagged/published to npm - superseded directly by 0.7.6.)*
-
-- Fixed **[E2004]**: removed the orphaned `0.7.3` entry from
-  `common.news` in `io-package.json` - that version (see below) was
-  never actually tagged/published to npm, `0.7.2` was followed directly
-  by `0.7.4`. Confirmed via a bot recheck that every other finding from
-  the last two rounds is now fixed.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

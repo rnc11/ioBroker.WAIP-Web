@@ -1,5 +1,15 @@
 # Older changes
 
+### 0.7.5 (2026-08-21)
+
+*(Also never tagged/published to npm - superseded directly by 0.7.6.)*
+
+- Fixed **[E2004]**: removed the orphaned `0.7.3` entry from
+  `common.news` in `io-package.json` - that version (see below) was
+  never actually tagged/published to npm, `0.7.2` was followed directly
+  by `0.7.4`. Confirmed via a bot recheck that every other finding from
+  the last two rounds is now fixed.
+
 ### 0.7.4 (2026-08-21)
 
 - Bumped the `ioBroker/testing-action-check` GitHub Action used by the
