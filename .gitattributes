@@ -1,2 +1,4 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Auto detect text files, normalize to LF in the repo AND on checkout
+# (without eol=lf, Windows clients with core.autocrlf=true would still get
+# CRLF locally, which trips up prettier's default endOfLine: 'lf')
+* text=auto eol=lf
