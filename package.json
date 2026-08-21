@@ -1,6 +1,6 @@
 {
   "name": "iobroker.waip-web",
-  "version": "0.7.12",
+  "version": "0.7.13",
   "description": "Wachalarm IP-Web (WAIP) Adapter für ioBroker – bindet Alarmierungen, Rückmeldungen, Routen und TTS-Ansagen per Socket.IO an ioBroker an.",
   "author": {
     "name": "rnc11",
@@ -43,9 +43,12 @@
     "@alcalzone/release-script": "^5.2.1",
     "@alcalzone/release-script-plugin-iobroker": "^5.2.0",
     "@alcalzone/release-script-plugin-license": "^5.2.2",
+    "@alcalzone/release-script-plugin-manual-review": "^5.2.0",
     "@iobroker/adapter-dev": "^1.5.0",
     "@iobroker/eslint-config": "^2.2.0",
-    "@iobroker/testing": "^5.2.2"
+    "@iobroker/testing": "^5.2.2",
+    "@tsconfig/node22": "^22.0.6",
+    "@types/node": ">=22"
   },
   "scripts": {
     "test:package": "mocha test/package.js --exit",
