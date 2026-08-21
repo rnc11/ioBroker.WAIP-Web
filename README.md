@@ -8,6 +8,7 @@
 ![Current version in stable repository](https://iobroker.live/badges/waip-web-stable.svg)
 [![Test and Release](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml)
 [![Translation status](https://weblate.iobroker.net/widgets/adapters/-/waip-web/svg-badge.svg)](https://weblate.iobroker.net/engage/adapters/?utm_source=widget)
+[![License](https://img.shields.io/npm/l/iobroker.waip-web.svg)](LICENSE)
 
 ## English
 
@@ -427,6 +428,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.7.1 (2026-08-21)
+
+- Added a License badge to the README.
 
 ### 0.7.0 (2026-08-21)
 
