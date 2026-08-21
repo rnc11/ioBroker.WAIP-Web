@@ -10,7 +10,7 @@
 [![Translation status](https://weblate.iobroker.net/widgets/adapters/-/waip-web/svg-badge.svg)](https://weblate.iobroker.net/engage/adapters/?utm_source=widget)
 [![License](https://img.shields.io/npm/l/iobroker.waip-web.svg)](LICENSE)
 
-## English
+🇩🇪 [Deutsche Version dieser README](README.de.md)
 
 Unofficial ioBroker adapter for **Wachalarm IP-Web (WAIP-Web)**
 
@@ -19,7 +19,7 @@ Connects via Socket.IO to a WAIP-Web dispatch monitor and mirrors incidents
 announcements into ioBroker states – without needing a browser tab to stay
 open.
 
-### About this adapter
+## About this adapter
 
 This adapter is an **unofficial community project** and has no connection
 to the WAIP-Web project, to Robert-112, or to the operator of any specific
@@ -40,7 +40,7 @@ bypassed.
 > production instance, briefly check with the operator/your dispatch
 > center whether a permanent automated connection is welcome.
 
-### About WAIP-Web
+## About WAIP-Web
 
 [Wachalarm IP-Web](https://github.com/Robert-112/n112_waip-web) is an
 open-source web application by **Robert-112** that displays dispatch/alert
@@ -61,7 +61,7 @@ WAIP-Web itself is licensed under
 This adapter contains no code from the WAIP-Web project; it implements an
 independent client for its Socket.IO interface.
 
-### Features
+## Features
 
 - Connects to the `/waip` namespace via `socket.io-client`, registers via
   `emit('WAIP', monitorId)` (emitted 3× for robustness)
@@ -82,7 +82,7 @@ independent client for its Socket.IO interface.
 - Aggregated feedback counters per role/capability, mirroring the live
   badges on the web UI
 
-#### Why a session cookie is needed
+### Why a session cookie is needed
 
 The WAIP-Web server ties alarm delivery to an Express session cookie,
 which a browser renews automatically every few minutes via a bundled
@@ -100,7 +100,7 @@ observed lifetime, at least 55 seconds, at most a fixed 5-minute ceiling)
 – the exact same clamping that `/js/session_keepalive.js` on the site
 itself uses.
 
-### Configuration
+## Configuration
 
 In the admin UI of the adapter instance:
 
@@ -116,20 +116,20 @@ fully automatically on every renewal from the cookie lifetime the server
 reports (min. 55s, max. 5 min., matching `/js/session_keepalive.js` on
 the site itself).
 
-### States (under `waip-web.0.*`)
+## States (under `waip-web.0.*`)
 
 Feedback and routes are 1:n lists per incident and are therefore stored
 as nested JSON arrays inside `einsatz.json` and in every entry of
 `einsatz.history10` – complemented by quick-to-bind counters so VIS
 bindings and triggers don't need JSON parsing.
 
-#### info
+### info
 
 | State | Type | Description |
 | --- | --- | --- |
 | `connection` | boolean | Standard ioBroker indicator: connection to the WAIP server active |
 
-#### status
+### status
 
 | State | Type | Description |
 | --- | --- | --- |
@@ -140,7 +140,7 @@ bindings and triggers don't need JSON parsing.
 | `registeredMonitorName` | string | Display name of that monitor, without the ID (e.g. "Leitstelle: Lausitz"); resolved once at startup from the same `/waip/` overview page as the admin dropdown, `null` if it couldn't be resolved |
 | `registrationAccepted` | mixed | `"pending"` right after connecting, `true` once the first event was received, otherwise `false` once the registration timeout elapses |
 
-#### einsatz
+### einsatz
 
 Flat fields of the currently running incident. Cleared (`null`/`0`) on
 `io.standby`, matching the official frontend – `status.alarmAktiv` is
@@ -179,7 +179,7 @@ live data. The most recently finished incident remains available via
 | `rueckmeldungAnzahl.ma` | number | Feedback count as driver/operator ("Maschinist") |
 | `rueckmeldungAnzahl.med` | number | Feedback count with a medical qualification |
 
-#### tts
+### tts
 
 | State | Type | Description |
 | --- | --- | --- |
@@ -187,7 +187,7 @@ live data. The most recently finished incident remains available via
 | `lastTimestamp` | string (date) | Time of the last announcement |
 | `history10` | string (JSON array) | Last 10 announcements as `{zeitstempel, url}` |
 
-#### debug
+### debug
 
 | State | Type | Description |
 | --- | --- | --- |
@@ -204,230 +204,31 @@ JSON-internal keys inside `einsatz.json` (`emAlarmiert`, `emWeitere`,
 `routen`, `rueckmeldungen`) stay lowercase – these are object properties
 inside the JSON value, not their own ioBroker states.
 
-## Deutsch
-
-Inoffizieller ioBroker-Adapter für **Wachalarm IP-Web (WAIP-Web)**
-
-Verbindet sich per Socket.IO mit einem WAIP-Web-Wachalarm-Monitor und bildet
-Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab –
-ohne dass ein Browser-Tab dauerhaft offen sein muss.
-
-### Über diesen Adapter
-
-Dieser Adapter ist ein **inoffizielles Community-Projekt** und steht in
-keiner Verbindung zum WAIP-Web-Projekt, zu Robert-112 oder zum Betreiber
-einer konkreten Instanz (z. B. der Integrierten Regionalleitstelle
-Lausitz). Er wurde entwickelt, indem das öffentlich über den Browser
-ausgelieferte Frontend (`client_waip.js`) einer WAIP-Web-Instanz auf sein
-Verhalten hin analysiert wurde, um dieselben Socket.IO-Events und
-Datenfelder nachzubilden, die auch ein regulärer Browser-Client empfängt.
-
-Der Adapter meldet sich **ohne Login** an und erhält dadurch ausschließlich
-die öffentliche Berechtigungsstufe von WAIP-Web (Stichwort, Ort, ungefähre
-Position, alarmierte Einsatzmittel, Rückmeldungen) – dieselben Daten, die
-auch ein anonymer Browser-Besucher ohne Anmeldung sehen würde. Es werden
-keine Zugriffsbeschränkungen umgangen.
-
-> **Hinweis:** Ein automatisierter Dauerclient wie dieser Adapter ist etwas
-> anderes als ein gelegentlich geöffneter Browser-Tab. Bevor du den Adapter
-> gegen eine produktive Instanz laufen lässt, sprich kurz mit dem
-> Betreiber/deiner Leitstelle ab, ob eine dauerhafte automatisierte
-> Verbindung erwünscht ist.
-
-### Über WAIP-Web
-
-[Wachalarm IP-Web](https://github.com/Robert-112/n112_waip-web) ist eine
-quelloffene Webanwendung von **Robert-112**, die Alarmierungsinformationen
-für Feuerwehr/Rettungsdienst geräteunabhängig im Browser darstellt (Windows,
-Linux, Mac, Smartphone – keine Installation nötig). Sie bietet u. a.:
-
-- **Alarmmonitor** – Einsatzart, Stichwort, Sondersignal, Ort, Karte,
-  alarmierte Einsatzmittel, App-Rückmeldungen der Einsatzkräfte inkl.
-  Sprachansage
-- **Dashboard** – Gesamtübersicht laufender Einsätze
-- **Rückmeldefunktion** – App-basierte Rückmeldungen der Einsatzkräfte,
-  gegliedert nach Rolle (EK/GF/ZF/VF) und Zusatzfunktion (AGT/FZF/MA/MED)
-- **Administration** – Nutzerverwaltung, Wachdaten, Monitor-Übersicht
-
-WAIP-Web selbst ist unter der
-[**Creative Commons BY-SA 4.0**](https://creativecommons.org/licenses/by-sa/4.0/deed.de)
-lizenziert. Dieser Adapter enthält keinen Code aus dem WAIP-Web-Projekt,
-sondern implementiert eine eigenständige Anbindung an dessen Socket.IO-
-Schnittstelle.
-
-### Funktionen
-
-- Verbindung zum Namespace `/waip` per `socket.io-client`, Registrierung
-  über `emit('WAIP', monitorId)` (3-faches Emit für Robustheit)
-- Manuelles Reconnect-Handling (kein Auto-Reconnect der Bibliothek) mit
-  konfigurierbarer Verzögerung
-- Registrierungs-Timeout mit Audit-Log (`debug.monitorAudit`)
-- Normalisierung von Geodaten (wgs84-Felder, `position` oder
-  GeoJSON-`geometry` → Mittelpunkt)
-- History der letzten 10 abgeschlossenen Einsätze (`einsatz.history10`)
-- Getrennte Handler für Alarm (`io.new_waip`), Rückmeldung (`io.new_rmld`),
-  Routen (`io.routes`), TTS (`io.playtts`) und Standby (`io.standby`)
-- Automatisches Session-Cookie-Management (siehe unten), damit die
-  Alarm-Zustellung auch ohne offene Browsersitzung dauerhaft weiterläuft
-- Server-Neustart-Erkennung über `io.version` mit automatischem
-  Session-Refresh + Reconnect
-- Vollständige Einsatzdaten inkl. verschachtelter Rückmeldungen/Routen
-  pro Einsatz (Rückmeldungen und Routen sind 1:n-Beziehungen)
-- Aggregierte Rückmeldungs-Zähler pro Rolle/Fähigkeit, analog zu den
-  Live-Badges der Weboberfläche
-
-#### Warum ein Session-Cookie nötig ist
-
-Der WAIP-Web-Server bindet die Alarm-Zustellung an einen
-Express-Session-Cookie, den ein Browser über ein mitgeliefertes Skript
-automatisch alle paar Minuten erneuert. Ein reiner Socket.IO-Client bekommt
-diesen Cookie nie automatisch – der Adapter holt ihn deshalb selbst per
-`GET /session/keepalive` und hängt ihn an die Socket.IO-Verbindung an.
-
-Die Cookie-Lebensdauer ist laut Quellcode von WAIP-Web **pro Instanz per
-Umgebungsvariable konfigurierbar** (Server-Standard: 60 Sekunden; diese
-Instanz nutzt offenbar 10 Minuten) – ein fest angenommenes Erneuerungs-
-intervall wäre daher für andere WAIP-Web-Instanzen potenziell falsch. Der
-Adapter leitet das tatsächliche Intervall deshalb **adaptiv** aus der vom
-Server bei jedem Aufruf gemeldeten Ablaufzeit ab (80 % der beobachteten
-Laufzeit, mindestens 55 Sekunden, höchstens die konfigurierte Obergrenze) –
-genau die gleiche Klammerung, die auch `/js/session_keepalive.js` der
-Website selbst verwendet.
-
-### Konfiguration
-
-In der Admin-Oberfläche der Adapterinstanz:
-
-| Feld | Beschreibung | Default |
-| --- | --- | --- |
-| WAIP-Server-URL | Basis-URL der WAIP-Web-Instanz | `https://wachalarm.leitstelle-lausitz.de` |
-| Monitor-ID | Auswahl per Live-Dropdown, geladen von der `/waip/`-Übersichtsseite des konfigurierten Servers und gruppiert nach Leitstelle/Kreis/Träger/Wache; manuelle Eingabe bleibt möglich, falls der Server nicht erreichbar ist. Leer/`0` = globaler Monitor (alle Einsätze) | *(leer)* |
-| Registrierungs-Timeout (s) | Zeit bis eine ausbleibende Registrierungsbestätigung geloggt wird | `10` |
-| Wiederverbindungs-Verzögerung (s) | Wartezeit vor manuellem Reconnect nach Disconnect/Fehler | `5` |
-
-Das Session-Keepalive-Intervall ist **nicht konfigurierbar** – es wird bei
-jeder Erneuerung vollautomatisch aus der vom Server gemeldeten Cookie-
-Laufzeit abgeleitet (min. 55s, max. 5 Min., analog zu
-`/js/session_keepalive.js` der Website selbst).
-
-### States (unter `waip-web.0.*`)
-
-Rückmeldungen und Routen sind pro Einsatz Listen (1:n) und liegen deshalb
-als verschachtelte JSON-Arrays in `einsatz.json` bzw. in jedem Eintrag von
-`einsatz.history10` – ergänzt um schnell bindbare Zähler, damit VIS-Bindings
-und Trigger ohne JSON-Parsing auskommen.
-
-#### info
-
-| State | Typ | Beschreibung |
-| --- | --- | --- |
-| `connection` | boolean | Standard-ioBroker-Indikator: Verbindung zum WAIP-Server aktiv |
-
-#### status
-
-| State | Typ | Beschreibung |
-| --- | --- | --- |
-| `connected` | boolean | Socket.IO-Verbindung technisch aufgebaut |
-| `alarmAktiv` | boolean | `true` seit dem letzten `io.new_waip`, `false` seit dem letzten `io.standby` |
-| `restzeit` | number (s) | Verbleibende Sekunden bis `einsatz.ablaufzeit`, sekündlich aktualisiert |
-| `registeredMonitor` | string | Zuletzt beim Server registrierte Monitor-ID |
-| `registeredMonitorName` | string | Anzeigename dieses Monitors ohne ID (z. B. „Leitstelle: Lausitz"); wird einmalig beim Start von derselben `/waip/`-Übersichtsseite wie das Admin-Dropdown aufgelöst, `null` falls nicht auflösbar |
-| `registrationAccepted` | mixed | `"pending"` direkt nach Connect, `true` sobald das erste Event empfangen wurde, sonst `false` nach Ablauf des Registrierungs-Timeouts |
-
-#### einsatz
-
-Flache Felder des aktuell laufenden Einsatzes. Werden bei `io.standby`
-geleert (`null`/`0`), analog zum offiziellen Frontend – `status.alarmAktiv`
-ist damit ein verlässlicher Schalter dafür, ob hier gerade echte Live-Daten
-stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
-`einsatz.history10` abrufbar:
-
-| State | Typ | Beschreibung |
-| --- | --- | --- |
-| `id` | number | Interne Einsatz-ID |
-| `uuid` | string | Eindeutige Einsatz-UUID (dient auch der Zuordnung von Rückmeldungen) |
-| `einsatzart` | string | z. B. „Brandeinsatz", „Hilfeleistungseinsatz", „Rettungseinsatz", „Krankentransport" |
-| `stichwort` | string | Alarmstichwort |
-| `ort` | string | Ort |
-| `ortsteil` | string | Ortsteil (falls abweichend vom Ort) |
-| `strasse` / `hausnummer` | string | Adresse |
-| `objekt` / `objektteil` | string | Gebäude-/Objektname und -teil |
-| `einsatzdetails` | string | Zusatzdetails (nur bei Brand-/Hilfeleistungseinsätzen befüllt) |
-| `besonderheiten` | string | Freitext-Besonderheiten der Leitstelle |
-| `zeitstempel` | string (date) | Alarmzeit |
-| `ablaufzeit` | string (date) | Ende der Standby-Anzeigedauer, Basis für `status.restzeit` |
-| `einsatznummer` | string | Einsatznummer (sofern vom Server vergeben) |
-| `sondersignal` | number | `1` = Sondersignal, sonst kein Sondersignal |
-| `permissions` | mixed | Berechtigungsflag der Registrierung (Vollzugriff auf Detailkarte ja/nein) |
-| `latitude` / `longitude` | number | Position des Einsatzortes (normalisiert aus wgs84-Feldern oder GeoJSON-Mittelpunkt) |
-| `json` | string (JSON) | Vollständiges Einsatz-Objekt: alle Felder oben plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
-| `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleicher Objekt-Shape wie `json`, geschrieben bei `io.standby` |
-| `routenGesamt` | number | Anzahl Routen im aktuellen Einsatz (= `json.routen.length`) |
-| `rueckmeldungGesamt` | number | Rückmeldungen gesamt im aktuellen Einsatz |
-| `rueckmeldungAnzahl.ek` | number | Anzahl Rückmeldungen als Einsatzkraft |
-| `rueckmeldungAnzahl.gf` | number | Anzahl Rückmeldungen als Gruppenführer |
-| `rueckmeldungAnzahl.zf` | number | Anzahl Rückmeldungen als Zugführer |
-| `rueckmeldungAnzahl.vf` | number | Anzahl Rückmeldungen als Verbandsführer |
-| `rueckmeldungAnzahl.agt` | number | Anzahl Rückmeldungen mit Atemschutz-Befähigung |
-| `rueckmeldungAnzahl.fzf` | number | Anzahl Rückmeldungen als Fahrzeugführer |
-| `rueckmeldungAnzahl.ma` | number | Anzahl Rückmeldungen als Maschinist |
-| `rueckmeldungAnzahl.med` | number | Anzahl Rückmeldungen mit medizinischer Befähigung |
-
-#### tts
-
-| State | Typ | Beschreibung |
-| --- | --- | --- |
-| `last` | string (URL) | URL der zuletzt empfangenen Sprachansage |
-| `lastTimestamp` | string (date) | Zeitpunkt der letzten Ansage |
-| `history10` | string (JSON-Array) | Letzte 10 Ansagen als `{zeitstempel, url}` |
-
-#### debug
-
-| State | Typ | Beschreibung |
-| --- | --- | --- |
-| `lastEvent` | string (JSON) | Letztes empfangenes Socket-Event (Name + Zeitstempel), zur Verbindungsdiagnose |
-| `normalizedPosition` | string (JSON) | Zuletzt normalisierte Position des Einsatzes |
-| `rawPayloadShort` | string | Vorschau (500 Zeichen) der rohen, unnormalisierten `io.new_waip`-Nutzlast |
-| `ignoredCount` | number | Anzahl verworfener Events (Payload nannte explizit eine andere Monitor-ID) |
-| `monitorAudit` | string (JSON-Array) | Chronologisches Log von Connect-/Registrierungs-/Reconnect-Ereignissen (200 Einträge) |
-| `sessionExpires` | string (date) | Ablaufzeit des Session-Cookies laut letzter Erneuerung |
-| `lastError` | string (JSON) | Letzte vom Server gemeldete Fehlermeldung (`io.error`) |
-| `serverVersion` | string | Zuletzt gemeldete Server-Instanz-ID (`io.version`); Änderung deutet auf Server-Neustart hin |
-
-JSON-interne Schlüssel innerhalb von `einsatz.json` (`emAlarmiert`,
-`emWeitere`, `routen`, `rueckmeldungen`) bleiben kleingeschrieben – das sind
-Objekteigenschaften im JSON-Wert, keine eigenen ioBroker-States.
-
-## License
-
-MIT License (this adapter) – see [LICENSE](LICENSE).
-
-The adapter connects to instances of
-[WAIP-Web](https://github.com/Robert-112/n112_waip-web), which is licensed
-under CC BY-SA 4.0 by Robert-112. This adapter contains no code from that
-project.
-
-Copyright (c) 2026 rnc11
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
 ## Changelog
+
+### 0.7.2 (2026-08-21)
+
+- README is now English-only (per the official ioBroker adapter checker,
+  which flags mixed-language READMEs); the German version moved to a
+  separate [README.de.md](README.de.md), linked near the top.
+- Moved the License section to the very end of the file (was before the
+  Changelog) - the checker requires License to be the last section.
+- `package.json`: raised `engines.node` to `>=20` and `@iobroker/adapter-core`
+  to `^3.4.1`.
+- `io-package.json`: raised the `js-controller` dependency to `>=6.0.11`
+  and the `admin` dependency to `>=7.6.17`; removed the `0.7.0` news
+  entry (never published to npm, only `0.7.1` and later actually are).
+- `admin/jsonConfig.json`: added the root `"i18n": true` attribute (now
+  required since the fields resolve translations from `admin/i18n/*.json`)
+  and explicit `xs`/`xl` grid sizes on all fields.
+- `main.js`: `require('http')`/`require('https')`/`require('url')` now
+  use the `node:` prefix for Node's built-in modules.
+- `.gitignore`: added `.commitinfo`.
+- Removed `.npmignore` - redundant with the `files` allowlist already
+  used in `package.json`.
+- CI: `adapter-tests` now explicitly declares `needs: check-and-lint`;
+  raised the Node.js version used by the `check-and-lint` and `deploy`
+  jobs.
 
 ### 0.7.1 (2026-08-21)
 
@@ -789,3 +590,32 @@ SOFTWARE.
 - Initial version: ported the original "WAIP Instrumented v3.9" ioBroker
   JavaScript-adapter script into a standalone adapter. The URL/monitor
   ID now come from the admin configuration instead of a runtime state.
+
+## License
+
+MIT License (this adapter) – see [LICENSE](LICENSE).
+
+The adapter connects to instances of
+[WAIP-Web](https://github.com/Robert-112/n112_waip-web), which is licensed
+under CC BY-SA 4.0 by Robert-112. This adapter contains no code from that
+project.
+
+Copyright (c) 2026 rnc11
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

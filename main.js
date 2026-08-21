@@ -17,9 +17,9 @@
  * einsatz.rueckmeldungAnzahl.*). Der frühere vis.*-Kanal entfällt komplett.
  */
 
-const https = require('https');
-const http = require('http');
-const { URL } = require('url');
+const https = require('node:https');
+const http = require('node:http');
+const { URL } = require('node:url');
 const utils = require('@iobroker/adapter-core');
 const { io } = require('socket.io-client');
 
