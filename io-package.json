@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.8",
+    "version": "0.6.9",
     "news": {
+      "0.6.9": {
+        "en": "Removed common.news entries for versions that were never actually published to npm (0.6.1-0.6.5, 0.6.7 - only version bumps in git, no matching npm release), as reported by the official adapter checker.",
+        "de": "common.news-Einträge für Versionen entfernt, die nie tatsächlich bei npm veröffentlicht wurden (0.6.1-0.6.5, 0.6.7 - nur Versionserhöhungen in git, keine passende npm-Veröffentlichung), wie vom offiziellen Adapter-Checker gemeldet.",
+        "ru": "Удалены записи common.news для версий, которые фактически никогда не публиковались в npm (0.6.1–0.6.5, 0.6.7 — только повышения версии в git без соответствующего релиза npm), как сообщил официальный чекер адаптеров.",
+        "pt": "Removidas entradas de common.news para versões que nunca foram realmente publicadas no npm (0.6.1-0.6.5, 0.6.7 - apenas incrementos de versão no git, sem lançamento npm correspondente), conforme relatado pelo verificador oficial de adaptadores.",
+        "nl": "common.news-items verwijderd voor versies die nooit daadwerkelijk op npm zijn gepubliceerd (0.6.1-0.6.5, 0.6.7 - alleen versieverhogingen in git, geen bijbehorende npm-release), zoals gemeld door de officiële adapter-checker.",
+        "fr": "Suppression des entrées common.news pour des versions qui n'ont jamais été réellement publiées sur npm (0.6.1-0.6.5, 0.6.7 - simples incréments de version dans git, sans publication npm correspondante), comme signalé par le vérificateur officiel d'adaptateurs.",
+        "it": "Rimosse le voci common.news per versioni mai effettivamente pubblicate su npm (0.6.1-0.6.5, 0.6.7 - solo incrementi di versione in git, senza una release npm corrispondente), come segnalato dal checker ufficiale degli adapter.",
+        "es": "Se eliminaron las entradas de common.news para versiones que nunca se publicaron realmente en npm (0.6.1-0.6.5, 0.6.7 - solo incrementos de versión en git, sin la correspondiente publicación en npm), según lo indicado por el verificador oficial de adaptadores.",
+        "pl": "Usunięto wpisy common.news dla wersji, które nigdy nie zostały faktycznie opublikowane w npm (0.6.1-0.6.5, 0.6.7 - tylko podniesienia wersji w git, bez odpowiadającego wydania npm), zgodnie z raportem oficjalnego checkera adapterów.",
+        "uk": "Видалено записи common.news для версій, які фактично ніколи не публікувалися в npm (0.6.1-0.6.5, 0.6.7 - лише підвищення версії в git без відповідного релізу npm), як повідомив офіційний перевірник адаптерів.",
+        "zh-cn": "移除了从未真正发布到 npm 的版本的 common.news 条目(0.6.1-0.6.5、0.6.7——仅在 git 中提升了版本号,没有对应的 npm 发布),这是官方适配器检查器报告的问题。"
+      },
       "0.6.8": {
         "en": "Renamed the README title to \"ioBroker-Adapter (ioBroker.waip-web)\". This release doubles as the first end-to-end test of the automatic npm publish via Trusted Publishing introduced in 0.6.7.",
         "de": "README-Titel auf „ioBroker-Adapter (ioBroker.waip-web)\" geändert. Dieses Release dient gleichzeitig als erster Test der in 0.6.7 eingeführten automatischen npm-Veröffentlichung über Trusted Publishing.",
@@ -16,19 +29,6 @@
         "uk": "Заголовок README змінено на «ioBroker-Adapter (ioBroker.waip-web)». Цей реліз також слугує першим наскрізним тестом автоматичної публікації в npm через Trusted Publishing, введеної у версії 0.6.7.",
         "zh-cn": "已将 README 标题更改为 \"ioBroker-Adapter (ioBroker.waip-web)\"。此版本同时也是对 0.6.7 中引入的通过 Trusted Publishing 自动发布到 npm 功能的首次端到端测试。"
       },
-      "0.6.7": {
-        "en": "Enabled automatic npm publishing: the deploy job in CI is no longer commented out and now runs on every version tag (vX.Y.Z), publishing to npm via Trusted Publishing (OIDC, no NPM_TOKEN secret needed).",
-        "de": "Automatische npm-Veröffentlichung aktiviert: Der deploy-Job in der CI ist nicht mehr auskommentiert und läuft jetzt bei jedem Versions-Tag (vX.Y.Z), Veröffentlichung über Trusted Publishing (OIDC, kein NPM_TOKEN-Secret nötig).",
-        "ru": "Включена автоматическая публикация в npm: задача deploy в CI больше не закомментирована и теперь запускается при каждом версионном теге (vX.Y.Z), публикация происходит через Trusted Publishing (OIDC, секрет NPM_TOKEN не требуется).",
-        "pt": "Publicação automática no npm ativada: o job deploy no CI não está mais comentado e agora é executado a cada tag de versão (vX.Y.Z), publicando via Trusted Publishing (OIDC, sem necessidade do secret NPM_TOKEN).",
-        "nl": "Automatisch publiceren naar npm ingeschakeld: de deploy-job in CI is niet langer uitgecommentarieerd en draait nu bij elke versietag (vX.Y.Z), publiceren via Trusted Publishing (OIDC, geen NPM_TOKEN-secret nodig).",
-        "fr": "Publication automatique sur npm activée : le job deploy dans la CI n'est plus commenté et s'exécute désormais à chaque tag de version (vX.Y.Z), publication via Trusted Publishing (OIDC, aucun secret NPM_TOKEN nécessaire).",
-        "it": "Pubblicazione automatica su npm abilitata: il job deploy nella CI non è più commentato e ora viene eseguito a ogni tag di versione (vX.Y.Z), pubblicando tramite Trusted Publishing (OIDC, nessun secret NPM_TOKEN necessario).",
-        "es": "Publicación automática en npm habilitada: el job deploy en la CI ya no está comentado y ahora se ejecuta en cada etiqueta de versión (vX.Y.Z), publicando mediante Trusted Publishing (OIDC, sin necesidad del secreto NPM_TOKEN).",
-        "pl": "Włączono automatyczną publikację w npm: zadanie deploy w CI nie jest już zakomentowane i uruchamia się teraz przy każdym tagu wersji (vX.Y.Z), publikując przez Trusted Publishing (OIDC, bez potrzeby sekretu NPM_TOKEN).",
-        "uk": "Увімкнено автоматичну публікацію в npm: завдання deploy у CI більше не закоментоване і тепер запускається при кожному тегу версії (vX.Y.Z), публікація відбувається через Trusted Publishing (OIDC, секрет NPM_TOKEN не потрібен).",
-        "zh-cn": "已启用自动 npm 发布:CI 中的 deploy 任务不再被注释,现在会在每个版本标签(vX.Y.Z)上运行,通过 Trusted Publishing(OIDC,无需 NPM_TOKEN 密钥)发布到 npm。"
-      },
       "0.6.6": {
         "en": "Added .gitattributes eol=lf so all contributors get consistent LF line endings regardless of local git autocrlf settings (previously caused hundreds of spurious local lint errors on Windows without affecting CI). Added package-lock.json and switched CI to the default npm ci with caching instead of npm install without caching.",
         "de": "eol=lf in .gitattributes ergänzt, damit alle Mitwirkenden unabhängig von ihrer lokalen git-autocrlf-Einstellung konsistente LF-Zeilenenden erhalten (verursachte zuvor unter Windows lokal hunderte unnötige Lint-Fehler, ohne die CI zu betreffen). package-lock.json ergänzt und CI von npm install ohne Caching auf das Standard-npm-ci mit Caching umgestellt.",
@@ -41,58 +41,6 @@
         "pl": "Dodano eol=lf w .gitattributes, aby wszyscy współtwórcy mieli spójne zakończenia linii LF niezależnie od lokalnego ustawienia git autocrlf (wcześniej powodowało to setki fałszywych lokalnych błędów lint w systemie Windows, nie wpływając na CI). Dodano package-lock.json i przełączono CI z npm install bez cache na domyślne npm ci z cache.",
         "uk": "Додано eol=lf у .gitattributes, щоб усі учасники отримували однакові закінчення рядків LF незалежно від локального налаштування git autocrlf (раніше це спричиняло сотні хибних локальних помилок лінтера у Windows, не впливаючи на CI). Додано package-lock.json, а CI переведено з npm install без кешування на стандартний npm ci з кешуванням.",
         "zh-cn": "在 .gitattributes 中添加了 eol=lf,确保所有贡献者无论本地 git autocrlf 设置如何都能获得一致的 LF 换行符(此前在 Windows 上会导致本地出现数百个虚假的 lint 错误,但不影响 CI)。新增了 package-lock.json,并将 CI 从不带缓存的 npm install 切换为带缓存的默认 npm ci。"
-      },
-      "0.6.5": {
-        "en": "Fixed all issues reported by the official ioBroker adapter checker: bumped required js-controller to >=5.0.19 and @iobroker/adapter-core to ^3.2.2, replaced deprecated common.license/common.title/common.main with common.licenseInformation/common.titleLang, added common.tier, added translations for titleLang/desc/news into all 10 additional languages, and trimmed common.news to the 7 most recent entries as recommended",
-        "de": "Alle vom offiziellen ioBroker-Adapter-Checker gemeldeten Punkte behoben: benötigten js-controller auf >=5.0.19 und @iobroker/adapter-core auf ^3.2.2 angehoben, veraltete common.license/common.title/common.main durch common.licenseInformation/common.titleLang ersetzt, common.tier ergänzt, titleLang/desc/news in alle 10 zusätzlichen Sprachen übersetzt und common.news wie empfohlen auf die 7 neuesten Einträge gekürzt",
-        "ru": "Устранены все замечания официального ioBroker Adapter Checker: минимальная требуемая версия js-controller повышена до >=5.0.19, а @iobroker/adapter-core — до ^3.2.2, устаревшие common.license/common.title/common.main заменены на common.licenseInformation/common.titleLang, добавлено common.tier, добавлены переводы titleLang/desc/news на все 10 дополнительных языков, а common.news сокращено до 7 последних записей, как рекомендовано",
-        "pt": "Corrigidos todos os pontos relatados pelo verificador oficial de adaptadores do ioBroker: js-controller mínimo exigido elevado para >=5.0.19 e @iobroker/adapter-core para ^3.2.2, os campos obsoletos common.license/common.title/common.main substituídos por common.licenseInformation/common.titleLang, adicionado common.tier, adicionadas traduções de titleLang/desc/news para os 10 idiomas adicionais, e common.news reduzido para as 7 entradas mais recentes, conforme recomendado",
-        "nl": "Alle door de officiële ioBroker adapter-checker gemelde punten opgelost: vereiste js-controller verhoogd naar >=5.0.19 en @iobroker/adapter-core naar ^3.2.2, verouderde common.license/common.title/common.main vervangen door common.licenseInformation/common.titleLang, common.tier toegevoegd, vertalingen van titleLang/desc/news toegevoegd voor alle 10 extra talen, en common.news zoals aanbevolen ingekort tot de 7 meest recente items",
-        "fr": "Correction de tous les points signalés par le vérificateur officiel d'adaptateurs ioBroker : js-controller minimal requis relevé à >=5.0.19 et @iobroker/adapter-core à ^3.2.2, les champs obsolètes common.license/common.title/common.main remplacés par common.licenseInformation/common.titleLang, ajout de common.tier, ajout des traductions de titleLang/desc/news dans les 10 langues supplémentaires, et common.news réduit aux 7 entrées les plus récentes comme recommandé",
-        "it": "Risolti tutti i punti segnalati dal checker ufficiale degli adapter ioBroker: js-controller minimo richiesto elevato a >=5.0.19 e @iobroker/adapter-core a ^3.2.2, i campi deprecati common.license/common.title/common.main sostituiti con common.licenseInformation/common.titleLang, aggiunto common.tier, aggiunte le traduzioni di titleLang/desc/news in tutte le 10 lingue aggiuntive, e common.news ridotto alle 7 voci più recenti come raccomandato",
-        "es": "Se corrigieron todos los puntos señalados por el verificador oficial de adaptadores de ioBroker: se elevó el js-controller mínimo requerido a >=5.0.19 y @iobroker/adapter-core a ^3.2.2, se sustituyeron los campos obsoletos common.license/common.title/common.main por common.licenseInformation/common.titleLang, se añadió common.tier, se añadieron traducciones de titleLang/desc/news a los 10 idiomas adicionales, y common.news se redujo a las 7 entradas más recientes según lo recomendado",
-        "pl": "Naprawiono wszystkie kwestie zgłoszone przez oficjalny checker adapterów ioBroker: podniesiono wymaganą minimalną wersję js-controller do >=5.0.19, a @iobroker/adapter-core do ^3.2.2, przestarzałe pola common.license/common.title/common.main zastąpiono common.licenseInformation/common.titleLang, dodano common.tier, dodano tłumaczenia titleLang/desc/news na wszystkie 10 dodatkowych języków, a common.news skrócono do 7 najnowszych wpisów zgodnie z zaleceniem",
-        "uk": "Виправлено всі зауваження офіційного перевірника адаптерів ioBroker: мінімальну потрібну версію js-controller підвищено до >=5.0.19, а @iobroker/adapter-core — до ^3.2.2, застарілі common.license/common.title/common.main замінено на common.licenseInformation/common.titleLang, додано common.tier, додано переклади titleLang/desc/news на всі 10 додаткових мов, а common.news скорочено до 7 найновіших записів, як рекомендовано",
-        "zh-cn": "修复了官方 ioBroker 适配器检查器报告的所有问题:将所需最低 js-controller 版本提升至 >=5.0.19,@iobroker/adapter-core 提升至 ^3.2.2;用 common.licenseInformation/common.titleLang 替换了已弃用的 common.license/common.title/common.main;新增 common.tier;为 titleLang/desc/news 添加了全部 10 种附加语言的翻译;并按照建议将 common.news 精简为最近的 7 条记录"
-      },
-      "0.6.4": {
-        "en": "New state status.registeredMonitorName shows the registered monitor as text without the ID (e.g. 'Leitstelle: Lausitz'), resolved once at startup from the same /waip/ overview page as the admin dropdown; status.registeredMonitor keeps showing the ID as before",
-        "de": "Neuer State status.registeredMonitorName zeigt den registrierten Monitor als Text ohne ID (z.B. 'Leitstelle: Lausitz'), einmalig beim Start von derselben /waip/-Übersichtsseite wie das Admin-Dropdown aufgelöst; status.registeredMonitor zeigt weiterhin wie bisher die ID",
-        "ru": "Новое состояние status.registeredMonitorName показывает зарегистрированный монитор в виде текста без ID (например, 'Leitstelle: Lausitz'), которое определяется один раз при запуске с той же обзорной страницы /waip/, что и выпадающий список в админке; status.registeredMonitor по-прежнему показывает ID",
-        "pt": "O novo estado status.registeredMonitorName mostra o monitor registrado como texto sem o ID (ex.: 'Leitstelle: Lausitz'), resolvido uma vez na inicialização a partir da mesma página de visão geral /waip/ usada pela lista suspensa do admin; status.registeredMonitor continua mostrando o ID como antes",
-        "nl": "Nieuwe state status.registeredMonitorName toont de geregistreerde monitor als tekst zonder ID (bijv. 'Leitstelle: Lausitz'), eenmalig bepaald bij het opstarten vanaf dezelfde /waip/-overzichtspagina als de admin-keuzelijst; status.registeredMonitor blijft zoals voorheen de ID tonen",
-        "fr": "Le nouvel état status.registeredMonitorName affiche le moniteur enregistré sous forme de texte sans l'ID (ex. « Leitstelle: Lausitz »), résolu une seule fois au démarrage à partir de la même page de présentation /waip/ que la liste déroulante d'administration ; status.registeredMonitor continue d'afficher l'ID comme auparavant",
-        "it": "Il nuovo stato status.registeredMonitorName mostra il monitor registrato come testo senza ID (es. 'Leitstelle: Lausitz'), risolto una sola volta all'avvio dalla stessa pagina panoramica /waip/ usata dal menu a tendina di amministrazione; status.registeredMonitor continua a mostrare l'ID come prima",
-        "es": "El nuevo estado status.registeredMonitorName muestra el monitor registrado como texto sin el ID (p. ej. 'Leitstelle: Lausitz'), resuelto una sola vez al iniciar desde la misma página de resumen /waip/ que la lista desplegable de administración; status.registeredMonitor sigue mostrando el ID como antes",
-        "pl": "Nowy stan status.registeredMonitorName pokazuje zarejestrowany monitor jako tekst bez ID (np. 'Leitstelle: Lausitz'), ustalany jednorazowo przy starcie na podstawie tej samej strony przeglądu /waip/, co lista rozwijana w panelu administracyjnym; status.registeredMonitor nadal pokazuje ID jak dotychczas",
-        "uk": "Новий стан status.registeredMonitorName показує зареєстрований монітор як текст без ID (напр., 'Leitstelle: Lausitz'), що визначається один раз під час запуску з тієї самої оглядової сторінки /waip/, що й випадний список в адмінці; status.registeredMonitor, як і раніше, показує ID",
-        "zh-cn": "新增状态 status.registeredMonitorName 以文本形式显示已注册的监视器名称(不含 ID,例如 'Leitstelle: Lausitz'),在启动时从与管理界面下拉列表相同的 /waip/ 概览页面解析一次;status.registeredMonitor 保持不变,仍显示 ID"
-      },
-      "0.6.3": {
-        "en": "Monitor ID field is now always full-width, placed on its own row below the WAIP server URL, so the (sometimes long) dropdown entries have enough room",
-        "de": "Feld Monitor-ID ist jetzt immer vollzeilig und steht in einer eigenen Zeile unterhalb der WAIP-Server-URL, damit die teils langen Dropdown-Einträge genug Platz haben",
-        "ru": "Поле ID монитора теперь всегда занимает всю ширину и располагается в отдельной строке под URL сервера WAIP, чтобы для порой длинных пунктов выпадающего списка было достаточно места",
-        "pt": "O campo ID do monitor agora é sempre de largura total, colocado em sua própria linha abaixo da URL do servidor WAIP, para que as entradas (às vezes longas) da lista suspensa tenham espaço suficiente",
-        "nl": "Het veld Monitor-ID is nu altijd volledig breed en staat op een eigen regel onder de WAIP-server-URL, zodat de soms lange items in de keuzelijst genoeg ruimte hebben",
-        "fr": "Le champ ID du moniteur occupe désormais toujours toute la largeur et se trouve sur sa propre ligne sous l'URL du serveur WAIP, afin que les entrées (parfois longues) de la liste déroulante disposent de suffisamment de place",
-        "it": "Il campo ID del monitor ora è sempre a larghezza intera, collocato su una riga propria sotto l'URL del server WAIP, così le voci (a volte lunghe) del menu a tendina hanno spazio sufficiente",
-        "es": "El campo ID del monitor ahora siempre ocupa el ancho completo y se coloca en su propia fila debajo de la URL del servidor WAIP, para que las entradas (a veces largas) de la lista desplegable tengan suficiente espacio",
-        "pl": "Pole ID monitora zajmuje teraz zawsze pełną szerokość i znajduje się w osobnym wierszu poniżej adresu URL serwera WAIP, dzięki czemu czasem długie pozycje listy rozwijanej mają wystarczająco miejsca",
-        "uk": "Поле ID монітора тепер завжди на всю ширину і розташоване в окремому рядку під URL-адресою сервера WAIP, щоб інколи довгі пункти випадного списку мали достатньо місця",
-        "zh-cn": "监视器 ID 字段现在始终占满整行宽度,并单独显示在 WAIP 服务器 URL 下方一行,以便下拉列表中(有时较长的)条目有足够的显示空间"
-      },
-      "0.6.2": {
-        "en": "Monitor dropdown entries are now sorted by numeric monitor ID instead of the source page's order",
-        "de": "Einträge im Monitor-Dropdown werden jetzt nach numerischer Monitor-ID sortiert statt in der Reihenfolge der Quellseite",
-        "ru": "Пункты выпадающего списка мониторов теперь сортируются по числовому ID монитора, а не в порядке исходной страницы",
-        "pt": "As entradas da lista suspensa de monitores agora são ordenadas pelo ID numérico do monitor, em vez da ordem da página de origem",
-        "nl": "Items in de monitor-keuzelijst worden nu gesorteerd op numerieke monitor-ID in plaats van op de volgorde van de bronpagina",
-        "fr": "Les entrées de la liste déroulante des moniteurs sont désormais triées par ID de moniteur numérique plutôt que selon l'ordre de la page source",
-        "it": "Le voci del menu a tendina dei monitor sono ora ordinate per ID monitor numerico anziché secondo l'ordine della pagina di origine",
-        "es": "Las entradas de la lista desplegable de monitores ahora se ordenan por el ID numérico del monitor en lugar del orden de la página de origen",
-        "pl": "Pozycje na liście rozwijanej monitorów są teraz sortowane według numerycznego ID monitora zamiast kolejności ze strony źródłowej",
-        "uk": "Пункти випадного списку моніторів тепер сортуються за числовим ID монітора, а не за порядком на вихідній сторінці",
-        "zh-cn": "监视器下拉列表条目现在按数字监视器 ID 排序,而不是按源页面的顺序排列"
       }
     },
     "titleLang": {

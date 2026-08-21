@@ -421,6 +421,15 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.9 (2026-08-21)
+
+- Fixed adapter-checker finding **[E254]**: removed `common.news` entries
+  for versions that were never actually published to npm (`0.6.1`–`0.6.5`,
+  `0.6.7` were only version bumps in git/GitHub, without a matching
+  tagged npm release). `common.news` now only lists versions that really
+  exist on the npm registry (`0.6.6`, `0.6.8`); the full history remains
+  in this changelog regardless of what was actually published.
+
 ### 0.6.8 (2026-08-21)
 
 - Renamed the README title to "ioBroker-Adapter (ioBroker.waip-web)".
