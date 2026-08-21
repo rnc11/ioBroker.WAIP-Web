@@ -1,4 +1,4 @@
-# ioBroker.WAIP-Web
+# ioBroker-Adapter (ioBroker.waip-web)
 
 [![Test and Release](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/rnc11/ioBroker.waip-web/actions/workflows/test-and-release.yml)
 
@@ -420,6 +420,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.6.8 (2026-08-21)
+
+- Renamed the README title to "ioBroker-Adapter (ioBroker.waip-web)".
+- This release doubles as the first end-to-end test of the automatic
+  npm publish via Trusted Publishing introduced in 0.6.7.
 
 ### 0.6.7 (2026-08-21)
 

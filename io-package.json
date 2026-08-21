@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.7",
+    "version": "0.6.8",
     "news": {
+      "0.6.8": {
+        "en": "Renamed the README title to \"ioBroker-Adapter (ioBroker.waip-web)\". This release doubles as the first end-to-end test of the automatic npm publish via Trusted Publishing introduced in 0.6.7.",
+        "de": "README-Titel auf „ioBroker-Adapter (ioBroker.waip-web)\" geändert. Dieses Release dient gleichzeitig als erster Test der in 0.6.7 eingeführten automatischen npm-Veröffentlichung über Trusted Publishing.",
+        "ru": "Заголовок README изменён на «ioBroker-Adapter (ioBroker.waip-web)». Этот релиз одновременно служит первым сквозным тестом автоматической публикации в npm через Trusted Publishing, введённой в версии 0.6.7.",
+        "pt": "Título do README alterado para \"ioBroker-Adapter (ioBroker.waip-web)\". Este lançamento também serve como o primeiro teste completo da publicação automática no npm via Trusted Publishing, introduzida na 0.6.7.",
+        "nl": "README-titel gewijzigd naar \"ioBroker-Adapter (ioBroker.waip-web)\". Deze release dient ook als de eerste end-to-end test van het automatisch publiceren naar npm via Trusted Publishing, geïntroduceerd in 0.6.7.",
+        "fr": "Titre du README changé en « ioBroker-Adapter (ioBroker.waip-web) ». Cette version sert également de premier test de bout en bout de la publication automatique sur npm via Trusted Publishing, introduite dans la 0.6.7.",
+        "it": "Titolo del README modificato in \"ioBroker-Adapter (ioBroker.waip-web)\". Questa release funge anche da primo test end-to-end della pubblicazione automatica su npm tramite Trusted Publishing, introdotta nella 0.6.7.",
+        "es": "Título del README cambiado a \"ioBroker-Adapter (ioBroker.waip-web)\". Esta versión también sirve como la primera prueba de extremo a extremo de la publicación automática en npm mediante Trusted Publishing, introducida en la 0.6.7.",
+        "pl": "Zmieniono tytuł README na \"ioBroker-Adapter (ioBroker.waip-web)\". To wydanie służy również jako pierwszy pełny test automatycznej publikacji w npm przez Trusted Publishing, wprowadzonej w wersji 0.6.7.",
+        "uk": "Заголовок README змінено на «ioBroker-Adapter (ioBroker.waip-web)». Цей реліз також слугує першим наскрізним тестом автоматичної публікації в npm через Trusted Publishing, введеної у версії 0.6.7.",
+        "zh-cn": "已将 README 标题更改为 \"ioBroker-Adapter (ioBroker.waip-web)\"。此版本同时也是对 0.6.7 中引入的通过 Trusted Publishing 自动发布到 npm 功能的首次端到端测试。"
+      },
       "0.6.7": {
         "en": "Enabled automatic npm publishing: the deploy job in CI is no longer commented out and now runs on every version tag (vX.Y.Z), publishing to npm via Trusted Publishing (OIDC, no NPM_TOKEN secret needed).",
         "de": "Automatische npm-Veröffentlichung aktiviert: Der deploy-Job in der CI ist nicht mehr auskommentiert und läuft jetzt bei jedem Versions-Tag (vX.Y.Z), Veröffentlichung über Trusted Publishing (OIDC, kein NPM_TOKEN-Secret nötig).",
@@ -80,19 +93,6 @@
         "pl": "Pozycje na liście rozwijanej monitorów są teraz sortowane według numerycznego ID monitora zamiast kolejności ze strony źródłowej",
         "uk": "Пункти випадного списку моніторів тепер сортуються за числовим ID монітора, а не за порядком на вихідній сторінці",
         "zh-cn": "监视器下拉列表条目现在按数字监视器 ID 排序,而不是按源页面的顺序排列"
-      },
-      "0.6.1": {
-        "en": "Monitor dropdown entries now start with the actual monitor ID, e.g. '4 - Leitstelle: Lausitz'",
-        "de": "Einträge im Monitor-Dropdown beginnen jetzt mit der eigentlichen Monitor-ID, z.B. '4 - Leitstelle: Lausitz'",
-        "ru": "Пункты выпадающего списка мониторов теперь начинаются с фактического ID монитора, например '4 - Leitstelle: Lausitz'",
-        "pt": "As entradas da lista suspensa de monitores agora começam com o ID real do monitor, por ex. '4 - Leitstelle: Lausitz'",
-        "nl": "Items in de monitor-keuzelijst beginnen nu met de werkelijke monitor-ID, bijv. '4 - Leitstelle: Lausitz'",
-        "fr": "Les entrées de la liste déroulante des moniteurs commencent désormais par l'ID réel du moniteur, par ex. « 4 - Leitstelle: Lausitz »",
-        "it": "Le voci del menu a tendina dei monitor iniziano ora con l'ID effettivo del monitor, ad es. '4 - Leitstelle: Lausitz'",
-        "es": "Las entradas de la lista desplegable de monitores ahora comienzan con el ID real del monitor, p. ej. '4 - Leitstelle: Lausitz'",
-        "pl": "Pozycje na liście rozwijanej monitorów zaczynają się teraz od rzeczywistego ID monitora, np. '4 - Leitstelle: Lausitz'",
-        "uk": "Пункти випадного списку моніторів тепер починаються з фактичного ID монітора, напр. '4 - Leitstelle: Lausitz'",
-        "zh-cn": "监视器下拉列表条目现在以实际监视器 ID 开头,例如 '4 - Leitstelle: Lausitz'"
       }
     },
     "titleLang": {
