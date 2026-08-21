@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.3",
+    "version": "0.7.4",
     "news": {
+      "0.7.4": {
+        "en": "Bumped the ioBroker/testing-action-check GitHub Action used by the check-and-lint CI job from v1 to v2 (Dependabot PR #10) - purely additive (adds an optional test-command: 'false' flag), no behavior change for us.",
+        "de": "GitHub-Action ioBroker/testing-action-check im check-and-lint-CI-Job von v1 auf v2 angehoben (Dependabot-PR #10) - rein additiv (fügt eine optionale test-command: 'false'-Option hinzu), kein Verhaltensunterschied für uns.",
+        "ru": "Обновлён GitHub Action ioBroker/testing-action-check, используемый в задаче CI check-and-lint, с v1 до v2 (Dependabot PR #10) — чисто аддитивное изменение (добавляет опциональный флаг test-command: 'false'), поведение для нас не меняется.",
+        "pt": "Atualizada a GitHub Action ioBroker/testing-action-check usada pelo job de CI check-and-lint de v1 para v2 (Dependabot PR #10) - puramente aditiva (adiciona uma flag opcional test-command: 'false'), sem mudança de comportamento para nós.",
+        "nl": "GitHub Action ioBroker/testing-action-check, gebruikt door de CI-job check-and-lint, bijgewerkt van v1 naar v2 (Dependabot PR #10) - puur additief (voegt een optionele test-command: 'false'-vlag toe), geen gedragsverandering voor ons.",
+        "fr": "Mise à jour de l'action GitHub ioBroker/testing-action-check utilisée par le job CI check-and-lint, de v1 à v2 (PR Dependabot #10) - purement additive (ajoute un indicateur optionnel test-command: 'false'), aucun changement de comportement pour nous.",
+        "it": "Aggiornata l'azione GitHub ioBroker/testing-action-check usata dal job CI check-and-lint da v1 a v2 (PR Dependabot #10) - puramente additiva (aggiunge un flag opzionale test-command: 'false'), nessun cambiamento di comportamento per noi.",
+        "es": "Actualizada la GitHub Action ioBroker/testing-action-check usada por el job de CI check-and-lint de v1 a v2 (PR de Dependabot #10) - puramente aditiva (añade una opción opcional test-command: 'false'), sin cambio de comportamiento para nosotros.",
+        "pl": "Zaktualizowano akcję GitHub ioBroker/testing-action-check używaną przez zadanie CI check-and-lint z v1 do v2 (PR Dependabota #10) - czysto addytywnie (dodaje opcjonalną flagę test-command: 'false'), bez zmiany zachowania dla nas.",
+        "uk": "Оновлено GitHub Action ioBroker/testing-action-check, яку використовує завдання CI check-and-lint, з v1 до v2 (Dependabot PR #10) - суто адитивно (додає опціональний прапорець test-command: 'false'), без зміни поведінки для нас.",
+        "zh-cn": "将 check-and-lint CI 任务使用的 ioBroker/testing-action-check GitHub Action 从 v1 升级到 v2(Dependabot PR #10)——纯增量更新(新增可选的 test-command: 'false' 标志),对我们没有行为影响。"
+      },
       "0.7.3": {
         "en": "Addressed further ioBroker Check and Service Bot findings: removed the deprecated common.materialize field (superseded by common.adminUI.config), raised engines.node to >=22 and dropped Node.js 20 (reached End of Life 2026-04-30) from the CI test matrix, raised the admin dependency to >=7.8.23, moved the check-and-lint CI job to Node 24.x, and added a .github/dependabot.yml for automated dependency updates.",
         "de": "Weitere Findings des ioBroker Check and Service Bot behoben: veraltetes Feld common.materialize entfernt (abgelöst durch common.adminUI.config), engines.node auf >=22 angehoben und Node.js 20 (End of Life seit 2026-04-30) aus der CI-Testmatrix entfernt, admin-Dependency auf >=7.8.23 angehoben, CI-Job check-and-lint auf Node 24.x umgestellt, sowie .github/dependabot.yml für automatische Abhängigkeits-Updates ergänzt.",
@@ -80,19 +93,6 @@
         "pl": "Usunięto wpisy common.news dla wersji, które nigdy nie zostały faktycznie opublikowane w npm (0.6.1-0.6.5, 0.6.7 - tylko podniesienia wersji w git, bez odpowiadającego wydania npm), zgodnie z raportem oficjalnego checkera adapterów.",
         "uk": "Видалено записи common.news для версій, які фактично ніколи не публікувалися в npm (0.6.1-0.6.5, 0.6.7 - лише підвищення версії в git без відповідного релізу npm), як повідомив офіційний перевірник адаптерів.",
         "zh-cn": "移除了从未真正发布到 npm 的版本的 common.news 条目(0.6.1-0.6.5、0.6.7——仅在 git 中提升了版本号,没有对应的 npm 发布),这是官方适配器检查器报告的问题。"
-      },
-      "0.6.8": {
-        "en": "Renamed the README title to \"ioBroker-Adapter (ioBroker.waip-web)\". This release doubles as the first end-to-end test of the automatic npm publish via Trusted Publishing introduced in 0.6.7.",
-        "de": "README-Titel auf „ioBroker-Adapter (ioBroker.waip-web)\" geändert. Dieses Release dient gleichzeitig als erster Test der in 0.6.7 eingeführten automatischen npm-Veröffentlichung über Trusted Publishing.",
-        "ru": "Заголовок README изменён на «ioBroker-Adapter (ioBroker.waip-web)». Этот релиз одновременно служит первым сквозным тестом автоматической публикации в npm через Trusted Publishing, введённой в версии 0.6.7.",
-        "pt": "Título do README alterado para \"ioBroker-Adapter (ioBroker.waip-web)\". Este lançamento também serve como o primeiro teste completo da publicação automática no npm via Trusted Publishing, introduzida na 0.6.7.",
-        "nl": "README-titel gewijzigd naar \"ioBroker-Adapter (ioBroker.waip-web)\". Deze release dient ook als de eerste end-to-end test van het automatisch publiceren naar npm via Trusted Publishing, geïntroduceerd in 0.6.7.",
-        "fr": "Titre du README changé en « ioBroker-Adapter (ioBroker.waip-web) ». Cette version sert également de premier test de bout en bout de la publication automatique sur npm via Trusted Publishing, introduite dans la 0.6.7.",
-        "it": "Titolo del README modificato in \"ioBroker-Adapter (ioBroker.waip-web)\". Questa release funge anche da primo test end-to-end della pubblicazione automatica su npm tramite Trusted Publishing, introdotta nella 0.6.7.",
-        "es": "Título del README cambiado a \"ioBroker-Adapter (ioBroker.waip-web)\". Esta versión también sirve como la primera prueba de extremo a extremo de la publicación automática en npm mediante Trusted Publishing, introducida en la 0.6.7.",
-        "pl": "Zmieniono tytuł README na \"ioBroker-Adapter (ioBroker.waip-web)\". To wydanie służy również jako pierwszy pełny test automatycznej publikacji w npm przez Trusted Publishing, wprowadzonej w wersji 0.6.7.",
-        "uk": "Заголовок README змінено на «ioBroker-Adapter (ioBroker.waip-web)». Цей реліз також слугує першим наскрізним тестом автоматичної публікації в npm через Trusted Publishing, введеної у версії 0.6.7.",
-        "zh-cn": "已将 README 标题更改为 \"ioBroker-Adapter (ioBroker.waip-web)\"。此版本同时也是对 0.6.7 中引入的通过 Trusted Publishing 自动发布到 npm 功能的首次端到端测试。"
       }
     },
     "titleLang": {
