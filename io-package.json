@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.7",
+    "version": "0.7.8",
     "news": {
+      "0.7.8": {
+        "en": "Fixed [E5018]: added the missing .releaseconfig.json (plugins: iobroker, license) required now that @alcalzone/release-script is a dev dependency. Caught by the ioBroker.repositories 'ADD TO LATEST' submission check.",
+        "de": "[E5018] behoben: fehlende .releaseconfig.json ergänzt (plugins: iobroker, license), die nun erforderlich ist, da @alcalzone/release-script als Dev-Dependency vorhanden ist. Aufgefallen beim ioBroker.repositories-„ADD TO LATEST\"-Check.",
+        "ru": "Исправлено [E5018]: добавлен отсутствующий файл .releaseconfig.json (plugins: iobroker, license), который теперь требуется, так как @alcalzone/release-script указан как dev-зависимость. Обнаружено при проверке отправки в ioBroker.repositories «ADD TO LATEST».",
+        "pt": "Corrigido [E5018]: adicionado o .releaseconfig.json ausente (plugins: iobroker, license), agora necessário porque @alcalzone/release-script é uma dependência de desenvolvimento. Detectado na verificação de envio 'ADD TO LATEST' do ioBroker.repositories.",
+        "nl": "[E5018] opgelost: ontbrekende .releaseconfig.json toegevoegd (plugins: iobroker, license), nu vereist omdat @alcalzone/release-script een dev-dependency is. Opgemerkt bij de 'ADD TO LATEST'-indieningscontrole van ioBroker.repositories.",
+        "fr": "Correction de [E5018] : ajout du fichier .releaseconfig.json manquant (plugins : iobroker, license), désormais requis puisque @alcalzone/release-script est une dépendance de développement. Détecté lors de la vérification de soumission « ADD TO LATEST » de ioBroker.repositories.",
+        "it": "Risolto [E5018]: aggiunto il file .releaseconfig.json mancante (plugins: iobroker, license), ora richiesto poiché @alcalzone/release-script è una dev-dependency. Rilevato durante il controllo di invio 'ADD TO LATEST' di ioBroker.repositories.",
+        "es": "Se corrigió [E5018]: se añadió el .releaseconfig.json faltante (plugins: iobroker, license), ahora requerido porque @alcalzone/release-script es una dependencia de desarrollo. Detectado durante la verificación de envío 'ADD TO LATEST' de ioBroker.repositories.",
+        "pl": "Naprawiono [E5018]: dodano brakujący plik .releaseconfig.json (plugins: iobroker, license), wymagany teraz, ponieważ @alcalzone/release-script jest zależnością deweloperską. Wykryte podczas kontroli zgłoszenia 'ADD TO LATEST' w ioBroker.repositories.",
+        "uk": "Виправлено [E5018]: додано відсутній файл .releaseconfig.json (plugins: iobroker, license), який тепер потрібен, оскільки @alcalzone/release-script є dev-залежністю. Виявлено під час перевірки подання 'ADD TO LATEST' у ioBroker.repositories.",
+        "zh-cn": "修复了 [E5018]:添加了缺失的 .releaseconfig.json 文件(plugins: iobroker, license),由于 @alcalzone/release-script 已作为开发依赖,现在需要此文件。此问题是在 ioBroker.repositories 的 'ADD TO LATEST' 提交检查中发现的。"
+      },
       "0.7.7": {
         "en": "Fixed [E254]: removed the orphaned 0.7.5 news entry - like 0.7.0 and 0.7.3 before it, that version was never actually tagged/published to npm (0.7.4 was followed directly by 0.7.6).",
         "de": "[E254] behoben: verwaisten 0.7.5-News-Eintrag entfernt - wie zuvor schon 0.7.0 und 0.7.3 wurde diese Version nie tatsächlich getaggt/bei npm veröffentlicht (auf 0.7.4 folgte direkt 0.7.6).",
@@ -80,19 +93,6 @@
         "pl": "README: logo jest teraz wyświetlane powiększone (115x115, ostre skalowanie pikselowe, ponieważ ikona źródłowa ma tylko 32x32) za pomocą nowego pliku admin/waip-web-logo.png; rzeczywista ikona adaptera ioBroker (admin/waip-web.png) pozostaje bez zmian. Tytuł README ponownie uproszczono do \"ioBroker.waip-web\".",
         "uk": "README: логотип тепер відображається збільшеним (115x115, чітке пікселне масштабування, оскільки вихідна іконка лише 32x32) через новий файл admin/waip-web-logo.png; фактична іконка адаптера ioBroker (admin/waip-web.png) залишається незмінною. Заголовок README знову спрощено до «ioBroker.waip-web».",
         "zh-cn": "README:徽标现在以放大显示(115x115,由于源图标仅为 32x32,采用清晰的像素缩放)通过新的 admin/waip-web-logo.png 实现;实际的 ioBroker 适配器图标(admin/waip-web.png)保持不变。README 标题重新简化为 \"ioBroker.waip-web\"。"
-      },
-      "0.6.10-beta.0": {
-        "en": "Added the adapter logo and npm/installation badges (NPM version, downloads, installed, stable) to the README, matching standard ioBroker adapter conventions.",
-        "de": "Adapter-Logo sowie npm-/Installations-Badges (NPM-Version, Downloads, installiert, stabil) im README ergänzt, passend zur ioBroker-Standardkonvention.",
-        "ru": "В README добавлены логотип адаптера и значки npm/установки (версия NPM, загрузки, установлено, стабильная версия) в соответствии со стандартными соглашениями адаптеров ioBroker.",
-        "pt": "Adicionados o logotipo do adaptador e os selos de npm/instalação (versão NPM, downloads, instalado, estável) ao README, seguindo as convenções padrão dos adaptadores ioBroker.",
-        "nl": "Adapterlogo en npm-/installatiebadges (NPM-versie, downloads, geïnstalleerd, stabiel) toegevoegd aan de README, conform de standaard ioBroker-adapterconventies.",
-        "fr": "Ajout du logo de l'adaptateur et des badges npm/installation (version NPM, téléchargements, installé, stable) au README, conformément aux conventions standard des adaptateurs ioBroker.",
-        "it": "Aggiunti il logo dell'adapter e i badge npm/installazione (versione NPM, download, installato, stabile) al README, in linea con le convenzioni standard degli adapter ioBroker.",
-        "es": "Se añadieron el logotipo del adaptador y las insignias de npm/instalación (versión de NPM, descargas, instalado, estable) al README, siguiendo las convenciones estándar de los adaptadores de ioBroker.",
-        "pl": "Dodano logo adaptera oraz odznaki npm/instalacji (wersja NPM, pobrania, zainstalowano, stabilna) do README, zgodnie ze standardowymi konwencjami adapterów ioBroker.",
-        "uk": "До README додано логотип адаптера та значки npm/встановлення (версія NPM, завантаження, встановлено, стабільна версія) відповідно до стандартних угод адаптерів ioBroker.",
-        "zh-cn": "已在 README 中添加适配器徽标以及 npm/安装徽章(NPM 版本、下载量、已安装数量、稳定版),符合 ioBroker 适配器的标准约定。"
       }
     },
     "titleLang": {
