@@ -421,6 +421,16 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.6 (2026-08-21)
+
+- Added `.gitattributes` `eol=lf` so all contributors get consistent LF
+  line endings regardless of their local git `autocrlf` setting
+  (previously caused hundreds of spurious local lint errors on Windows
+  without affecting CI, since CI checkouts weren't affected).
+- Added `package-lock.json` and switched CI to the default `npm ci` with
+  caching instead of `npm install` without caching, now that a lockfile
+  exists.
+
 ### 0.6.5 (2026-08-21)
 
 - Fixed all issues reported by the official [ioBroker adapter checker](https://adapter-check.iobroker.in/):
