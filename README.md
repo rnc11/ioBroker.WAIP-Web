@@ -1,6 +1,6 @@
-![Logo](admin/waip-web.png)
+![Logo](admin/waip-web-logo.png)
 
-# ioBroker-Adapter (ioBroker.waip-web)
+# ioBroker.waip-web
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.waip-web.svg)](https://www.npmjs.com/package/iobroker.waip-web)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.waip-web.svg)](https://www.npmjs.com/package/iobroker.waip-web)
@@ -426,6 +426,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Changelog
+
+### 0.6.11 (2026-08-21)
+
+- README: logo now shown enlarged (115×115) via a new
+  `admin/waip-web-logo.png`, nearest-neighbor-scaled from the 32×32
+  source icon for a crisp (if visibly pixelated) result instead of a
+  blurry interpolated one — no higher-resolution source exists anywhere
+  in the WAIP-Web ecosystem (checked the Lausitz instance and the
+  upstream project, both use the same 32×32 favicon). The actual
+  ioBroker adapter icon (`admin/waip-web.png`, referenced from
+  `io-package.json`) is unchanged.
+- Simplified the README title back to "ioBroker.waip-web".
 
 ### 0.6.10 (2026-08-21)
 
