@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.6.11",
+    "version": "0.6.11-beta.0",
     "news": {
-      "0.6.11": {
+      "0.6.11-beta.0": {
         "en": "README: logo now shown enlarged (115x115, crisp pixel-scaled since the source icon is only 32x32) via a new admin/waip-web-logo.png; the actual ioBroker adapter icon (admin/waip-web.png) is unchanged. Simplified the README title back to \"ioBroker.waip-web\".",
         "de": "README: Logo wird jetzt vergrößert angezeigt (115x115, scharf pixel-skaliert, da das Quell-Icon nur 32x32 ist) über eine neue admin/waip-web-logo.png; das eigentliche ioBroker-Adapter-Icon (admin/waip-web.png) bleibt unverändert. README-Titel wieder auf „ioBroker.waip-web\" vereinfacht.",
         "ru": "README: логотип теперь отображается увеличенным (115x115, чёткое пиксельное масштабирование, так как исходная иконка всего 32x32) через новый файл admin/waip-web-logo.png; сама иконка адаптера ioBroker (admin/waip-web.png) не изменилась. Заголовок README снова упрощён до «ioBroker.waip-web».",
