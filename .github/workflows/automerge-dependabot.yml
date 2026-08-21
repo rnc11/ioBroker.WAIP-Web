@@ -1,42 +1,27 @@
+# Workflow for auto-merging Dependabot PRs
+# This workflow uses the action-automerge-dependabot action to automatically merge
+# Dependabot PRs based on the rules defined in .github/auto-merge.yml
+
 name: Auto-Merge Dependabot PRs
 
-# Automatically approves and merges Dependabot PRs once the required CI
-# checks (test-and-release.yml) pass - but only for patch/minor version
-# bumps. Major version bumps are left for manual review, since e.g. a
-# socket.io-client major update can change the Socket.IO wire protocol
-# used to talk to the WAIP server.
-#
-# Note: merging here only lands the change on `main`. Publishing to npm
-# still requires a separate `v*` tag push (see test-and-release.yml), so
-# this cannot trigger an unattended release.
-#
-# Requires "Allow auto-merge" to be enabled under Settings > General >
-# Pull Requests, otherwise `gh pr merge --auto` has no effect.
 on:
-  pull_request:
-    branches:
-      - main
-
-permissions:
-  contents: write
-  pull-requests: write
+  # Trigger when a PR is opened or updated
+  # WARNING: This needs to be run in the PR base, DO NOT build untrusted code in this action
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
-  automerge:
-    if: github.actor == 'dependabot[bot]'
+  auto-merge:
     runs-on: ubuntu-latest
+    # Only run if actor is dependabot
+    if: github.actor == 'dependabot[bot]'
+
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
-      - name: Fetch Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v2
+      - name: Auto-merge Dependabot PRs
+        uses: iobroker-bot-orga/action-automerge-dependabot@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Approve and enable auto-merge (patch/minor only)
-        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr review --approve "$PR_URL"
-          gh pr merge --auto --squash "$PR_URL"
