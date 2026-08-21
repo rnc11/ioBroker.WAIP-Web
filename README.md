@@ -206,6 +206,19 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.3 (2026-08-21)
+
+- Addressed further findings from the official ioBroker Check and
+  Service Bot (which re-scans the repository after every push):
+  - Removed the deprecated `common.materialize` field from
+    `io-package.json` (superseded by `common.adminUI.config`)
+  - Raised `engines.node` to `>=22` and dropped Node.js 20 (reached
+    End of Life on 2026-04-30) from the CI test matrix
+  - Raised the `admin` dependency to `>=7.8.23`
+  - Moved the `check-and-lint` CI job to Node 24.x
+  - Added `.github/dependabot.yml` for automated dependency updates
+    (weekly `npm`/`github-actions` checks)
+
 ### 0.7.2 (2026-08-21)
 
 - README is now English-only (per the official ioBroker adapter checker,

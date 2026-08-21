@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.2",
+    "version": "0.7.3",
     "news": {
+      "0.7.3": {
+        "en": "Addressed further ioBroker Check and Service Bot findings: removed the deprecated common.materialize field (superseded by common.adminUI.config), raised engines.node to >=22 and dropped Node.js 20 (reached End of Life 2026-04-30) from the CI test matrix, raised the admin dependency to >=7.8.23, moved the check-and-lint CI job to Node 24.x, and added a .github/dependabot.yml for automated dependency updates.",
+        "de": "Weitere Findings des ioBroker Check and Service Bot behoben: veraltetes Feld common.materialize entfernt (abgelöst durch common.adminUI.config), engines.node auf >=22 angehoben und Node.js 20 (End of Life seit 2026-04-30) aus der CI-Testmatrix entfernt, admin-Dependency auf >=7.8.23 angehoben, CI-Job check-and-lint auf Node 24.x umgestellt, sowie .github/dependabot.yml für automatische Abhängigkeits-Updates ergänzt.",
+        "ru": "Устранены дополнительные замечания ioBroker Check and Service Bot: удалено устаревшее поле common.materialize (заменено на common.adminUI.config), engines.node повышено до >=22, Node.js 20 (End of Life с 2026-04-30) удалён из тестовой матрицы CI, зависимость admin повышена до >=7.8.23, задача CI check-and-lint переведена на Node 24.x, добавлен .github/dependabot.yml для автоматических обновлений зависимостей.",
+        "pt": "Resolvidos mais apontamentos do ioBroker Check and Service Bot: removido o campo obsoleto common.materialize (substituído por common.adminUI.config), engines.node elevado para >=22 e Node.js 20 (End of Life desde 2026-04-30) removido da matriz de testes do CI, dependência admin elevada para >=7.8.23, job de CI check-and-lint alterado para Node 24.x, e adicionado .github/dependabot.yml para atualizações automáticas de dependências.",
+        "nl": "Verdere bevindingen van de ioBroker Check and Service Bot opgelost: verouderd veld common.materialize verwijderd (vervangen door common.adminUI.config), engines.node verhoogd naar >=22 en Node.js 20 (End of Life sinds 2026-04-30) uit de CI-testmatrix verwijderd, admin-dependency verhoogd naar >=7.8.23, CI-job check-and-lint overgezet naar Node 24.x, en .github/dependabot.yml toegevoegd voor automatische afhankelijkheidsupdates.",
+        "fr": "Correction d'autres remarques du ioBroker Check and Service Bot : suppression du champ obsolète common.materialize (remplacé par common.adminUI.config), engines.node relevé à >=22 et Node.js 20 (End of Life depuis le 2026-04-30) retiré de la matrice de tests CI, dépendance admin relevée à >=7.8.23, job CI check-and-lint passé à Node 24.x, et ajout de .github/dependabot.yml pour les mises à jour automatiques des dépendances.",
+        "it": "Risolte ulteriori segnalazioni del ioBroker Check and Service Bot: rimosso il campo deprecato common.materialize (sostituito da common.adminUI.config), engines.node elevato a >=22 e Node.js 20 (End of Life dal 2026-04-30) rimosso dalla matrice di test CI, dipendenza admin elevata a >=7.8.23, job CI check-and-lint passato a Node 24.x, e aggiunto .github/dependabot.yml per aggiornamenti automatici delle dipendenze.",
+        "es": "Se resolvieron más hallazgos del ioBroker Check and Service Bot: se eliminó el campo obsoleto common.materialize (sustituido por common.adminUI.config), se elevó engines.node a >=22 y se eliminó Node.js 20 (End of Life desde el 2026-04-30) de la matriz de pruebas de CI, se elevó la dependencia admin a >=7.8.23, el job de CI check-and-lint pasó a Node 24.x, y se añadió .github/dependabot.yml para actualizaciones automáticas de dependencias.",
+        "pl": "Naprawiono kolejne ustalenia ioBroker Check and Service Bot: usunięto przestarzałe pole common.materialize (zastąpione przez common.adminUI.config), podniesiono engines.node do >=22 i usunięto Node.js 20 (End of Life od 2026-04-30) z macierzy testów CI, podniesiono zależność admin do >=7.8.23, zadanie CI check-and-lint przełączono na Node 24.x oraz dodano .github/dependabot.yml do automatycznych aktualizacji zależności.",
+        "uk": "Виправлено подальші зауваження ioBroker Check and Service Bot: видалено застаріле поле common.materialize (замінене на common.adminUI.config), engines.node підвищено до >=22, а Node.js 20 (End of Life з 2026-04-30) видалено з матриці тестів CI, залежність admin підвищено до >=7.8.23, завдання CI check-and-lint переведено на Node 24.x, додано .github/dependabot.yml для автоматичних оновлень залежностей.",
+        "zh-cn": "解决了 ioBroker Check and Service Bot 的更多问题:移除了已弃用的 common.materialize 字段(由 common.adminUI.config 取代);将 engines.node 提升至 >=22,并从 CI 测试矩阵中移除 Node.js 20(已于 2026-04-30 终止支持);将 admin 依赖提升至 >=7.8.23;将 CI 的 check-and-lint 任务切换到 Node 24.x;并新增了 .github/dependabot.yml 以实现依赖项自动更新。"
+      },
       "0.7.2": {
         "en": "Fixed all findings from the official ioBroker Check and Service Bot: raised Node.js/dependency minimums (engines.node >=20, @iobroker/adapter-core ^3.4.1, js-controller >=6.0.11, admin >=7.6.17), split the README into English-only (README.md) and German (README.de.md) since the checker requires English-only READMEs, moved License to the very last section, added the required i18n/size attributes to jsonConfig.json, switched to node: prefixes for built-in requires, removed the redundant .npmignore, and added .commitinfo to .gitignore. Also removed the orphaned 0.7.0 news entry (never actually published to npm).",
         "de": "Alle Findings des offiziellen ioBroker Check and Service Bot behoben: Mindestversionen angehoben (engines.node >=20, @iobroker/adapter-core ^3.4.1, js-controller >=6.0.11, admin >=7.6.17), README aufgeteilt in rein englisches README.md und deutsches README.de.md (der Checker verlangt rein englische READMEs), Lizenz-Abschnitt ans Dateiende verschoben, fehlende i18n-/Größenattribute in jsonConfig.json ergänzt, auf node:-Präfixe bei Built-in-Requires umgestellt, überflüssige .npmignore entfernt und .commitinfo zur .gitignore hinzugefügt. Außerdem den verwaisten 0.7.0-News-Eintrag entfernt (wurde nie tatsächlich bei npm veröffentlicht).",
@@ -80,19 +93,6 @@
         "pl": "Zmieniono tytuł README na \"ioBroker-Adapter (ioBroker.waip-web)\". To wydanie służy również jako pierwszy pełny test automatycznej publikacji w npm przez Trusted Publishing, wprowadzonej w wersji 0.6.7.",
         "uk": "Заголовок README змінено на «ioBroker-Adapter (ioBroker.waip-web)». Цей реліз також слугує першим наскрізним тестом автоматичної публікації в npm через Trusted Publishing, введеної у версії 0.6.7.",
         "zh-cn": "已将 README 标题更改为 \"ioBroker-Adapter (ioBroker.waip-web)\"。此版本同时也是对 0.6.7 中引入的通过 Trusted Publishing 自动发布到 npm 功能的首次端到端测试。"
-      },
-      "0.6.6": {
-        "en": "Added .gitattributes eol=lf so all contributors get consistent LF line endings regardless of local git autocrlf settings (previously caused hundreds of spurious local lint errors on Windows without affecting CI). Added package-lock.json and switched CI to the default npm ci with caching instead of npm install without caching.",
-        "de": "eol=lf in .gitattributes ergänzt, damit alle Mitwirkenden unabhängig von ihrer lokalen git-autocrlf-Einstellung konsistente LF-Zeilenenden erhalten (verursachte zuvor unter Windows lokal hunderte unnötige Lint-Fehler, ohne die CI zu betreffen). package-lock.json ergänzt und CI von npm install ohne Caching auf das Standard-npm-ci mit Caching umgestellt.",
-        "ru": "Добавлен eol=lf в .gitattributes, чтобы все участники получали единообразные окончания строк LF независимо от локальной настройки git autocrlf (ранее это вызывало сотни ложных ошибок линтера локально на Windows, не влияя на CI). Добавлен package-lock.json, CI переведён с npm install без кэширования на стандартный npm ci с кэшированием.",
-        "pt": "Adicionado eol=lf ao .gitattributes para que todos os colaboradores tenham finais de linha LF consistentes, independentemente da configuração local de autocrlf do git (antes causava centenas de erros de lint falsos localmente no Windows, sem afetar o CI). Adicionado package-lock.json e o CI foi alterado de npm install sem cache para o npm ci padrão com cache.",
-        "nl": "eol=lf toegevoegd aan .gitattributes zodat alle bijdragers consistente LF-regeleinden krijgen, ongeacht hun lokale git-autocrlf-instelling (veroorzaakte voorheen honderden onnodige lokale lintfouten op Windows, zonder invloed op CI). package-lock.json toegevoegd en CI omgezet van npm install zonder caching naar de standaard npm ci met caching.",
-        "fr": "Ajout de eol=lf dans .gitattributes afin que tous les contributeurs obtiennent des fins de ligne LF cohérentes, quel que soit leur réglage local git autocrlf (provoquait auparavant des centaines de fausses erreurs de lint locales sous Windows, sans affecter la CI). Ajout de package-lock.json et passage de la CI de npm install sans cache au npm ci standard avec cache.",
-        "it": "Aggiunto eol=lf in .gitattributes così tutti i collaboratori ottengono terminazioni di riga LF coerenti indipendentemente dall'impostazione locale di git autocrlf (in precedenza causava centinaia di falsi errori di lint locali su Windows, senza influire sulla CI). Aggiunto package-lock.json e la CI è passata da npm install senza cache al npm ci predefinito con cache.",
-        "es": "Se añadió eol=lf a .gitattributes para que todos los colaboradores obtengan finales de línea LF consistentes, independientemente de su configuración local de git autocrlf (antes causaba cientos de errores de lint falsos localmente en Windows, sin afectar a la CI). Se añadió package-lock.json y la CI pasó de npm install sin caché al npm ci estándar con caché.",
-        "pl": "Dodano eol=lf w .gitattributes, aby wszyscy współtwórcy mieli spójne zakończenia linii LF niezależnie od lokalnego ustawienia git autocrlf (wcześniej powodowało to setki fałszywych lokalnych błędów lint w systemie Windows, nie wpływając na CI). Dodano package-lock.json i przełączono CI z npm install bez cache na domyślne npm ci z cache.",
-        "uk": "Додано eol=lf у .gitattributes, щоб усі учасники отримували однакові закінчення рядків LF незалежно від локального налаштування git autocrlf (раніше це спричиняло сотні хибних локальних помилок лінтера у Windows, не впливаючи на CI). Додано package-lock.json, а CI переведено з npm install без кешування на стандартний npm ci з кешуванням.",
-        "zh-cn": "在 .gitattributes 中添加了 eol=lf,确保所有贡献者无论本地 git autocrlf 设置如何都能获得一致的 LF 换行符(此前在 Windows 上会导致本地出现数百个虚假的 lint 错误,但不影响 CI)。新增了 package-lock.json,并将 CI 从不带缓存的 npm install 切换为带缓存的默认 npm ci。"
       }
     },
     "titleLang": {
@@ -148,7 +148,6 @@
     "messagebox": true,
     "connectionType": "cloud",
     "dataSource": "push",
-    "materialize": false,
     "adminUI": {
       "config": "json"
     },
@@ -159,7 +158,7 @@
     ],
     "globalDependencies": [
       {
-        "admin": ">=7.6.17"
+        "admin": ">=7.8.23"
       }
     ]
   },
