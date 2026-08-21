@@ -206,6 +206,14 @@ inside the JSON value, not their own ioBroker states.
 
 ## Changelog
 
+### 0.7.5 (2026-08-21)
+
+- Fixed **[E2004]**: removed the orphaned `0.7.3` entry from
+  `common.news` in `io-package.json` - that version (see below) was
+  never actually tagged/published to npm, `0.7.2` was followed directly
+  by `0.7.4`. Confirmed via a bot recheck that every other finding from
+  the last two rounds is now fixed.
+
 ### 0.7.4 (2026-08-21)
 
 - Bumped the `ioBroker/testing-action-check` GitHub Action used by the
@@ -216,6 +224,9 @@ inside the JSON value, not their own ioBroker states.
   'false'` flag), no behavior change for us.
 
 ### 0.7.3 (2026-08-21)
+
+*(Never tagged/published to npm - superseded directly by 0.7.4; kept
+here for a complete history of what was worked on.)*
 
 - Addressed further findings from the official ioBroker Check and
   Service Bot (which re-scans the repository after every push):
