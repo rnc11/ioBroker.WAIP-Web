@@ -1,0 +1,10 @@
+{
+    "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)": "WAIP 调度服务器的基本 URL（Socket.IO 端点，命名空间 /waip 自动附加）",
+    "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.": "在记录警告之前等待服务器确认监视器注册需要多长时间；无论哪种方式，连接本身都会保持运行。",
+    "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.": "从配置的服务器的 /waip/ 概述页面实时加载 - 按 Leitstelle、Kreis、Träger 或 Wache 进行选择，或为每个事件选择“Alle Wachalarme”（ID 0）。如果无法连接到服务器，仍然可以手动输入 ID。",
+    "Monitor ID": "显示器ID",
+    "Reconnect delay (s)": "重新连接延迟（秒）",
+    "Registration timeout (s)": "注册超时（秒）",
+    "WAIP server URL": "WAIP 服务器 URL",
+    "Wait time before the adapter automatically reconnects after a lost connection or a connection error.": "连接丢失或连接错误后适配器自动重新连接之前的等待时间。"
+}

@@ -1,0 +1,10 @@
+{
+    "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)": "Базовый URL-адрес сервера отправки WAIP (конечная точка Socket.IO, пространство имен /waip добавляется автоматически)",
+    "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.": "Как долго ждать, пока сервер подтвердит регистрацию монитора, прежде чем записывать предупреждение; само соединение продолжает работать в любом случае.",
+    "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.": "Загружается в реальном времени со страницы обзора настроенного сервера /waip/ — выберите Leitstelle, Kreis, Träger или Wache или выберите «Alle Wachalarme» (ID 0) для каждого инцидента. Если доступ к серверу недоступен, идентификатор все равно можно ввести вручную.",
+    "Monitor ID": "Идентификатор монитора",
+    "Reconnect delay (s)": "Задержка повторного подключения (с)",
+    "Registration timeout (s)": "Таймаут регистрации (с)",
+    "WAIP server URL": "URL-адрес WAIP-сервера",
+    "Wait time before the adapter automatically reconnects after a lost connection or a connection error.": "Время ожидания, прежде чем адаптер автоматически подключится после потери соединения или ошибки соединения."
+}

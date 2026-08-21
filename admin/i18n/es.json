@@ -1,0 +1,10 @@
+{
+    "Base URL of the WAIP dispatch server (Socket.IO endpoint, namespace /waip is appended automatically)": "URL base del servidor de envío WAIP (punto final Socket.IO, el espacio de nombres /waip se agrega automáticamente)",
+    "How long to wait for the server to confirm the monitor registration before logging a warning; the connection itself keeps running either way.": "Cuánto tiempo esperar para que el servidor confirme el registro del monitor antes de registrar una advertencia; la conexión en sí sigue funcionando en cualquier sentido.",
+    "Loaded live from the configured server's /waip/ overview page - choose by Leitstelle, Kreis, Träger or Wache, or pick 'Alle Wachalarme' (ID 0) for every incident. If the server can't be reached, an ID can still be entered manually.": "Cargado en vivo desde la página de descripción general /waip/ del servidor configurado: elija Leitstelle, Kreis, Träger o Wache, o elija 'Alle Wachalarme' (ID 0) para cada incidente. Si no se puede acceder al servidor, aún se puede ingresar una identificación manualmente.",
+    "Monitor ID": "Identificador del monitor",
+    "Reconnect delay (s)": "Retardo(s) de reconexión",
+    "Registration timeout (s)": "Tiempos de espera de registro",
+    "WAIP server URL": "URL del servidor WAIP",
+    "Wait time before the adapter automatically reconnects after a lost connection or a connection error.": "Tiempo de espera antes de que el adaptador se vuelva a conectar automáticamente después de una pérdida de conexión o un error de conexión."
+}
