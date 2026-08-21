@@ -421,6 +421,14 @@ SOFTWARE.
 
 ## Changelog
 
+### 0.6.7 (2026-08-21)
+
+- Enabled automatic npm publishing: the `deploy` job in
+  `.github/workflows/test-and-release.yml` is no longer commented out
+  and now runs on every version tag (`vX.Y.Z`), publishing to npm via
+  [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC,
+  no `NPM_TOKEN` secret needed).
+
 ### 0.6.6 (2026-08-21)
 
 - Added `.gitattributes` `eol=lf` so all contributors get consistent LF
