@@ -789,3 +789,5 @@ SOFTWARE.
 - Initial version: ported the original "WAIP Instrumented v3.9" ioBroker
   JavaScript-adapter script into a standalone adapter. The URL/monitor
   ID now come from the admin configuration instead of a runtime state.
+
+[Older changelogs can be found there](CHANGELOG_OLD.md)
