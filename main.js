@@ -38,6 +38,14 @@ const DEFAULT_SESSION_KEEPALIVE_SEC = 300; // Obergrenze, wie /js/session_keepal
 // berechnet, statt einen festen Wert anzunehmen.
 const SESSION_KEEPALIVE_MIN_MS = 55 * 1000;
 const HISTORY_SIZE = 10;
+// Default-Beschriftungen für decodeRettungsdienstStichwort() - in der Admin-UI unter dem
+// "Automatically decode rescue-service keywords"-Häkchen als Textfelder überschreibbar, da der
+// Adapter mehrsprachig ist und die Bezeichnungen daher nicht fest im Code stehen dürfen.
+const DEFAULT_RD_LABEL_R = 'Rettungswagen';
+const DEFAULT_RD_LABEL_N = 'Notfalleinsatzfahrzeug';
+const DEFAULT_RD_LABEL_P = 'Polytrauma';
+const DEFAULT_RD_LABEL_F = 'First Responder';
+const DEFAULT_RD_LABEL_NT = 'Notfalltransport mit Notfallkrankenwagen';
 // einsatznummer/objekt/objektteil/besonderheiten/strasse/hausnummer/einsatzdetails/permissions
 // wurden mit 0.7.18 entfernt: server/waip.js von WAIP-Web befüllt diese Felder serverseitig
 // nur für eingeloggte Clients (db_user_check_permission_for_waip) - da dieser Adapter sich
@@ -216,6 +224,12 @@ const STATE_DEFS = [
     { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
     { id: 'einsatz.einsatzart', type: 'string', role: 'text', name: 'Einsatzart' },
     { id: 'einsatz.stichwort', type: 'string', role: 'text', name: 'Alarmstichwort' },
+    {
+        id: 'einsatz.beschreibung',
+        type: 'string',
+        role: 'text',
+        name: 'Beschreibung zum Stichwort (Stammdaten-Zuordnung/automatische Dekodierung, null falls kein Treffer)',
+    },
     { id: 'einsatz.ort', type: 'string', role: 'text', name: 'Ort' },
     { id: 'einsatz.ortsteil', type: 'string', role: 'text', name: 'Ortsteil' },
     { id: 'einsatz.zeitstempel', type: 'string', role: 'date', name: 'Alarmzeitstempel' },
@@ -621,6 +635,32 @@ class WaipWeb extends utils.Adapter {
             this.config.monitorID !== undefined && this.config.monitorID !== null
                 ? String(this.config.monitorID).trim()
                 : '';
+        this.rdKeywordDecodingEnabled = !!this.config.rdKeywordDecodingEnabled;
+        // Beschriftungen für decodeRettungsdienstStichwort() - konfigurierbar statt fest im
+        // Code, damit sie sich in jede Sprache übersetzen/anpassen lassen. Leerer/fehlender
+        // Konfigurationswert fällt auf die deutschen Defaults zurück (siehe io-package.json).
+        this.rdLabels = {
+            r: (this.config.rdLabelR || '').trim() || DEFAULT_RD_LABEL_R,
+            n: (this.config.rdLabelN || '').trim() || DEFAULT_RD_LABEL_N,
+            p: (this.config.rdLabelP || '').trim() || DEFAULT_RD_LABEL_P,
+            f: (this.config.rdLabelF || '').trim() || DEFAULT_RD_LABEL_F,
+            nt: (this.config.rdLabelNT || '').trim() || DEFAULT_RD_LABEL_NT,
+        };
+        // Normalisiert einmalig beim Start (statt bei jedem Lookup): trim + lowercase für den
+        // späteren case-insensitiven Vergleich, alphabetisch nach Muster sortiert. Die Reihenfolge
+        // hat für lookupStichwortBeschreibung() selbst keine Bedeutung mehr (dort gewinnt das
+        // längste/spezifischste passende Muster, nicht die Tabellenposition) - die Sortierung
+        // dient nur der Übersichtlichkeit/Nachvollziehbarkeit.
+        this.stichwortMapping = Array.isArray(this.config.stichwortMapping)
+            ? this.config.stichwortMapping
+                  .filter(e => e && typeof e.stichwort === 'string' && e.stichwort.trim() !== '')
+                  .map(e => ({
+                      pattern: e.stichwort.trim().toLowerCase(),
+                      beschreibung: typeof e.beschreibung === 'string' ? e.beschreibung : '',
+                      matchType: e.matchType === 'contains' ? 'contains' : 'startsWith',
+                  }))
+                  .sort((a, b) => a.pattern.localeCompare(b.pattern))
+            : [];
 
         await this.cleanupObsoleteObjects();
         await this.migrateObjectTypes();
@@ -1243,6 +1283,67 @@ class WaipWeb extends utils.Adapter {
         };
     }
 
+    /* Dekodiert Rettungsdienst-Stichwörter nach dem Schema "R<Anzahl RTW>N<Anzahl NEF>[p][f][-NT]"
+       - von mehreren Leitstellen verwendet, dokumentiertes Beispiel:
+       https://www.leitstelle-lausitz.de/anpassung-der-einsatzstichworte-rettungsdienst/
+       (z.B. "R1N0" = 1 RTW, kein NEF). Nur aktiv, wenn rdKeywordDecodingEnabled gesetzt ist
+       (Default aus, da nicht jede Leitstelle/WAIP-Web-Instanz dieses Schema verwendet).
+       Liefert null, falls das Stichwort nicht diesem Muster entspricht. */
+    decodeRettungsdienstStichwort(stichwort) {
+        const m = /^R(\d+)N(\d+)([a-z]*)(-NT)?$/i.exec(String(stichwort || '').trim());
+        if (!m) {
+            return null;
+        }
+        const rtw = m[1];
+        const nef = m[2];
+        const modifiers = (m[3] || '').toLowerCase();
+        const labels = this.rdLabels || {};
+        const parts = [`${labels.r || DEFAULT_RD_LABEL_R}: ${rtw}`, `${labels.n || DEFAULT_RD_LABEL_N}: ${nef}`];
+        if (modifiers.includes('p')) {
+            parts.push(labels.p || DEFAULT_RD_LABEL_P);
+        }
+        if (modifiers.includes('f')) {
+            parts.push(labels.f || DEFAULT_RD_LABEL_F);
+        }
+        if (m[4]) {
+            parts.push(labels.nt || DEFAULT_RD_LABEL_NT);
+        }
+        return parts.join(', ');
+    }
+
+    /* Ermittelt die Beschreibung zu einem Stichwort: zuerst die Rettungsdienst-Dekodierung (falls
+       aktiviert und das Muster passt), sonst die manuelle Stammdaten-Tabelle (this.stichwortMapping,
+       case-insensitiv, startsWith/contains je Eintrag). Bei mehreren passenden Einträgen gewinnt
+       der mit dem LÄNGSTEN Muster (spezifischste Übereinstimmung) - unabhängig von der
+       Tabellenreihenfolge, damit die Admin-Tabelle gefahrlos alphabetisch sortiert werden kann
+       (z.B. "B:Wald groß/WSP" schlägt automatisch das kürzere "B:Wald", ganz gleich welche der
+       beiden Zeilen zuerst in der Tabelle steht). Bei gleicher Musterlänge entscheidet die
+       Tabellenreihenfolge als Tiebreaker. Liefert null, wenn nichts passt (kein Fehler). */
+    lookupStichwortBeschreibung(stichwort) {
+        if (!stichwort) {
+            return null;
+        }
+        if (this.rdKeywordDecodingEnabled) {
+            const decoded = this.decodeRettungsdienstStichwort(stichwort);
+            if (decoded) {
+                return decoded;
+            }
+        }
+        const value = String(stichwort).trim().toLowerCase();
+        if (!value) {
+            return null;
+        }
+        let best = null;
+        for (const entry of this.stichwortMapping || []) {
+            const isMatch =
+                entry.matchType === 'contains' ? value.includes(entry.pattern) : value.startsWith(entry.pattern);
+            if (isMatch && (!best || entry.pattern.length > best.pattern.length)) {
+                best = entry;
+            }
+        }
+        return best ? best.beschreibung : null;
+    }
+
     /* Extrahiert aus einem Einsatz-Snapshot nur die flachen Einsatzstamm-Felder
        (ALLOWED_EINSATZ_FIELDS + lat/lon aus position), ergänzt um den zum Aufrufzeitpunkt
        registrierten Monitor - ohne routen/rueckmeldungen/emAlarmiert/emWeitere. Gemeinsam
@@ -1261,6 +1362,10 @@ class WaipWeb extends utils.Adapter {
         }
         flat.lat = src.position && typeof src.position.lat === 'number' ? src.position.lat : null;
         flat.lon = src.position && typeof src.position.lon === 'number' ? src.position.lon : null;
+        // beschreibung kommt nicht vom Server (daher nicht in ALLOWED_EINSATZ_FIELDS), sondern
+        // wird von handleAlarm() lokal ermittelt und im Snapshot mitgeführt (siehe
+        // lookupStichwortBeschreibung()).
+        flat.beschreibung = Object.prototype.hasOwnProperty.call(src, 'beschreibung') ? src.beschreibung : null;
         flat.registeredMonitor = this.currentMonitor || null;
         flat.registeredMonitorName = this.monitorName || null;
         return flat;
@@ -1583,6 +1688,12 @@ class WaipWeb extends utils.Adapter {
                 this.currentEinsatzSnapshot.emWeitere = data.em_weitere;
             }
 
+            // Beschreibung zum Stichwort lokal ermitteln (kommt nicht vom Server) und wie die
+            // übrigen flachen Felder setzen/im Snapshot mitführen.
+            const beschreibung = this.lookupStichwortBeschreibung(this.currentEinsatzSnapshot.stichwort);
+            this.currentEinsatzSnapshot.beschreibung = beschreibung;
+            tasks.push(this.setField('einsatz.beschreibung', beschreibung));
+
             const results = await Promise.allSettled(tasks);
             for (const r of results) {
                 if (r.status === 'rejected') {
@@ -1680,6 +1791,7 @@ class WaipWeb extends utils.Adapter {
        der abgeschlossene Einsatz bleibt also weiterhin über einsatz.json.history10 abrufbar. */
     async clearCurrentEinsatzStates() {
         const tasks = this.ALLOWED_EINSATZ_FIELDS.map(k => this.setStateAsync(`einsatz.${k}`, null, true));
+        tasks.push(this.setStateAsync('einsatz.beschreibung', null, true));
         tasks.push(this.setStateAsync('einsatz.latitude', null, true));
         tasks.push(this.setStateAsync('einsatz.longitude', null, true));
         tasks.push(this.writeJsonArrayState('einsatz.json.current', []));
