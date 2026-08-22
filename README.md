@@ -333,6 +333,19 @@ example.
 
 ## Changelog
 
+### 0.7.19 (2026-08-22)
+
+- Fixed a bug where incoming feedback (`io.new_rmld`) was silently
+  dropped as "wrong monitor" whenever the responding station's number
+  (`wache_nr`) differed from the registered monitor ID:
+  `payloadMonitorMatch()` incorrectly treated `wache_nr`/`wache_id`/
+  `wacheId` as monitor-identifying fields, but confirmed against the
+  WAIP-Web server source, `wache_nr` on a feedback event is the station
+  number of the crew that submitted it, unrelated to the monitor/
+  dispatch-center ID. Removed these three from the match candidates -
+  alarms and routes were never affected (they don't carry these
+  fields).
+
 ### 0.7.18 (2026-08-22)
 
 - Fixed `debug.lastEvent`/`debug.normalizedPosition` to hold a
@@ -414,23 +427,6 @@ example.
 - All states are now actively reset to their empty value on every
   adapter start, except `einsatz.json.history10` and
   `debug.monitorAudit`, which persist across restarts.
-
-### 0.7.14 (2026-08-22)
-
-- Fixed **[E1032]**/**[E2004]**: trimmed `common.news` to the 7
-  entries allowed by the repository builder and removed the orphaned
-  `0.7.10` entry (never published to npm).
-- Fixed **[W0066]**: pinned `@types/node` to `^22.0.0` (was `>=22`,
-  resolving to a mismatched `26.x`).
-- Fixed **[W4040]**/**[W4042]**: corrected the `.vscode/settings.json`
-  JSON schema URLs for `io-package.json`/`jsonConfig` to the ones
-  ioBroker actually expects.
-- Fixed **[S8914]**: replaced the custom Dependabot auto-merge
-  workflow with the canonical
-  `iobroker-bot-orga/action-automerge-dependabot@v1` action and added
-  the matching `.github/auto-merge.yml` (production: patch always,
-  minor only for security fixes; development: minor allowed too).
-- No runtime changes.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

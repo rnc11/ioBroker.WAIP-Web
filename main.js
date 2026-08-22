@@ -1286,6 +1286,15 @@ class WaipWeb extends utils.Adapter {
         if (!p || typeof p !== 'object') {
             return null;
         }
+        // wache_nr/wache_id/wacheId bewusst NICHT hier: server/waip.js sendet io.new_rmld-
+        // Events mit einem realen "wache_nr"-Feld (Wachennummer der zurückmeldenden Einsatz-
+        // kraft aus der waip_rueckmeldungen-Tabelle) - das hat nichts mit der Monitor-/
+        // Leitstellen-ID zu tun, wurde hier aber fälschlich so behandelt und hat dadurch
+        // praktisch jede Rückmeldung als "falscher Monitor" verworfen, sobald die
+        // Wachennummer von der registrierten Monitor-ID abwich (0.7.19 gefunden/behoben).
+        // wache_id/wacheId kommen in keiner geprüften Server-Tabelle (waip_einsaetze,
+        // waip_rueckmeldungen, Routen) überhaupt vor - ebenso unbegründete Kandidaten mit
+        // demselben Kollisionsrisiko, daher ebenfalls entfernt.
         const keys = [
             'monitor',
             'monitorID',
@@ -1293,9 +1302,6 @@ class WaipWeb extends utils.Adapter {
             'monitorId',
             'waip_monitor',
             'waip_monitor_id',
-            'wache_nr',
-            'wache_id',
-            'wacheId',
             'room',
             'tenant',
             'group',
