@@ -237,6 +237,16 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 > Übersicht aller gerade aktiven Einsätze liefert derzeit nur das
 > Dashboard der angebundenen WAIP-Web-Instanz selbst.
 
+> **Hinweis:** WAIP-Web befüllt `einsatznummer`, `objekt`/`objektteil`,
+> `besonderheiten`, `strasse`/`hausnummer`, `einsatzdetails` sowie das
+> Berechtigungsflag serverseitig nur für **eingeloggte** Clients
+> (`db_user_check_permission_for_waip()` im server-eigenen
+> `server/waip.js`) – da dieser Adapter sich bewusst ohne Login
+> verbindet (siehe [Über diesen Adapter](#über-diesen-adapter)), sendet
+> der Server diese Felder immer leer bzw. `false`. Sie werden deshalb
+> gar nicht erst als States geführt, statt dauerhaft leere Werte
+> vorzuhalten.
+
 | State | Typ | Beschreibung |
 | --- | --- | --- |
 | `alarmAktiv` | boolean | `true` seit dem letzten `io.new_waip`, `false` seit dem letzten `io.standby` |
@@ -247,15 +257,9 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `stichwort` | string | Alarmstichwort |
 | `ort` | string | Ort |
 | `ortsteil` | string | Ortsteil (falls abweichend vom Ort) |
-| `strasse` / `hausnummer` | string | Adresse |
-| `objekt` / `objektteil` | string | Gebäude-/Objektname und -teil |
-| `einsatzdetails` | string | Zusatzdetails (nur bei Brand-/Hilfeleistungseinsätzen befüllt) |
-| `besonderheiten` | string | Freitext-Besonderheiten der Leitstelle |
 | `zeitstempel` | string (date) | Alarmzeit |
 | `ablaufzeit` | string (date) | Ende der Standby-Anzeigedauer, Basis für `restzeit` |
-| `einsatznummer` | string | Einsatznummer (sofern vom Server vergeben) |
 | `sondersignal` | number | `1` = Sondersignal, sonst kein Sondersignal |
-| `permissions` | string | Berechtigungsflag der Registrierung (Vollzugriff auf Detailkarte ja/nein); wird immer als String gespeichert (z.B. `"true"`), da der Server hier ein rohes Boolean sendet |
 | `latitude` / `longitude` | number | Position des Einsatzortes (normalisiert aus wgs84-Feldern oder GeoJSON-Mittelpunkt) |
 | `routenGesamt` | number | Anzahl Routen im aktuellen Einsatz |
 | `rueckmeldungGesamt` | number | Rückmeldungen gesamt im aktuellen Einsatz |
@@ -276,15 +280,13 @@ ein einfaches `{routen, rueckmeldungen, ...}`-Objekt werden von diesen
 Widgets in der Regel nicht dargestellt). `routen`/`rueckmeldungen`/
 `emAlarmiert`/`emWeitere` enthalten immer nur die Daten des **aktuellen**
 Einsatzes – sie werden bei `io.standby` geleert (`[]`) und sind **nicht**
-Teil der History. `permissions` innerhalb von `current`/`history10` wird
-genauso als String gespeichert wie im eigenständigen
-`einsatz.permissions`-State. Wie bei `einsatz.*` oben gilt auch hier:
-`current` enthält immer nur den zuletzt aktiven Einsatz – siehe Hinweis
-im Abschnitt [`einsatz`](#einsatz).
+Teil der History. Wie bei `einsatz.*` oben gilt auch hier: `current`
+enthält immer nur den zuletzt aktiven Einsatz – siehe Hinweis im
+Abschnitt [`einsatz`](#einsatz).
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 19 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `permissions`, plus `lat`/`lon`), zusätzlich `registeredMonitor`/`registeredMonitorName` (der Monitor, auf den der Adapter zu diesem Zeitpunkt registriert war), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
+| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 11 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `zeitstempel`, plus `lat`/`lon`), zusätzlich `registeredMonitor`/`registeredMonitorName` (der Monitor, auf den der Adapter zu diesem Zeitpunkt registriert war), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
 | `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleiches Schema wie `current`, ein Array-Eintrag pro Einsatz, geschrieben bei `io.standby` |
 | `routen` | string (JSON-Array) | Routen des aktuellen Einsatzes; jeder Eintrag hat `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` zu flachem `lat`/`lon` aufgelöst) |
 | `rueckmeldungen` | string (JSON-Array) | Rückmeldungen des aktuellen Einsatzes, wie vom Server empfangen |
@@ -307,8 +309,8 @@ relevant, deshalb wird nur die jeweils letzte vorgehalten.
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `lastEvent` | string (JSON) | Letztes empfangenes Socket-Event (Name + Zeitstempel), zur Verbindungsdiagnose |
-| `normalizedPosition` | string (JSON) | Ergebnis der Geodaten-Normalisierung für das letzte `io.new_waip`-Event, als flaches `{lat, lon}`-Objekt (beide `null`, falls keine gültige Position ermittelt werden konnte) |
+| `lastEvent` | string (JSON-Array) | Letztes empfangenes Socket-Event (Name + Zeitstempel), zur Verbindungsdiagnose; einelementiges Array (`[]` falls noch keins), für VIS-Tabellen-Kompatibilität |
+| `normalizedPosition` | string (JSON-Array) | Ergebnis der Geodaten-Normalisierung für das letzte `io.new_waip`-Event, als flaches einelementiges `[{lat, lon}]`-Array (beide `null`, falls keine gültige Position ermittelt werden konnte; `[]` falls noch kein Event), für VIS-Tabellen-Kompatibilität |
 | `rawPayloadShort` | string | Vorschau (500 Zeichen) der rohen, unnormalisierten `io.new_waip`-Nutzlast |
 | `ignoredCount` | number | Anzahl verworfener Events (Payload nannte explizit eine andere Monitor-ID) |
 | `monitorAudit` | string (JSON-Array) | Chronologisches Log von Connect-/Registrierungs-/Reconnect-Ereignissen (200 Einträge) |

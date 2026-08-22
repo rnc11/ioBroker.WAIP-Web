@@ -38,6 +38,11 @@ const DEFAULT_SESSION_KEEPALIVE_SEC = 300; // Obergrenze, wie /js/session_keepal
 // berechnet, statt einen festen Wert anzunehmen.
 const SESSION_KEEPALIVE_MIN_MS = 55 * 1000;
 const HISTORY_SIZE = 10;
+// einsatznummer/objekt/objektteil/besonderheiten/strasse/hausnummer/einsatzdetails/permissions
+// wurden mit 0.7.18 entfernt: server/waip.js von WAIP-Web befüllt diese Felder serverseitig
+// nur für eingeloggte Clients (db_user_check_permission_for_waip) - da dieser Adapter sich
+// bewusst ohne Login verbindet (siehe "Über diesen Adapter"), waren sie immer leer bzw.
+// permissions immer false. Siehe OBSOLETE_OBJECT_IDS für die zugehörige Migration.
 const ALLOWED_EINSATZ_FIELDS = [
     'id',
     'uuid',
@@ -47,16 +52,8 @@ const ALLOWED_EINSATZ_FIELDS = [
     'ortsteil',
     'ablaufzeit',
     'sondersignal',
-    // laut client_waip.js (offizielles Frontend) zusätzlich vorhandene Felder:
+    // laut client_waip.js (offizielles Frontend) zusätzlich vorhandenes Feld:
     'zeitstempel',
-    'einsatznummer',
-    'objekt',
-    'objektteil',
-    'strasse',
-    'hausnummer',
-    'einsatzdetails',
-    'besonderheiten',
-    'permissions',
 ];
 const RUECKMELDUNG_ANZAHL_KEYS = ['ek', 'gf', 'zf', 'vf', 'agt', 'fzf', 'ma', 'med'];
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
@@ -130,6 +127,18 @@ const OBSOLETE_OBJECT_IDS = [
     'rueckmeldung.counts.gesamt',
     'routen.json',
     'routen.count',
+    // Umstrukturierung in 0.7.18: diese Felder werden von WAIP-Web serverseitig ohnehin nur
+    // befüllt, wenn der verbindende Client eingeloggt ist (siehe db_user_check_permission_for_waip
+    // in server/waip.js) - da dieser Adapter sich bewusst ohne Login verbindet, waren sie immer
+    // leer bzw. permissions immer false. Ersatzlos entfernt statt dauerhaft leere States zu führen.
+    'einsatz.einsatznummer',
+    'einsatz.objekt',
+    'einsatz.objektteil',
+    'einsatz.besonderheiten',
+    'einsatz.strasse',
+    'einsatz.hausnummer',
+    'einsatz.einsatzdetails',
+    'einsatz.permissions',
 ];
 
 // Übergeordnete Channel/Folder-Objekte, die für jeden State-Zweig existieren müssen.
@@ -209,17 +218,9 @@ const STATE_DEFS = [
     { id: 'einsatz.stichwort', type: 'string', role: 'text', name: 'Alarmstichwort' },
     { id: 'einsatz.ort', type: 'string', role: 'text', name: 'Ort' },
     { id: 'einsatz.ortsteil', type: 'string', role: 'text', name: 'Ortsteil' },
-    { id: 'einsatz.strasse', type: 'string', role: 'text', name: 'Straße' },
-    { id: 'einsatz.hausnummer', type: 'string', role: 'text', name: 'Hausnummer' },
-    { id: 'einsatz.objekt', type: 'string', role: 'text', name: 'Objekt' },
-    { id: 'einsatz.objektteil', type: 'string', role: 'text', name: 'Objektteil' },
-    { id: 'einsatz.einsatzdetails', type: 'string', role: 'text', name: 'Einsatzdetails' },
-    { id: 'einsatz.besonderheiten', type: 'string', role: 'text', name: 'Besonderheiten' },
     { id: 'einsatz.zeitstempel', type: 'string', role: 'date', name: 'Alarmzeitstempel' },
     { id: 'einsatz.ablaufzeit', type: 'string', role: 'date', name: 'Ablaufzeit' },
-    { id: 'einsatz.einsatznummer', type: 'string', role: 'text', name: 'Einsatznummer' },
     { id: 'einsatz.sondersignal', type: 'number', role: 'value', name: 'Sondersignal', def: 0 },
-    { id: 'einsatz.permissions', type: 'string', role: 'json', name: 'Berechtigungs-Flag der Registrierung' },
     { id: 'einsatz.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
     { id: 'einsatz.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
     // Flache JSON-Objekte/Arrays für Tabellen-Widgets (siehe einsatz.json.*-Channel).
@@ -328,11 +329,12 @@ const STATE_DEFS = [
 const STATE_DEF_BY_ID = new Map(STATE_DEFS.map(def => [def.id, def]));
 
 // IDs, deren "string"-Wert tatsächlich ein JSON-*Array* enthält - liefert den korrekten
-// Leerwert "[]" für resetAllStates() (alle anderen "string"-States, auch JSON-*Objekte*
-// wie debug.lastEvent, werden auf null gesetzt). einsatz.json.current ist trotz des Namens
-// ebenfalls ein Array (mit maximal einem Element) - VIS-Tabellen-Widgets erwarten am Root
-// immer ein Array, siehe persistEinsatzSnapshot(). einsatz.json.history10 und
-// debug.monitorAudit stehen ebenfalls hier, obwohl sie nicht bei jedem Neustart
+// Leerwert "[]" für resetAllStates() (alle anderen "string"-States werden auf null
+// gesetzt). einsatz.json.current, debug.lastEvent und debug.normalizedPosition sind
+// trotz eines inhaltlich einzelnen Objekts ebenfalls Arrays (mit maximal einem Element)
+// - VIS-Tabellen-Widgets erwarten am Root immer ein Array, siehe persistEinsatzSnapshot()
+// bzw. die entsprechenden setState()-Aufrufe in handleAlarm()/connect(). einsatz.json.history10
+// und debug.monitorAudit stehen ebenfalls hier, obwohl sie nicht bei jedem Neustart
 // zurückgesetzt werden (siehe RESET_EXCLUDED_STATE_IDS) - resetAllStates() braucht den
 // korrekten Leerwert trotzdem, um sie bei einer frischen Installation zu initialisieren.
 const JSON_ARRAY_STATE_IDS = new Set([
@@ -343,6 +345,8 @@ const JSON_ARRAY_STATE_IDS = new Set([
     'einsatz.json.emWeitere',
     'einsatz.json.history10',
     'debug.monitorAudit',
+    'debug.lastEvent',
+    'debug.normalizedPosition',
 ]);
 
 // "number"-States, bei denen 0 ein irreführender "leerer" Wert wäre (Einsatz-ID,
@@ -1198,9 +1202,9 @@ class WaipWeb extends utils.Adapter {
                 toSet = null;
             } else if (def && def.type === 'string') {
                 // Der State ist als "string" deklariert (z.B. role "json") - unabhängig vom
-                // tatsächlichen JS-Typ der Serverantwort (etwa ein rohes Boolean/Number-Flag
-                // wie bei einsatz.permissions) muss "val" den deklarierten Typ einhalten,
-                // sonst schlägt die ioBroker-Objektstrukturprüfung fehl (E3005).
+                // tatsächlichen JS-Typ der Serverantwort (etwa ein rohes Boolean/Number-Flag)
+                // muss "val" den deklarierten Typ einhalten, sonst schlägt die
+                // ioBroker-Objektstrukturprüfung fehl (E3005).
                 toSet = typeof val === 'string' ? val : JSON.stringify(val);
             } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
                 toSet = val;
@@ -1257,13 +1261,6 @@ class WaipWeb extends utils.Adapter {
         }
         flat.lat = src.position && typeof src.position.lat === 'number' ? src.position.lat : null;
         flat.lon = src.position && typeof src.position.lon === 'number' ? src.position.lon : null;
-        // Konsistent zum eigenständigen einsatz.permissions-State (setField() stringifiziert
-        // dort ebenfalls jeden Nicht-String-Wert) - sonst könnte permissions hier z.B. ein
-        // rohes Boolean sein, im Einzel-State aber immer ein String.
-        flat.permissions =
-            flat.permissions === null || typeof flat.permissions === 'string'
-                ? flat.permissions
-                : JSON.stringify(flat.permissions);
         flat.registeredMonitor = this.currentMonitor || null;
         flat.registeredMonitorName = this.monitorName || null;
         return flat;
@@ -1481,14 +1478,17 @@ class WaipWeb extends utils.Adapter {
 
             const data = normalizeData(incoming || {});
             try {
-                // Flach halten (lat/lon statt eines verschachtelten position-Objekts), damit
-                // dieser Debug-State ebenfalls direkt an ein Tabellen-Widget gebunden werden kann.
+                // Flach halten (lat/lon statt eines verschachtelten position-Objekts) und als
+                // Array mit einem Element speichern (nicht das nackte Objekt) - VIS-Tabellen-
+                // Widgets erwarten am Root immer ein Array, sonst liefern sie keine Zeile.
                 await this.setStateAsync(
                     'debug.normalizedPosition',
-                    JSON.stringify({
-                        lat: data.position && typeof data.position.lat === 'number' ? data.position.lat : null,
-                        lon: data.position && typeof data.position.lon === 'number' ? data.position.lon : null,
-                    }),
+                    JSON.stringify([
+                        {
+                            lat: data.position && typeof data.position.lat === 'number' ? data.position.lat : null,
+                            lon: data.position && typeof data.position.lon === 'number' ? data.position.lon : null,
+                        },
+                    ]),
                     true,
                 );
             } catch {
@@ -2066,11 +2066,16 @@ class WaipWeb extends utils.Adapter {
                     const now = Date.now();
                     if (event !== this._lastDebugEvent.event || now - this._lastDebugEvent.ts > 5000) {
                         this._lastDebugEvent = { event, ts: now };
-                        this.setField('debug.lastEvent', {
-                            event,
-                            ts: new Date().toISOString(),
-                            argsCount: args.length,
-                        }).catch(() => {});
+                        // Als Array mit einem Element speichern (nicht das nackte Objekt) -
+                        // VIS-Tabellen-Widgets erwarten am Root immer ein Array, sonst liefern
+                        // sie keine Zeile.
+                        this.setField('debug.lastEvent', [
+                            {
+                                event,
+                                ts: new Date().toISOString(),
+                                argsCount: args.length,
+                            },
+                        ]).catch(() => {});
                     }
                 } catch {
                     /* ignore */

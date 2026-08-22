@@ -240,6 +240,15 @@ The most recently finished incident remains available via
 > active incidents is, for now, only available via the connected
 > WAIP-Web instance's own dashboard.
 
+> **Note:** WAIP-Web's server only fills `einsatznummer`, `objekt`/
+> `objektteil`, `besonderheiten`, `strasse`/`hausnummer`,
+> `einsatzdetails` and the permission flag for **logged-in** clients
+> (`db_user_check_permission_for_waip()` in the server's own
+> `server/waip.js`) - since this adapter connects without a login by
+> design (see [About this adapter](#about-this-adapter)), the server
+> always sends these blank/`false`. They are therefore not exposed as
+> states at all rather than permanently carrying dead values.
+
 | State | Type | Description |
 | --- | --- | --- |
 | `alarmAktiv` | boolean | `true` since the last `io.new_waip`, `false` since the last `io.standby` |
@@ -250,15 +259,9 @@ The most recently finished incident remains available via
 | `stichwort` | string | Alarm keyword |
 | `ort` | string | Location/town |
 | `ortsteil` | string | District (if different from `ort`) |
-| `strasse` / `hausnummer` | string | Address |
-| `objekt` / `objektteil` | string | Building name and part |
-| `einsatzdetails` | string | Extra details (only populated for fire/technical-assistance incidents) |
-| `besonderheiten` | string | Free-text remarks from the dispatch center |
 | `zeitstempel` | string (date) | Alarm time |
 | `ablaufzeit` | string (date) | End of the standby display duration, basis for `restzeit` |
-| `einsatznummer` | string | Incident number (if assigned by the server) |
 | `sondersignal` | number | `1` = special signal (lights & siren), otherwise none |
-| `permissions` | string | The registration's permission flag (full access to the detail map yes/no); always stringified (e.g. `"true"`), since the server sends it as a raw boolean |
 | `latitude` / `longitude` | number | Incident location (normalized from wgs84 fields or GeoJSON centroid) |
 | `routenGesamt` | number | Number of routes in the current incident |
 | `rueckmeldungGesamt` | number | Total feedback count for the current incident |
@@ -278,15 +281,13 @@ directly to VIS table widgets (nested structures like a plain
 `{routen, rueckmeldungen, ...}` object generally aren't rendered by
 those widgets). `routen`/`rueckmeldungen`/`emAlarmiert`/`emWeitere` only
 ever hold the *current* incident's data – they are cleared (`[]`) on
-`io.standby` and are **not** part of the history. `permissions` inside
-`current`/`history10` is stringified the same way as the standalone
-`einsatz.permissions` state. As with `einsatz.*` above, `current` only
-ever holds the single most recently active incident – see the note in
-the [`einsatz`](#einsatz) section.
+`io.standby` and are **not** part of the history. As with `einsatz.*`
+above, `current` only ever holds the single most recently active
+incident – see the note in the [`einsatz`](#einsatz) section.
 
 | State | Type | Description |
 | --- | --- | --- |
-| `current` | string (JSON array) | Current incident's flat data: the same 19 fields as the individual `einsatz.*` states above (`id` … `permissions`, plus `lat`/`lon`), plus `registeredMonitor`/`registeredMonitorName` (the monitor the adapter was registered to at the time), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
+| `current` | string (JSON array) | Current incident's flat data: the same 11 fields as the individual `einsatz.*` states above (`id` … `zeitstempel`, plus `lat`/`lon`), plus `registeredMonitor`/`registeredMonitorName` (the monitor the adapter was registered to at the time), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
 | `history10` | string (JSON array) | Last 10 completed incidents, same shape as `current`, one array entry per incident, written on `io.standby` |
 | `routen` | string (JSON array) | Routes of the current incident; each entry has `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` resolved to flat `lat`/`lon`) |
 | `rueckmeldungen` | string (JSON array) | Feedback entries of the current incident, as received from the server |
@@ -309,8 +310,8 @@ matters in the moment, so only the most recent one is kept.
 
 | State | Type | Description |
 | --- | --- | --- |
-| `lastEvent` | string (JSON) | Last received socket event (name + timestamp), for connection diagnostics |
-| `normalizedPosition` | string (JSON) | Result of the geodata normalization for the last `io.new_waip` event, as a flat `{lat, lon}` object (both `null` if no valid position could be derived) |
+| `lastEvent` | string (JSON array) | Last received socket event (name + timestamp), for connection diagnostics; single-element array (`[]` if none yet), for VIS table-widget compatibility |
+| `normalizedPosition` | string (JSON array) | Result of the geodata normalization for the last `io.new_waip` event, as a flat single-element `[{lat, lon}]` array (both `null` if no valid position could be derived; `[]` if no event yet), for VIS table-widget compatibility |
 | `rawPayloadShort` | string | Preview (500 characters) of the raw, unnormalized `io.new_waip` payload |
 | `ignoredCount` | number | Count of discarded events (payload explicitly named a different monitor ID) |
 | `monitorAudit` | string (JSON array) | Chronological log of connect/registration/reconnect events (200 entries) |
@@ -331,6 +332,24 @@ message the adapter can produce, grouped by level, with its cause and an
 example.
 
 ## Changelog
+
+### 0.7.18 (2026-08-22)
+
+- Fixed `debug.lastEvent`/`debug.normalizedPosition` to hold a
+  single-element JSON array instead of a bare object (matching
+  `einsatz.json.current`), for direct VIS table-widget compatibility,
+  and to correctly initialize to `[]` instead of `null` on a fresh
+  install/restart.
+- Removed `einsatz.einsatznummer`/`.objekt`/`.objektteil`/
+  `.besonderheiten`/`.strasse`/`.hausnummer`/`.einsatzdetails`/
+  `.permissions` (and the corresponding fields in
+  `einsatz.json.current`/`.history10`): confirmed via the WAIP-Web
+  server source (`server/waip.js`,
+  `db_user_check_permission_for_waip()`) that these fields are only
+  ever populated for logged-in clients - since this adapter connects
+  anonymously by design, they were always empty/`false`. Removed
+  instead of permanently carrying dead states - see the note in the
+  [`einsatz`](#einsatz) section.
 
 ### 0.7.17 (2026-08-22)
 
@@ -412,23 +431,6 @@ example.
   the matching `.github/auto-merge.yml` (production: patch always,
   minor only for security fixes; development: minor allowed too).
 - No runtime changes.
-
-### 0.7.13 (2026-08-22)
-
-- Addressed all remaining `ioBroker.repositories` checker suggestions:
-  - **[S0065]**/**[S0085]**/**[S0087]**: added devDependencies
-    `@types/node` and `@tsconfig/node22`, plus a `tsconfig.json` for
-    editor tooling (no `checkJs`, so this doesn't introduce any new
-    type-check warnings).
-  - **[S4036]**: added `.vscode/settings.json` with JSON schemas for
-    `io-package.json`/`admin/jsonConfig.json`.
-  - **[S5026]**: added the `release-script-plugin-manual-review`
-    plugin (adds a confirm-before-commit step to interactive
-    `npm run release` runs only).
-  - **[S8913]**: added a Dependabot auto-merge workflow for
-    patch/minor updates; major version bumps still require manual
-    review.
-  - No runtime changes.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
