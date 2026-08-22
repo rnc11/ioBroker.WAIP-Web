@@ -10,11 +10,17 @@
  * script into a standalone adapter: URL/Monitor-ID kommen jetzt aus der
  * Admin-Konfiguration statt aus einem Laufzeit-State.
  *
- * Objektstruktur (Stand 0.4.0): Rückmeldungen und Routen sind pro Einsatz
- * Listen (1:n) und liegen deshalb als verschachtelte JSON-Arrays innerhalb
- * von einsatz.json bzw. jedem Eintrag von einsatz.history10 - ergänzt um
- * schnell bindbare Zähler (einsatz.routenGesamt, einsatz.rueckmeldungGesamt,
- * einsatz.rueckmeldungAnzahl.*). Der frühere vis.*-Kanal entfällt komplett.
+ * Objektstruktur (Stand 0.7.15): einsatz.json ist ein eigener Channel mit
+ * ausschließlich flachen JSON-States, da VIS-Tabellen-Widgets keine
+ * verschachtelten Strukturen darstellen können. einsatz.json.current /
+ * .history10 enthalten nur den flachen Einsatzstamm (dieselben Felder wie
+ * die einzelnen einsatz.*-States, nur als ein JSON-Objekt bzw. -Array
+ * gebündelt); Routen/Rückmeldungen/Alarmierungen liegen als eigene, ebenfalls
+ * flache Arrays in einsatz.json.routen/.rueckmeldungen/.emAlarmiert/
+ * .emWeitere - nur für den jeweils aktuellen Einsatz, nicht historisiert.
+ * Ergänzt um schnell bindbare Zähler (einsatz.routenGesamt,
+ * einsatz.rueckmeldungGesamt, einsatz.rueckmeldungAnzahl.*). Der frühere
+ * vis.*-Kanal entfällt komplett.
  */
 
 const https = require('node:https');
@@ -81,6 +87,23 @@ const OBSOLETE_OBJECT_IDS = [
     'geo.position',
     'history.last10',
     'einsatz.emWeitere',
+    // Umstrukturierung in 0.7.15: einsatz.json/einsatz.history10 wechseln von State zu
+    // Channel (einsatz.json.current/.history10/.routen/.rueckmeldungen/.emAlarmiert/
+    // .emWeitere) - ein Objekt kann nicht gleichzeitig State und Channel sein, die alten
+    // States müssen daher vor initObjects() entfernt werden.
+    'einsatz.json',
+    'einsatz.history10',
+    // Umstrukturierung in 0.7.15: Kanal tts zieht komplett unter einsatz um
+    // (einsatz.tts.last/.lastTimestamp), da er sich auf den aktuellen Einsatz bezieht.
+    // tts.history10 entfällt ersatzlos (keine sinnvolle Historie ohne Einsatzbezug).
+    'tts.last',
+    'tts.lastTimestamp',
+    'tts.history10',
+    'tts',
+    // Umstrukturierung in 0.7.15: status.alarmAktiv/status.restzeit ziehen unter einsatz
+    // um (einsatz.alarmAktiv/.restzeit), da sie sich auf den aktuellen Einsatz beziehen.
+    'status.alarmAktiv',
+    'status.restzeit',
     'rueckmeldung.last.json',
     'rueckmeldung.counts.ek',
     'rueckmeldung.counts.gf',
@@ -102,8 +125,9 @@ const CHANNEL_DEFS = [
     { id: 'status', type: 'channel', name: 'Verbindungs- und Registrierungsstatus' },
     { id: 'einsatz', type: 'channel', name: 'Aktueller Einsatz' },
     { id: 'einsatz.rueckmeldungAnzahl', type: 'folder', name: 'Rückmeldungen nach Funktion' },
+    { id: 'einsatz.json', type: 'folder', name: 'Einsatzdaten als flache JSON-Objekte/Arrays für Tabellen-Widgets' },
+    { id: 'einsatz.tts', type: 'folder', name: 'TTS-Ansage des aktuellen Einsatzes' },
     { id: 'debug', type: 'channel', name: 'Diagnose- und Debug-Informationen' },
-    { id: 'tts', type: 'channel', name: 'TTS-Ansagen' },
 ];
 
 // Definition aller States, die beim Start sichergestellt werden.
@@ -114,15 +138,6 @@ const STATE_DEFS = [
         role: 'indicator.reachable',
         name: 'Verbunden mit WAIP-Server',
         def: false,
-    },
-    { id: 'status.alarmAktiv', type: 'boolean', role: 'indicator.alarm', name: 'Alarm aktiv', def: false },
-    {
-        id: 'status.restzeit',
-        type: 'number',
-        role: 'value.interval',
-        name: 'Restzeit bis Einsatzende',
-        unit: 's',
-        def: 0,
     },
     { id: 'status.registeredMonitor', type: 'string', role: 'text', name: 'Aktuell registrierte Monitor-ID' },
     {
@@ -157,7 +172,7 @@ const STATE_DEFS = [
     },
     { id: 'debug.monitorAudit', type: 'string', role: 'json', name: 'Monitor-Audit-Log (letzte 200 Einträge)' },
     { id: 'debug.sessionExpires', type: 'string', role: 'date', name: 'Session-Cookie gültig bis (letzte Erneuerung)' },
-    { id: 'debug.lastError', type: 'string', role: 'json', name: 'Letzte Server-Fehlermeldung (io.error)' },
+    { id: 'debug.lastError', type: 'string', role: 'text', name: 'Letzte Server-Fehlermeldung (io.error)' },
     {
         id: 'debug.serverVersion',
         type: 'string',
@@ -165,6 +180,15 @@ const STATE_DEFS = [
         name: 'Zuletzt gemeldete Server-Version/Instanz-ID (io.version)',
     },
     // flache Felder des aktuellen Einsatzes
+    { id: 'einsatz.alarmAktiv', type: 'boolean', role: 'indicator.alarm', name: 'Alarm aktiv', def: false },
+    {
+        id: 'einsatz.restzeit',
+        type: 'number',
+        role: 'value.interval',
+        name: 'Restzeit bis Einsatzende',
+        unit: 's',
+        def: 0,
+    },
     { id: 'einsatz.id', type: 'number', role: 'value', name: 'Einsatz ID' },
     { id: 'einsatz.uuid', type: 'string', role: 'text', name: 'Einsatz UUID' },
     { id: 'einsatz.einsatzart', type: 'string', role: 'text', name: 'Einsatzart' },
@@ -184,18 +208,45 @@ const STATE_DEFS = [
     { id: 'einsatz.permissions', type: 'string', role: 'json', name: 'Berechtigungs-Flag der Registrierung' },
     { id: 'einsatz.latitude', type: 'number', role: 'value.gps.latitude', name: 'Breitengrad' },
     { id: 'einsatz.longitude', type: 'number', role: 'value.gps.longitude', name: 'Längengrad' },
-    // verschachteltes Gesamtobjekt + Historie
+    // Flache JSON-Objekte/Arrays für Tabellen-Widgets (siehe einsatz.json.*-Channel).
+    // Jedes dieser States ist entweder ein flaches Objekt oder ein Array flacher Objekte -
+    // bewusst ohne weitere Verschachtelung, da VIS-Tabellen-Widgets nur eine Ebene abflachen
+    // können (siehe Diskussion zu den ursprünglich verschachtelten einsatz.json/history10).
     {
-        id: 'einsatz.json',
+        id: 'einsatz.json.current',
         type: 'string',
         role: 'json',
-        name: 'Vollständiger aktueller Einsatz inkl. Einsatzmittel/Routen/Rückmeldungen (JSON)',
+        name: 'Einsatzstamm des aktuellen Einsatzes, flaches Objekt (JSON)',
     },
     {
-        id: 'einsatz.history10',
+        id: 'einsatz.json.history10',
         type: 'string',
         role: 'json',
-        name: `Letzte ${HISTORY_SIZE} abgeschlossene Einsätze, gleicher Objekt-Shape wie einsatz.json (JSON-Array)`,
+        name: `Einsatzstamm der letzten ${HISTORY_SIZE} abgeschlossenen Einsätze, gleiches Schema wie einsatz.json.current (JSON-Array)`,
+    },
+    {
+        id: 'einsatz.json.routen',
+        type: 'string',
+        role: 'json',
+        name: 'Routen des aktuellen Einsatzes, flaches Array (JSON)',
+    },
+    {
+        id: 'einsatz.json.rueckmeldungen',
+        type: 'string',
+        role: 'json',
+        name: 'Rückmeldungen des aktuellen Einsatzes, flaches Array (JSON)',
+    },
+    {
+        id: 'einsatz.json.emAlarmiert',
+        type: 'string',
+        role: 'json',
+        name: 'Alarmierte Einsatzmittel des aktuellen Einsatzes, flaches Array (JSON)',
+    },
+    {
+        id: 'einsatz.json.emWeitere',
+        type: 'string',
+        role: 'json',
+        name: 'Weitere Einsatzmittel des aktuellen Einsatzes, flaches Array (JSON)',
     },
     // abgeleitete Zähler
     { id: 'einsatz.routenGesamt', type: 'number', role: 'value', name: 'Anzahl Routen im aktuellen Einsatz', def: 0 },
@@ -250,13 +301,39 @@ const STATE_DEFS = [
         name: 'Rückmeldungen: Medizinisch/Sanitäter',
         def: 0,
     },
-    // TTS
-    { id: 'tts.last', type: 'string', role: 'json', name: 'Letzte TTS-Ansage (JSON)' },
-    { id: 'tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
-    { id: 'tts.history10', type: 'string', role: 'json', name: `Letzte ${HISTORY_SIZE} TTS-Ansagen (JSON-Array)` },
+    // TTS des aktuellen Einsatzes (Kanal liegt unter einsatz, siehe CHANNEL_DEFS)
+    {
+        id: 'einsatz.tts.last',
+        type: 'string',
+        role: 'text.url',
+        name: 'Vollständige URL der letzten TTS-Ansage (mp3)',
+    },
+    { id: 'einsatz.tts.lastTimestamp', type: 'string', role: 'date', name: 'Zeitstempel letzte TTS-Ansage' },
 ];
 // Schneller Zugriff von setField() auf den deklarierten Typ eines States (siehe dort).
 const STATE_DEF_BY_ID = new Map(STATE_DEFS.map(def => [def.id, def]));
+
+// IDs, deren "string"-Wert tatsächlich ein JSON-*Array* enthält - werden von
+// resetAllStates() auf "[]" statt null zurückgesetzt (alle anderen "string"-States,
+// auch JSON-*Objekte* wie debug.lastEvent/einsatz.json.current, werden auf null gesetzt).
+// debug.monitorAudit ist ebenfalls ein JSON-Array, steht aber bewusst NICHT hier, da es
+// komplett in RESET_EXCLUDED_STATE_IDS ausgenommen ist (siehe dort).
+const JSON_ARRAY_STATE_IDS = new Set([
+    'einsatz.json.routen',
+    'einsatz.json.rueckmeldungen',
+    'einsatz.json.emAlarmiert',
+    'einsatz.json.emWeitere',
+]);
+
+// "number"-States, bei denen 0 ein irreführender "leerer" Wert wäre (Einsatz-ID,
+// Koordinaten - 0/0 wäre eine reale, aber falsche Position) - resetAllStates() setzt
+// diese auf null statt 0 zurück.
+const NULLABLE_NUMBER_STATE_IDS = new Set(['einsatz.id', 'einsatz.latitude', 'einsatz.longitude']);
+
+// States, die resetAllStates() bewusst NICHT bei jedem Adapter-Start leert - die Historie
+// der letzten Einsätze (einsatz.json.history10) und das Verbindungs-/Registrierungs-
+// Audit-Log (debug.monitorAudit) sollen über Neustarts hinweg erhalten bleiben.
+const RESET_EXCLUDED_STATE_IDS = new Set(['einsatz.json.history10', 'debug.monitorAudit']);
 
 /* Prüft ob eine monitorID gültig ist (nicht-leer). */
 function isValidMonitor(mon) {
@@ -489,8 +566,7 @@ class WaipWeb extends utils.Adapter {
         this.nextSessionKeepaliveDelayMs = null;
         this.sessionCookie = null;
         this.currentEinsatzUuid = null;
-        this.currentEinsatzSnapshot = null; // verschachteltes Objekt -> einsatz.json
-        this.ttsHistory = [];
+        this.currentEinsatzSnapshot = null; // -> einsatz.json.current/.routen/.rueckmeldungen/...
         this.lastServerVersion = null;
 
         this._lastDisconnectMsg = null;
@@ -519,6 +595,7 @@ class WaipWeb extends utils.Adapter {
         await this.cleanupObsoleteObjects();
         await this.migrateObjectTypes();
         await this.initObjects();
+        await this.resetAllStates();
         // Session-Cookie holen, bevor die erste Socket.IO-Verbindung aufgebaut wird
         await this.refreshSessionCookie();
         this.startSessionKeepalive();
@@ -571,19 +648,28 @@ class WaipWeb extends utils.Adapter {
         }
     }
 
-    /* Löscht bestehende State-Objekte, deren common.type nicht mehr zur aktuellen
-       STATE_DEFS-Definition passt (z.B. weil sich herausstellt, dass der Server ein Feld
-       als Zahl statt als String schickt - siehe einsatz.id/einsatz.sondersignal in 0.4.3).
-       setObjectNotExistsAsync legt danach in initObjects() ein frisches Objekt mit dem
-       korrekten Typ an. Generisch für alle künftigen Typ-Korrekturen, nicht nur diese. */
+    /* Löscht bestehende State-Objekte, deren common.type oder common.role nicht mehr zur
+       aktuellen STATE_DEFS-Definition passt (z.B. weil sich herausstellt, dass der Server
+       ein Feld als Zahl statt als String schickt - siehe einsatz.id/einsatz.sondersignal
+       in 0.4.3 -, oder weil sich eine Rolle als falsch gewählt herausstellt - siehe
+       debug.lastError in 0.7.15, das trotz role "json" meist nur einen reinen Fehlertext
+       enthält). setObjectNotExistsAsync legt danach in initObjects() ein frisches Objekt
+       mit der korrekten Definition an. Generisch für alle künftigen Typ-/Rollen-
+       Korrekturen, nicht nur diese. */
     async migrateObjectTypes() {
         for (const def of STATE_DEFS) {
             try {
                 const obj = await this.getObjectAsync(def.id);
-                if (obj && obj.common && obj.common.type && obj.common.type !== def.type) {
+                if (!obj || !obj.common) {
+                    continue;
+                }
+                const typeChanged = obj.common.type && obj.common.type !== def.type;
+                const roleChanged = obj.common.role && obj.common.role !== def.role;
+                if (typeChanged || roleChanged) {
                     await this.delObjectAsync(def.id);
                     this.log.info(
-                        `State-Objekt mit geändertem Datentyp neu angelegt: ${def.id} (${obj.common.type} -> ${def.type})`,
+                        `State-Objekt mit geänderter Definition neu angelegt: ${def.id} ` +
+                            `(type ${obj.common.type} -> ${def.type}, role ${obj.common.role} -> ${def.role})`,
                     );
                 }
             } catch {
@@ -614,6 +700,37 @@ class WaipWeb extends utils.Adapter {
                 },
                 native: {},
             });
+        }
+    }
+
+    /* Setzt bei jedem Adapter-Start aktiv alle States (außer RESET_EXCLUDED_STATE_IDS) auf
+       ihren "leeren" Wert zurück - anders als initObjects()/setObjectNotExistsAsync(), das
+       einen bereits vorhandenen Wert unangetastet lässt. Sorgt dafür, dass jeder Neustart
+       mit einem sauber initialisierten Zustand beginnt, unabhängig vom Stand davor. Läuft
+       nach initObjects(), die States müssen also bereits existieren. */
+    async resetAllStates() {
+        const tasks = [];
+        for (const def of STATE_DEFS) {
+            if (RESET_EXCLUDED_STATE_IDS.has(def.id)) {
+                continue;
+            }
+            let value;
+            if (def.type === 'boolean') {
+                value = false;
+            } else if (def.type === 'number') {
+                value = NULLABLE_NUMBER_STATE_IDS.has(def.id) ? null : 0;
+            } else if (JSON_ARRAY_STATE_IDS.has(def.id)) {
+                value = '[]';
+            } else {
+                value = null;
+            }
+            tasks.push(this.setStateAsync(def.id, value, true));
+        }
+        const results = await Promise.allSettled(tasks);
+        for (const r of results) {
+            if (r.status === 'rejected') {
+                this.safeWarn('resetAllStates', r.reason);
+            }
         }
     }
 
@@ -982,6 +1099,63 @@ class WaipWeb extends utils.Adapter {
         }
     }
 
+    /* Schreibt ein flaches Array (routen/rueckmeldungen/emAlarmiert/emWeitere) in einen
+       einsatz.json.*-State. Wandelt Nicht-Arrays defensiv in ein leeres Array um, damit
+       Tabellen-Widgets nie auf einen unerwarteten Werttyp treffen. */
+    async writeJsonArrayState(id, value) {
+        try {
+            await this.setStateAsync(id, JSON.stringify(Array.isArray(value) ? value : []), true);
+        } catch (e) {
+            this.safeWarn(`${id}.setState`, e);
+        }
+    }
+
+    /* Löst das verschachtelte position-Objekt eines Routen-Eintrags zu flachen lat/lon-Feldern
+       auf (siehe einsatz.json.routen) - Tabellen-Widgets können nur eine Verschachtelungsebene
+       abflachen, position{lat,lon} wäre bereits eine Ebene zu viel. */
+    flattenRoutenEntry(r) {
+        if (!r || typeof r !== 'object') {
+            return r;
+        }
+        const { position, ...rest } = r;
+        return {
+            ...rest,
+            lat: position && typeof position.lat === 'number' ? position.lat : null,
+            lon: position && typeof position.lon === 'number' ? position.lon : null,
+        };
+    }
+
+    /* Extrahiert aus einem Einsatz-Snapshot nur die flachen Einsatzstamm-Felder
+       (ALLOWED_EINSATZ_FIELDS + lat/lon aus position) - ohne routen/rueckmeldungen/
+       emAlarmiert/emWeitere. Gemeinsam genutzt von persistEinsatzSnapshot()
+       (einsatz.json.current) und pushEinsatzToHistory() (einsatz.json.history10), damit
+       beide garantiert dasselbe Schema haben. */
+    buildFlatEinsatzJson(snapshot) {
+        const src = snapshot || {};
+        const flat = {};
+        for (const k of this.ALLOWED_EINSATZ_FIELDS) {
+            flat[k] = Object.prototype.hasOwnProperty.call(src, k) ? src[k] : null;
+        }
+        flat.lat = src.position && typeof src.position.lat === 'number' ? src.position.lat : null;
+        flat.lon = src.position && typeof src.position.lon === 'number' ? src.position.lon : null;
+        return flat;
+    }
+
+    /* Löst eine vom Server per io.playtts gesendete TTS-URL zu einer vollständigen absoluten
+       URL auf. Bereits absolute URLs (http(s)://...) bleiben unverändert, relative Pfade
+       (z.B. "/tts/xyz.mp3") werden mit der konfigurierten WAIP-Server-URL zusammengesetzt. */
+    resolveTtsUrl(raw) {
+        if (typeof raw !== 'string' || !raw) {
+            return raw;
+        }
+        if (/^https?:\/\//i.test(raw)) {
+            return raw;
+        }
+        const base = (this.url || '').replace(/\/+$/, '');
+        const path = raw.startsWith('/') ? raw : `/${raw}`;
+        return `${base}${path}`;
+    }
+
     /* Prüft ob eine eingehende Payload eindeutig einem Monitor zuordenbar ist und mit currentMonitor übereinstimmt. */
     payloadMonitorMatch(p) {
         if (!p || typeof p !== 'object') {
@@ -1084,13 +1258,14 @@ class WaipWeb extends utils.Adapter {
     /* Schreibt this.currentEinsatzSnapshot komplett (inkl. verschachtelter Arrays) nach einsatz.json. */
     async persistEinsatzSnapshot() {
         try {
-            await this.setStateAsync('einsatz.json', JSON.stringify(this.currentEinsatzSnapshot), true);
+            const flat = this.buildFlatEinsatzJson(this.currentEinsatzSnapshot);
+            await this.setStateAsync('einsatz.json.current', JSON.stringify(flat), true);
         } catch (e) {
             this.safeWarn('persistEinsatzSnapshot', e);
         }
     }
 
-    /* Legt den aktuellen Einsatz-Snapshot als abgeschlossenen Eintrag vorne in einsatz.history10 ab
+    /* Legt den aktuellen Einsatz-Snapshot als abgeschlossenen Eintrag vorne in einsatz.json.history10 ab
        (z.B. bei io.standby oder wenn ein neuer Einsatz beginnt, ohne dass zuvor io.standby kam).
        Dedupliziert über die uuid, damit derselbe Einsatz nicht doppelt eingetragen wird, falls
        sowohl io.standby als auch der nächste io.new_waip diese Methode auslösen. */
@@ -1099,7 +1274,7 @@ class WaipWeb extends utils.Adapter {
             if (!this.currentEinsatzSnapshot || !this.currentEinsatzSnapshot.uuid) {
                 return;
             }
-            const st = await this.getStateAsync('einsatz.history10');
+            const st = await this.getStateAsync('einsatz.json.history10');
             let arr = [];
             try {
                 arr = st && st.val ? JSON.parse(st.val) : [];
@@ -1109,11 +1284,13 @@ class WaipWeb extends utils.Adapter {
             if (arr.length && arr[0] && arr[0].uuid === this.currentEinsatzSnapshot.uuid) {
                 return;
             }
-            arr.unshift(this.currentEinsatzSnapshot);
+            // Nur den flachen Einsatzstamm archivieren - Routen/Rückmeldungen/Alarmierungen
+            // gelten nur für den jeweils aktuellen Einsatz und werden nicht historisiert.
+            arr.unshift(this.buildFlatEinsatzJson(this.currentEinsatzSnapshot));
             if (arr.length > this.HISTORY_SIZE) {
                 arr = arr.slice(0, this.HISTORY_SIZE);
             }
-            await this.setStateAsync('einsatz.history10', JSON.stringify(arr), true);
+            await this.setStateAsync('einsatz.json.history10', JSON.stringify(arr), true);
         } catch (e) {
             this.safeWarn('pushEinsatzToHistory', e);
         }
@@ -1171,9 +1348,14 @@ class WaipWeb extends utils.Adapter {
 
             const data = normalizeData(incoming || {});
             try {
+                // Flach halten (lat/lon statt eines verschachtelten position-Objekts), damit
+                // dieser Debug-State ebenfalls direkt an ein Tabellen-Widget gebunden werden kann.
                 await this.setStateAsync(
                     'debug.normalizedPosition',
-                    JSON.stringify({ position: data.position ?? null }),
+                    JSON.stringify({
+                        lat: data.position && typeof data.position.lat === 'number' ? data.position.lat : null,
+                        lon: data.position && typeof data.position.lon === 'number' ? data.position.lon : null,
+                    }),
                     true,
                 );
             } catch {
@@ -1228,9 +1410,9 @@ class WaipWeb extends utils.Adapter {
             }
 
             try {
-                await this.setStateAsync('status.alarmAktiv', true, true);
+                await this.setStateAsync('einsatz.alarmAktiv', true, true);
             } catch (e) {
-                this.safeWarn('status.alarmAktiv.setState', e);
+                this.safeWarn('einsatz.alarmAktiv.setState', e);
             }
 
             // flache Felder setzen und gleichzeitig im Snapshot mitführen
@@ -1256,6 +1438,8 @@ class WaipWeb extends utils.Adapter {
             }
 
             await this.persistEinsatzSnapshot();
+            await this.writeJsonArrayState('einsatz.json.emAlarmiert', this.currentEinsatzSnapshot.emAlarmiert);
+            await this.writeJsonArrayState('einsatz.json.emWeitere', this.currentEinsatzSnapshot.emWeitere);
         } catch (e) {
             // Ein Alarm-Event konnte nicht verarbeitet werden -> echter Datenverlust.
             this.safeLog('error', 'handleAlarm', e);
@@ -1296,6 +1480,7 @@ class WaipWeb extends utils.Adapter {
             }
 
             await this.persistEinsatzSnapshot();
+            await this.writeJsonArrayState('einsatz.json.rueckmeldungen', this.currentEinsatzSnapshot.rueckmeldungen);
             await this.updateRueckmeldungCounts();
         } catch (e) {
             // Eine Rückmeldung konnte nicht verarbeitet werden -> echter Datenverlust.
@@ -1306,7 +1491,7 @@ class WaipWeb extends utils.Adapter {
     /* Handler für Standby (io.standby) - Einsatz beendet / Monitor im Ruhezustand.
        Analog zum offiziellen Frontend (client_waip.js leert dabei Stichwort, Ortsdaten,
        Besonderheiten etc. und setzt die Karte zurück): der abgeschlossene Einsatz wird
-       zuerst archiviert (einsatz.history10), danach werden alle auf den aktuellen Einsatz
+       zuerst archiviert (einsatz.json.history10), danach werden alle auf den aktuellen Einsatz
        bezogenen States geleert - so bleibt alarmAktiv ein verlässlicher Schalter dafür, ob
        einsatz.* gerade echte Live-Daten enthält, statt still den letzten (beendeten)
        Einsatz weiter anzuzeigen. */
@@ -1315,9 +1500,9 @@ class WaipWeb extends utils.Adapter {
             this.log.info('Standby empfangen - Einsatz beendet bzw. Monitor im Ruhezustand');
             this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'standby' }).catch(() => {});
             try {
-                await this.setStateAsync('status.alarmAktiv', false, true);
+                await this.setStateAsync('einsatz.alarmAktiv', false, true);
             } catch (e) {
-                this.safeWarn('status.alarmAktiv.setState', e);
+                this.safeWarn('einsatz.alarmAktiv.setState', e);
             }
             await this.pushEinsatzToHistory();
             await this.clearCurrentEinsatzStates();
@@ -1328,14 +1513,18 @@ class WaipWeb extends utils.Adapter {
     }
 
     /* Leert alle States, die sich auf den aktuellen (jetzt beendeten) Einsatz beziehen -
-       flache einsatz.*-Felder, einsatz.json sowie alle abgeleiteten Zähler. Wird nach
-       pushEinsatzToHistory() aufgerufen, der abgeschlossene Einsatz bleibt also weiterhin
-       über einsatz.history10 abrufbar. */
+       flache einsatz.*-Felder, einsatz.json.current/.routen/.rueckmeldungen/.emAlarmiert/
+       .emWeitere sowie alle abgeleiteten Zähler. Wird nach pushEinsatzToHistory() aufgerufen,
+       der abgeschlossene Einsatz bleibt also weiterhin über einsatz.json.history10 abrufbar. */
     async clearCurrentEinsatzStates() {
         const tasks = this.ALLOWED_EINSATZ_FIELDS.map(k => this.setStateAsync(`einsatz.${k}`, null, true));
         tasks.push(this.setStateAsync('einsatz.latitude', null, true));
         tasks.push(this.setStateAsync('einsatz.longitude', null, true));
-        tasks.push(this.setStateAsync('einsatz.json', null, true));
+        tasks.push(this.setStateAsync('einsatz.json.current', null, true));
+        tasks.push(this.writeJsonArrayState('einsatz.json.routen', []));
+        tasks.push(this.writeJsonArrayState('einsatz.json.rueckmeldungen', []));
+        tasks.push(this.writeJsonArrayState('einsatz.json.emAlarmiert', []));
+        tasks.push(this.writeJsonArrayState('einsatz.json.emWeitere', []));
         tasks.push(this.setStateAsync('einsatz.routenGesamt', 0, true));
         const results = await Promise.allSettled(tasks);
         for (const r of results) {
@@ -1418,6 +1607,10 @@ class WaipWeb extends utils.Adapter {
             this.currentEinsatzSnapshot.routen = Array.isArray(data) ? data : data ? [data] : [];
 
             await this.persistEinsatzSnapshot();
+            await this.writeJsonArrayState(
+                'einsatz.json.routen',
+                this.currentEinsatzSnapshot.routen.map(r => this.flattenRoutenEntry(r)),
+            );
             try {
                 await this.setStateAsync('einsatz.routenGesamt', this.currentEinsatzSnapshot.routen.length, true);
             } catch (e) {
@@ -1430,26 +1623,16 @@ class WaipWeb extends utils.Adapter {
     }
 
     /* Handler für TTS-Events (io.playtts). Payload ist laut client_waip.js nur eine URL
-       (direkt als audio.src verwendet), daher kein Einsatzbezug/keine weiteren Felder. */
+       (direkt als audio.src verwendet) - im Browser funktioniert das auch als relativer
+       Pfad, weil er implizit gegen die aktuelle Seiten-Origin aufgelöst wird. Für uns nicht
+       (VIS/Automationen haben nicht zwangsläufig dieselbe Origin wie der WAIP-Server),
+       daher wird hier explizit zu einer vollständigen absoluten URL aufgelöst. */
     async handleTTS(incoming) {
         try {
             const data = normalizeData(incoming || {});
             const ts = new Date().toISOString();
-            await this.setField('tts.last', data);
-            await this.setField('tts.lastTimestamp', ts);
-
-            if (!Array.isArray(this.ttsHistory)) {
-                this.ttsHistory = [];
-            }
-            this.ttsHistory.unshift({ zeitstempel: ts, url: data });
-            if (this.ttsHistory.length > this.HISTORY_SIZE) {
-                this.ttsHistory = this.ttsHistory.slice(0, this.HISTORY_SIZE);
-            }
-            try {
-                await this.setStateAsync('tts.history10', JSON.stringify(this.ttsHistory), true);
-            } catch (e) {
-                this.safeWarn('tts.history10.setState', e);
-            }
+            await this.setField('einsatz.tts.last', this.resolveTtsUrl(data));
+            await this.setField('einsatz.tts.lastTimestamp', ts);
         } catch (e) {
             // Ein TTS-Event konnte nicht verarbeitet werden -> echter Datenverlust.
             this.safeLog('error', 'handleTTS', e);
@@ -1778,7 +1961,7 @@ class WaipWeb extends utils.Adapter {
         if (this._lastRestzeit !== rest) {
             this._lastRestzeit = rest;
             try {
-                await this.setStateAsync('status.restzeit', rest, true);
+                await this.setStateAsync('einsatz.restzeit', rest, true);
             } catch {
                 /* ignore */
             }

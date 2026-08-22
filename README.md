@@ -70,17 +70,25 @@ independent client for its Socket.IO interface.
 - Registration timeout with an audit log (`debug.monitorAudit`)
 - Geodata normalization (wgs84 fields, `position`, or GeoJSON `geometry`
   → centroid)
-- History of the last 10 completed incidents (`einsatz.history10`)
+- History of the last 10 completed incidents (`einsatz.json.history10`)
 - Separate handlers for alarm (`io.new_waip`), feedback (`io.new_rmld`),
   routes (`io.routes`), TTS (`io.playtts`) and standby (`io.standby`)
 - Automatic session-cookie management (see below), so alarm delivery
   keeps working indefinitely without an open browser session
 - Server-restart detection via `io.version`, with automatic session
   refresh + reconnect
-- Complete incident data including nested feedback/routes per incident
-  (feedback and routes are 1:n relationships)
+- Incident, feedback, route and alerted-resource data available as
+  separate, flat JSON arrays under `einsatz.json.*` – no nesting, so VIS
+  table widgets can bind to them directly
 - Aggregated feedback counters per role/capability, mirroring the live
   badges on the web UI
+- Clean state on every restart: all states are actively reset to their
+  empty value (`false`/`0`/`null`/`[]`) on adapter start, except
+  `einsatz.json.history10` and `debug.monitorAudit` (both kept across
+  restarts). Note that if the adapter restarts while an incident is
+  actively running, its live fields (`einsatz.*`) are cleared too and
+  only repopulate once the server sends the next event for that
+  incident.
 
 ### Why a session cookie is needed
 
@@ -118,10 +126,11 @@ the site itself).
 
 ## States (under `waip-web.0.*`)
 
-Feedback and routes are 1:n lists per incident and are therefore stored
-as nested JSON arrays inside `einsatz.json` and in every entry of
-`einsatz.history10` – complemented by quick-to-bind counters so VIS
-bindings and triggers don't need JSON parsing.
+Feedback and routes are 1:n lists per incident. They are stored as
+**flat** JSON arrays under `einsatz.json.*` (no nested objects/arrays
+inside a row) so they can be bound directly to VIS table widgets –
+complemented by quick-to-bind counters so bindings and triggers don't
+need JSON parsing at all.
 
 ### info
 
@@ -134,8 +143,6 @@ bindings and triggers don't need JSON parsing.
 | State | Type | Description |
 | --- | --- | --- |
 | `connected` | boolean | Socket.IO connection technically established |
-| `alarmAktiv` | boolean | `true` since the last `io.new_waip`, `false` since the last `io.standby` |
-| `restzeit` | number (s) | Remaining seconds until `einsatz.ablaufzeit`, updated every second |
 | `registeredMonitor` | string | Monitor ID last registered with the server |
 | `registeredMonitorName` | string | Display name of that monitor, without the ID (e.g. "Leitstelle: Lausitz"); resolved once at startup from the same `/waip/` overview page as the admin dropdown, `null` if it couldn't be resolved |
 | `registrationAccepted` | boolean | `true` once the first event was received, `false` right after connecting or once the registration timeout elapses |
@@ -144,13 +151,15 @@ bindings and triggers don't need JSON parsing.
 ### einsatz
 
 Flat fields of the currently running incident. Cleared (`null`/`0`) on
-`io.standby`, matching the official frontend – `status.alarmAktiv` is
-therefore a reliable switch for whether these fields currently hold real
-live data. The most recently finished incident remains available via
-`einsatz.history10`:
+`io.standby`, matching the official frontend – `alarmAktiv` is therefore
+a reliable switch for whether these fields currently hold real live data.
+The most recently finished incident remains available via
+`einsatz.json.history10`:
 
 | State | Type | Description |
 | --- | --- | --- |
+| `alarmAktiv` | boolean | `true` since the last `io.new_waip`, `false` since the last `io.standby` |
+| `restzeit` | number (s) | Remaining seconds until `ablaufzeit`, updated every second |
 | `id` | number | Internal incident ID |
 | `uuid` | string | Unique incident UUID (also used to associate feedback) |
 | `einsatzart` | string | e.g. "Brandeinsatz" (fire), "Hilfeleistungseinsatz" (technical assistance), "Rettungseinsatz" (rescue/EMS), "Krankentransport" (patient transport) |
@@ -162,14 +171,12 @@ live data. The most recently finished incident remains available via
 | `einsatzdetails` | string | Extra details (only populated for fire/technical-assistance incidents) |
 | `besonderheiten` | string | Free-text remarks from the dispatch center |
 | `zeitstempel` | string (date) | Alarm time |
-| `ablaufzeit` | string (date) | End of the standby display duration, basis for `status.restzeit` |
+| `ablaufzeit` | string (date) | End of the standby display duration, basis for `restzeit` |
 | `einsatznummer` | string | Incident number (if assigned by the server) |
 | `sondersignal` | number | `1` = special signal (lights & siren), otherwise none |
 | `permissions` | string | The registration's permission flag (full access to the detail map yes/no); always stringified (e.g. `"true"`), since the server sends it as a raw boolean |
 | `latitude` / `longitude` | number | Incident location (normalized from wgs84 fields or GeoJSON centroid) |
-| `json` | string (JSON) | Complete incident object: all fields above plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
-| `history10` | string (JSON array) | Last 10 completed incidents, same object shape as `json`, written on `io.standby` |
-| `routenGesamt` | number | Number of routes in the current incident (= `json.routen.length`) |
+| `routenGesamt` | number | Number of routes in the current incident |
 | `rueckmeldungGesamt` | number | Total feedback count for the current incident |
 | `rueckmeldungAnzahl.ek` | number | Feedback count as team member ("Einsatzkraft") |
 | `rueckmeldungAnzahl.gf` | number | Feedback count as crew leader ("Gruppenführer") |
@@ -180,32 +187,67 @@ live data. The most recently finished incident remains available via
 | `rueckmeldungAnzahl.ma` | number | Feedback count as driver/operator ("Maschinist") |
 | `rueckmeldungAnzahl.med` | number | Feedback count with a medical qualification |
 
-### tts
+### einsatz.json
+
+Flat JSON objects/arrays, one level deep at most, meant to be bound
+directly to VIS table widgets (nested structures like a plain
+`{routen, rueckmeldungen, ...}` object generally aren't rendered by
+those widgets). `routen`/`rueckmeldungen`/`emAlarmiert`/`emWeitere` only
+ever hold the *current* incident's data – they are cleared (`[]`) on
+`io.standby` and are **not** part of the history.
 
 | State | Type | Description |
 | --- | --- | --- |
-| `last` | string (URL) | URL of the most recently received voice announcement |
+| `current` | string (JSON) | Current incident's flat data: the same 19 fields as the individual `einsatz.*` states above (`id` … `permissions`, plus `lat`/`lon`), bundled as one object |
+| `history10` | string (JSON array) | Last 10 completed incidents, same shape as `current`, one array entry per incident, written on `io.standby` |
+| `routen` | string (JSON array) | Routes of the current incident; each entry has `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` resolved to flat `lat`/`lon`) |
+| `rueckmeldungen` | string (JSON array) | Feedback entries of the current incident, as received from the server |
+| `emAlarmiert` | string (JSON array) | Alerted resources of the current incident; each entry has `name`, `zeit`, `wache`, `zeit_alarmierung_iso`, `zeit_ausgerueckt_iso` |
+| `emWeitere` | string (JSON array) | Additional resources of the current incident, same shape as `emAlarmiert` |
+
+### einsatz.tts
+
+Voice announcement (`io.playtts`) for the currently running incident –
+lives under `einsatz` rather than its own top-level channel since it has
+no meaning without an incident. No history: a TTS announcement only
+matters in the moment, so only the most recent one is kept.
+
+| State | Type | Description |
+| --- | --- | --- |
+| `last` | string (URL) | Full absolute URL of the most recent voice announcement's mp3 file. The server sends only a bare (often relative) path meant to be used as `audio.src` in a browser that shares its origin; the adapter resolves that against the configured WAIP server URL so the link also works outside the WAIP-Web page (e.g. in a VIS audio widget) |
 | `lastTimestamp` | string (date) | Time of the last announcement |
-| `history10` | string (JSON array) | Last 10 announcements as `{zeitstempel, url}` |
 
 ### debug
 
 | State | Type | Description |
 | --- | --- | --- |
 | `lastEvent` | string (JSON) | Last received socket event (name + timestamp), for connection diagnostics |
-| `normalizedPosition` | string (JSON) | Last normalized position of the incident |
+| `normalizedPosition` | string (JSON) | Result of the geodata normalization for the last `io.new_waip` event, as a flat `{lat, lon}` object (both `null` if no valid position could be derived) |
 | `rawPayloadShort` | string | Preview (500 characters) of the raw, unnormalized `io.new_waip` payload |
 | `ignoredCount` | number | Count of discarded events (payload explicitly named a different monitor ID) |
 | `monitorAudit` | string (JSON array) | Chronological log of connect/registration/reconnect events (200 entries) |
 | `sessionExpires` | string (date) | Expiry time of the session cookie as of the last renewal |
-| `lastError` | string (JSON) | Last error message reported by the server (`io.error`) |
+| `lastError` | string | Last error message reported by the server (`io.error`); plain text, not JSON, as the server sends this as a bare string |
 | `serverVersion` | string | Last reported server instance ID (`io.version`); a change suggests a server restart |
 
-JSON-internal keys inside `einsatz.json` (`emAlarmiert`, `emWeitere`,
-`routen`, `rueckmeldungen`) stay lowercase – these are object properties
-inside the JSON value, not their own ioBroker states.
-
 ## Changelog
+
+### 0.7.15 (2026-08-22)
+
+- Restructured `einsatz.json` into a channel with flat,
+  table-widget-friendly sub-states (`current`/`history10`/`routen`/
+  `rueckmeldungen`/`emAlarmiert`/`emWeitere`) - nested JSON wasn't
+  rendering in VIS table widgets.
+- Moved `tts.*` under `einsatz.tts.*` (removed the meaningless
+  `tts.history10`); `tts.last` now resolves to a full absolute mp3 URL
+  instead of the server's often-relative path.
+- Moved `status.alarmAktiv`/`status.restzeit` to
+  `einsatz.alarmAktiv`/`einsatz.restzeit`.
+- Flattened `debug.normalizedPosition` and corrected
+  `debug.lastError`'s role from `json` to `text`.
+- All states are now actively reset to their empty value on every
+  adapter start, except `einsatz.json.history10` and
+  `debug.monitorAudit`, which persist across restarts.
 
 ### 0.7.14 (2026-08-22)
 

@@ -62,17 +62,25 @@ Schnittstelle.
 - Registrierungs-Timeout mit Audit-Log (`debug.monitorAudit`)
 - Normalisierung von Geodaten (wgs84-Felder, `position` oder
   GeoJSON-`geometry` → Mittelpunkt)
-- History der letzten 10 abgeschlossenen Einsätze (`einsatz.history10`)
+- History der letzten 10 abgeschlossenen Einsätze (`einsatz.json.history10`)
 - Getrennte Handler für Alarm (`io.new_waip`), Rückmeldung (`io.new_rmld`),
   Routen (`io.routes`), TTS (`io.playtts`) und Standby (`io.standby`)
 - Automatisches Session-Cookie-Management (siehe unten), damit die
   Alarm-Zustellung auch ohne offene Browsersitzung dauerhaft weiterläuft
 - Server-Neustart-Erkennung über `io.version` mit automatischem
   Session-Refresh + Reconnect
-- Vollständige Einsatzdaten inkl. verschachtelter Rückmeldungen/Routen
-  pro Einsatz (Rückmeldungen und Routen sind 1:n-Beziehungen)
+- Einsatz-, Rückmeldungs-, Routen- und Einsatzmittel-Daten als eigene,
+  flache JSON-Arrays unter `einsatz.json.*` – ohne Verschachtelung, damit
+  VIS-Tabellen-Widgets direkt daran binden können
 - Aggregierte Rückmeldungs-Zähler pro Rolle/Fähigkeit, analog zu den
   Live-Badges der Weboberfläche
+- Sauberer Zustand bei jedem Neustart: alle States werden beim Adapter-
+  Start aktiv auf ihren leeren Wert zurückgesetzt (`false`/`0`/`null`/
+  `[]`), außer `einsatz.json.history10` und `debug.monitorAudit` (beide
+  bleiben über Neustarts hinweg erhalten). Startet der Adapter neu,
+  während gerade ein Einsatz läuft, werden dessen Live-Felder
+  (`einsatz.*`) ebenfalls geleert und füllen sich erst wieder, sobald
+  der Server das nächste Event zu diesem Einsatz sendet.
 
 ### Warum ein Session-Cookie nötig ist
 
@@ -110,10 +118,11 @@ Laufzeit abgeleitet (min. 55s, max. 5 Min., analog zu
 
 ## States (unter `waip-web.0.*`)
 
-Rückmeldungen und Routen sind pro Einsatz Listen (1:n) und liegen deshalb
-als verschachtelte JSON-Arrays in `einsatz.json` bzw. in jedem Eintrag von
-`einsatz.history10` – ergänzt um schnell bindbare Zähler, damit VIS-Bindings
-und Trigger ohne JSON-Parsing auskommen.
+Rückmeldungen und Routen sind pro Einsatz Listen (1:n). Sie liegen als
+**flache** JSON-Arrays unter `einsatz.json.*` (keine verschachtelten
+Objekte/Arrays innerhalb einer Zeile), damit sie direkt an VIS-Tabellen-
+Widgets gebunden werden können – ergänzt um schnell bindbare Zähler,
+damit Bindings und Trigger komplett ohne JSON-Parsing auskommen.
 
 ### info
 
@@ -126,8 +135,6 @@ und Trigger ohne JSON-Parsing auskommen.
 | State | Typ | Beschreibung |
 | --- | --- | --- |
 | `connected` | boolean | Socket.IO-Verbindung technisch aufgebaut |
-| `alarmAktiv` | boolean | `true` seit dem letzten `io.new_waip`, `false` seit dem letzten `io.standby` |
-| `restzeit` | number (s) | Verbleibende Sekunden bis `einsatz.ablaufzeit`, sekündlich aktualisiert |
 | `registeredMonitor` | string | Zuletzt beim Server registrierte Monitor-ID |
 | `registeredMonitorName` | string | Anzeigename dieses Monitors ohne ID (z. B. „Leitstelle: Lausitz"); wird einmalig beim Start von derselben `/waip/`-Übersichtsseite wie das Admin-Dropdown aufgelöst, `null` falls nicht auflösbar |
 | `registrationAccepted` | boolean | `true` sobald das erste Event empfangen wurde, sonst `false` direkt nach Connect oder nach Ablauf des Registrierungs-Timeouts |
@@ -136,13 +143,15 @@ und Trigger ohne JSON-Parsing auskommen.
 ### einsatz
 
 Flache Felder des aktuell laufenden Einsatzes. Werden bei `io.standby`
-geleert (`null`/`0`), analog zum offiziellen Frontend – `status.alarmAktiv`
-ist damit ein verlässlicher Schalter dafür, ob hier gerade echte Live-Daten
+geleert (`null`/`0`), analog zum offiziellen Frontend – `alarmAktiv` ist
+damit ein verlässlicher Schalter dafür, ob hier gerade echte Live-Daten
 stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
-`einsatz.history10` abrufbar:
+`einsatz.json.history10` abrufbar:
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
+| `alarmAktiv` | boolean | `true` seit dem letzten `io.new_waip`, `false` seit dem letzten `io.standby` |
+| `restzeit` | number (s) | Verbleibende Sekunden bis `ablaufzeit`, sekündlich aktualisiert |
 | `id` | number | Interne Einsatz-ID |
 | `uuid` | string | Eindeutige Einsatz-UUID (dient auch der Zuordnung von Rückmeldungen) |
 | `einsatzart` | string | z. B. „Brandeinsatz", „Hilfeleistungseinsatz", „Rettungseinsatz", „Krankentransport" |
@@ -154,14 +163,12 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `einsatzdetails` | string | Zusatzdetails (nur bei Brand-/Hilfeleistungseinsätzen befüllt) |
 | `besonderheiten` | string | Freitext-Besonderheiten der Leitstelle |
 | `zeitstempel` | string (date) | Alarmzeit |
-| `ablaufzeit` | string (date) | Ende der Standby-Anzeigedauer, Basis für `status.restzeit` |
+| `ablaufzeit` | string (date) | Ende der Standby-Anzeigedauer, Basis für `restzeit` |
 | `einsatznummer` | string | Einsatznummer (sofern vom Server vergeben) |
 | `sondersignal` | number | `1` = Sondersignal, sonst kein Sondersignal |
 | `permissions` | string | Berechtigungsflag der Registrierung (Vollzugriff auf Detailkarte ja/nein); wird immer als String gespeichert (z.B. `"true"`), da der Server hier ein rohes Boolean sendet |
 | `latitude` / `longitude` | number | Position des Einsatzortes (normalisiert aus wgs84-Feldern oder GeoJSON-Mittelpunkt) |
-| `json` | string (JSON) | Vollständiges Einsatz-Objekt: alle Felder oben plus `emAlarmiert[]`, `emWeitere[]`, `routen[]`, `rueckmeldungen[]` |
-| `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleicher Objekt-Shape wie `json`, geschrieben bei `io.standby` |
-| `routenGesamt` | number | Anzahl Routen im aktuellen Einsatz (= `json.routen.length`) |
+| `routenGesamt` | number | Anzahl Routen im aktuellen Einsatz |
 | `rueckmeldungGesamt` | number | Rückmeldungen gesamt im aktuellen Einsatz |
 | `rueckmeldungAnzahl.ek` | number | Anzahl Rückmeldungen als Einsatzkraft |
 | `rueckmeldungAnzahl.gf` | number | Anzahl Rückmeldungen als Gruppenführer |
@@ -172,30 +179,50 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `rueckmeldungAnzahl.ma` | number | Anzahl Rückmeldungen als Maschinist |
 | `rueckmeldungAnzahl.med` | number | Anzahl Rückmeldungen mit medizinischer Befähigung |
 
-### tts
+### einsatz.json
+
+Flache JSON-Objekte/Arrays, maximal eine Verschachtelungsebene, gedacht
+zum direkten Binden an VIS-Tabellen-Widgets (verschachtelte Strukturen wie
+ein einfaches `{routen, rueckmeldungen, ...}`-Objekt werden von diesen
+Widgets in der Regel nicht dargestellt). `routen`/`rueckmeldungen`/
+`emAlarmiert`/`emWeitere` enthalten immer nur die Daten des **aktuellen**
+Einsatzes – sie werden bei `io.standby` geleert (`[]`) und sind **nicht**
+Teil der History.
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `last` | string (URL) | URL der zuletzt empfangenen Sprachansage |
+| `current` | string (JSON) | Flache Daten des aktuellen Einsatzes: dieselben 19 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `permissions`, plus `lat`/`lon`), gebündelt als ein Objekt |
+| `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleiches Schema wie `current`, ein Array-Eintrag pro Einsatz, geschrieben bei `io.standby` |
+| `routen` | string (JSON-Array) | Routen des aktuellen Einsatzes; jeder Eintrag hat `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` zu flachem `lat`/`lon` aufgelöst) |
+| `rueckmeldungen` | string (JSON-Array) | Rückmeldungen des aktuellen Einsatzes, wie vom Server empfangen |
+| `emAlarmiert` | string (JSON-Array) | Alarmierte Einsatzmittel des aktuellen Einsatzes; jeder Eintrag hat `name`, `zeit`, `wache`, `zeit_alarmierung_iso`, `zeit_ausgerueckt_iso` |
+| `emWeitere` | string (JSON-Array) | Weitere Einsatzmittel des aktuellen Einsatzes, gleiches Schema wie `emAlarmiert` |
+
+### einsatz.tts
+
+Sprachansage (`io.playtts`) zum aktuell laufenden Einsatz – liegt unter
+`einsatz` statt in einem eigenen Top-Level-Kanal, da sie ohne Einsatzbezug
+keine Bedeutung hat. Keine History: eine TTS-Ansage ist nur im Moment
+relevant, deshalb wird nur die jeweils letzte vorgehalten.
+
+| State | Typ | Beschreibung |
+| --- | --- | --- |
+| `last` | string (URL) | Vollständige, absolute URL zur mp3-Datei der letzten Sprachansage. Der Server sendet nur einen (oft relativen) Pfad, der als `audio.src` in einem Browser mit derselben Origin gedacht ist; der Adapter löst diesen gegen die konfigurierte WAIP-Server-URL auf, damit der Link auch außerhalb der WAIP-Web-Seite funktioniert (z.B. in einem VIS-Audio-Widget) |
 | `lastTimestamp` | string (date) | Zeitpunkt der letzten Ansage |
-| `history10` | string (JSON-Array) | Letzte 10 Ansagen als `{zeitstempel, url}` |
 
 ### debug
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
 | `lastEvent` | string (JSON) | Letztes empfangenes Socket-Event (Name + Zeitstempel), zur Verbindungsdiagnose |
-| `normalizedPosition` | string (JSON) | Zuletzt normalisierte Position des Einsatzes |
+| `normalizedPosition` | string (JSON) | Ergebnis der Geodaten-Normalisierung für das letzte `io.new_waip`-Event, als flaches `{lat, lon}`-Objekt (beide `null`, falls keine gültige Position ermittelt werden konnte) |
 | `rawPayloadShort` | string | Vorschau (500 Zeichen) der rohen, unnormalisierten `io.new_waip`-Nutzlast |
 | `ignoredCount` | number | Anzahl verworfener Events (Payload nannte explizit eine andere Monitor-ID) |
 | `monitorAudit` | string (JSON-Array) | Chronologisches Log von Connect-/Registrierungs-/Reconnect-Ereignissen (200 Einträge) |
 | `sessionExpires` | string (date) | Ablaufzeit des Session-Cookies laut letzter Erneuerung |
-| `lastError` | string (JSON) | Letzte vom Server gemeldete Fehlermeldung (`io.error`) |
+| `lastError` | string | Letzte vom Server gemeldete Fehlermeldung (`io.error`); reiner Text, kein JSON, da der Server hier einen bloßen String sendet |
 | `serverVersion` | string | Zuletzt gemeldete Server-Instanz-ID (`io.version`); Änderung deutet auf Server-Neustart hin |
 
-JSON-interne Schlüssel innerhalb von `einsatz.json` (`emAlarmiert`,
-`emWeitere`, `routen`, `rueckmeldungen`) bleiben kleingeschrieben – das sind
-Objekteigenschaften im JSON-Wert, keine eigenen ioBroker-States.
 
 ---
 
