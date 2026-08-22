@@ -1,5 +1,22 @@
 # Older changes
 
+### 0.7.14 (2026-08-22)
+
+- Fixed **[E1032]**/**[E2004]**: trimmed `common.news` to the 7
+  entries allowed by the repository builder and removed the orphaned
+  `0.7.10` entry (never published to npm).
+- Fixed **[W0066]**: pinned `@types/node` to `^22.0.0` (was `>=22`,
+  resolving to a mismatched `26.x`).
+- Fixed **[W4040]**/**[W4042]**: corrected the `.vscode/settings.json`
+  JSON schema URLs for `io-package.json`/`jsonConfig` to the ones
+  ioBroker actually expects.
+- Fixed **[S8914]**: replaced the custom Dependabot auto-merge
+  workflow with the canonical
+  `iobroker-bot-orga/action-automerge-dependabot@v1` action and added
+  the matching `.github/auto-merge.yml` (production: patch always,
+  minor only for security fixes; development: minor allowed too).
+- No runtime changes.
+
 ### 0.7.13 (2026-08-22)
 
 - Addressed all remaining `ioBroker.repositories` checker suggestions:
