@@ -10,6 +10,21 @@ Verbindet sich per Socket.IO mit einem WAIP-Web-Wachalarm-Monitor und bildet
 Einsätze, Rückmeldungen, Routen und TTS-Ansagen als ioBroker-States ab –
 ohne dass ein Browser-Tab dauerhaft offen sein muss.
 
+## Inhaltsverzeichnis
+
+- [Über diesen Adapter](#über-diesen-adapter)
+- [Über WAIP-Web](#über-waip-web)
+- [Praktische Anwendungsfälle](#praktische-anwendungsfälle)
+- [Funktionen](#funktionen)
+  - [Warum ein Session-Cookie nötig ist](#warum-ein-session-cookie-nötig-ist)
+- [Konfiguration](#konfiguration)
+- [States (unter `waip-web.0.*`)](#states-unter-waip-web0)
+  - [info](#info) · [status](#status) · [einsatz](#einsatz) ·
+    [einsatz.json](#einsatzjson) · [einsatz.tts](#einsatztts) ·
+    [debug](#debug)
+- [Logging](#logging)
+- [Lizenz und Changelog](#lizenz-und-changelog)
+
 ## Über diesen Adapter
 
 Dieser Adapter ist ein **inoffizielles Community-Projekt** und steht in
@@ -53,10 +68,61 @@ lizenziert. Dieser Adapter enthält keinen Code aus dem WAIP-Web-Projekt,
 sondern implementiert eine eigenständige Anbindung an dessen Socket.IO-
 Schnittstelle.
 
+## Praktische Anwendungsfälle
+
+In diesem Abschnitt geht es darum, was sich mit den States dieses Adapters
+konkret **bauen** lässt – typischer Einsatz auf einer Feuerwehr-/
+Rettungsdienst-Wache:
+
+- **Wandmontierte Alarmanzeige.** `einsatz.json.current` an ein
+  VIS-Tabellen-Widget auf einem wandmontierten Tablet/TV im Aufenthalts-
+  raum oder in der Fahrzeughalle binden – Einsatzart, Stichwort, Adresse
+  und alarmierte Einsatzmittel erscheinen automatisch, ohne dass dort
+  dauerhaft ein Browser-Tab offen gehalten werden muss (genau dafür
+  existiert dieser Adapter).
+- **Automationen direkt bei Alarmeingang auslösen.** `einsatz.alarmAktiv`
+  (ggf. zusammen mit `info.connection`) in einem Script/einer Blockly-Regel
+  beobachten, um bei Alarm Licht in der Fahrzeughalle einzuschalten, ein
+  Tor/eine Tür zu öffnen, eine Push-Benachrichtigung (z. B. über einen
+  Telegram-/Pushover-Adapter) mit `einsatz.stichwort` + `einsatz.ort` zu
+  versenden oder eine Lichtszene auszulösen – wenige Sekunden nach der
+  eigentlichen Alarmierung, da ioBroker-State-Änderungen sofort feuern und
+  kein Polling nötig ist.
+- **Alarm laut ansagen.** `einsatz.tts.last` ist eine fertige, absolute
+  mp3-URL; eine `sonos`-/`snapcast`-/`text2speech`-Automation darauf
+  ansetzen (oder die URL direkt abspielen), um den Einsatz über
+  Gebäudelautsprecher anzusagen, sobald `io.playtts` feuert – hilfreich,
+  wenn nicht alle Mitglieder gerade auf einen Bildschirm schauen.
+- **Live-Übersicht der Rückmeldungen.** Die `einsatz.rueckmeldungAnzahl.*`
+  Zähler (pro Rolle: EK/GF/ZF/VF, pro Zusatzfunktion: AGT/FZF/MA/MED)
+  aktualisieren sich in Echtzeit, sobald Einsatzkräfte per App
+  zurückmelden – als Gauge- oder Zahlen-Widget gebunden ergibt das eine
+  Übersicht auf einen Blick, wer bereits kommt.
+- **Nachbereitung/Statistik.** `einsatz.json.history10` hält die letzten
+  10 abgeschlossenen Einsätze als flache Tabelle vor – an eine zweite
+  VIS-Ansicht binden oder periodisch exportieren (z. B. per Script, das
+  den State bei `io.standby` ausliest), um ein längerfristiges Log zu
+  führen oder Einsatzzahlen in ein Statistik-/Dashboard-Adapter
+  einzuspeisen.
+- **Routen-/Fahrzeugübersicht auf einer Karte.** `einsatz.json.routen`
+  enthält für jede alarmierte Wache `lat`/`lon` und `color` – an ein
+  VIS-Kartenwidget gebunden ergibt das auf einen Blick, wer unterwegs ist,
+  unabhängig von der WAIP-Web-eigenen Karte.
+- **Anbindung an weitere ioBroker-Automationen.** Da jedes Feld ein
+  gewöhnlicher ioBroker-State ist, lässt sich das Ganze mit allem
+  kombinieren, was ohnehin in der Instanz läuft – `einsatz.*` in eine
+  Smart-Home-Szenensteuerung einspeisen, eine Grafana-/InfluxDB-Historie
+  für Reaktionszeit-Auswertungen führen, oder per ioBroker-MQTT-Adapter
+  in einen Node-RED-artigen Flow einbinden, ganz ohne eigene Anbindung an
+  die WAIP-Web-API.
+
 ## Funktionen
 
 - Verbindung zum Namespace `/waip` per `socket.io-client`, Registrierung
-  über `emit('WAIP', monitorId)` (3-faches Emit für Robustheit)
+  über `emit('WAIP', monitorId)` einmalig (verlässt sich als Fallback
+  auf `REGISTRATION_TIMEOUT_MS` statt auf wiederholte Emits, da ein
+  redundanter Emit den Server nur erneut antworten lässt, ohne die
+  Zustellungssicherheit zu erhöhen)
 - Manuelles Reconnect-Handling (kein Auto-Reconnect der Bibliothek) mit
   konfigurierbarer Verzögerung
 - Registrierungs-Timeout mit Audit-Log (`debug.monitorAudit`)
@@ -90,6 +156,9 @@ Schnittstelle.
   ab, sobald seine `ablaufzeit` um mehr als eine Gnadenfrist (60
   Sekunden) überschritten ist, statt unbegrenzt veraltete "aktiv"-Daten
   stehen zu lassen.
+- Zeigt immer nur den zuletzt aktiven Einsatz; mehrere gleichzeitig
+  laufende Einsätze sind aktuell nur über das Dashboard der
+  WAIP-Web-Instanz selbst einsehbar
 
 ### Warum ein Session-Cookie nötig ist
 
@@ -157,6 +226,17 @@ damit ein verlässlicher Schalter dafür, ob hier gerade echte Live-Daten
 stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 `einsatz.json.history10` abrufbar:
 
+> **Hinweis:** Der Adapter bildet immer nur den zuletzt aktiv gemeldeten
+> Einsatz ab (`einsatz.*` bzw. `einsatz.json.current`) – analog zum
+> Alarmmonitor des offiziellen WAIP-Web-Frontends. Theoretisch können in
+> WAIP-Web mehrere Einsätze gleichzeitig aktiv sein (z. B. wenn kurz
+> hintereinander zwei Alarmierungen eingehen). Diese States sind **kein
+> Array mehrerer laufender Einsätze**, sondern werden bei jedem neuen
+> `io.new_waip`-Event überschrieben – ein zeitgleich zweiter laufender
+> Einsatz ist über den Adapter aktuell nicht sichtbar. Eine vollständige
+> Übersicht aller gerade aktiven Einsätze liefert derzeit nur das
+> Dashboard der angebundenen WAIP-Web-Instanz selbst.
+
 | State | Typ | Beschreibung |
 | --- | --- | --- |
 | `alarmAktiv` | boolean | `true` seit dem letzten `io.new_waip`, `false` seit dem letzten `io.standby` |
@@ -198,11 +278,13 @@ Widgets in der Regel nicht dargestellt). `routen`/`rueckmeldungen`/
 Einsatzes – sie werden bei `io.standby` geleert (`[]`) und sind **nicht**
 Teil der History. `permissions` innerhalb von `current`/`history10` wird
 genauso als String gespeichert wie im eigenständigen
-`einsatz.permissions`-State.
+`einsatz.permissions`-State. Wie bei `einsatz.*` oben gilt auch hier:
+`current` enthält immer nur den zuletzt aktiven Einsatz – siehe Hinweis
+im Abschnitt [`einsatz`](#einsatz).
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 19 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `permissions`, plus `lat`/`lon`), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
+| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 19 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `permissions`, plus `lat`/`lon`), zusätzlich `registeredMonitor`/`registeredMonitorName` (der Monitor, auf den der Adapter zu diesem Zeitpunkt registriert war), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
 | `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleiches Schema wie `current`, ein Array-Eintrag pro Einsatz, geschrieben bei `io.standby` |
 | `routen` | string (JSON-Array) | Routen des aktuellen Einsatzes; jeder Eintrag hat `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` zu flachem `lat`/`lon` aufgelöst) |
 | `rueckmeldungen` | string (JSON-Array) | Rückmeldungen des aktuellen Einsatzes, wie vom Server empfangen |
@@ -234,8 +316,22 @@ relevant, deshalb wird nur die jeweils letzte vorgehalten.
 | `lastError` | string | Letzte vom Server gemeldete Fehlermeldung (`io.error`); reiner Text, kein JSON, da der Server hier einen bloßen String sendet |
 | `serverVersion` | string | Zuletzt gemeldete Server-Instanz-ID (`io.version`); Änderung deutet auf Server-Neustart hin |
 
+## Logging
 
----
+Sämtliche Log-Texte sind auf Englisch, unabhängig von der ioBroker-
+Systemsprache (nur UI-Texte wie Admin-Beschriftungen werden übersetzt).
+Wiederkehrbare Fehlerzustände (Session-Cookie-Erneuerung,
+WAIP-Registrierung, die Socket.IO-Verbindung, eine Flut von
+Falscher-Monitor-Events) werden beim ersten Auftreten einmalig auf `warn`
+geloggt, danach solange sie bestehen nur noch auf `debug`, und bei
+Erholung einmalig auf `info` – entsprechend der
+[offiziellen ioBroker-Logging-Richtlinie](https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/adapterdev.md#logging).
+
+Eine vollständige Referenz aller Log-Meldungen (gruppiert nach Level, mit
+Ursache und Beispieltext) gibt es in **[LOGGING.md](LOGGING.md)** (auf
+Englisch, wie auch der Quelltext des Adapters selbst).
+
+## Lizenz und Changelog
 
 Lizenz und vollständiges Changelog stehen in der
 [englischen README](README.md#license) (`## License`, `## Changelog`).

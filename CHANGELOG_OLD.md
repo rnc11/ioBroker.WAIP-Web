@@ -1,5 +1,65 @@
 # Older changes
 
+### 0.7.12 (2026-08-21)
+
+- Fixed **[E3005]**: `einsatz.permissions` is declared as
+  `common.type: "string"`, but `setField()` passed raw
+  booleans/numbers through unchanged (the WAIP server sends this
+  field as a raw boolean flag), so the stored `val` didn't match the
+  declared type. `setField()` now looks up the declared type and
+  always stringifies values for string-typed states, regardless of
+  the incoming JS type - found by the `ioBroker.repositories` object
+  structure check.
+
+### 0.7.11 (2026-08-21)
+
+- Fixed **[E3009]** (57 findings): added the missing channel/folder
+  objects (`status`, `einsatz`, `einsatz.rueckmeldungAnzahl`, `debug`,
+  `tts`) that ioBroker requires for every state path segment - found
+  by the `ioBroker.repositories` object structure check.
+- Fixed **[E3005]**/**[E1009]**: replaced the unsupported
+  `common.type: "mixed"` on `einsatz.permissions` (now `string`) and
+  `status.registrationAccepted` (now split into two booleans:
+  `registrationAccepted` and the new `registrationPending`).
+
+### 0.7.10 (2026-08-21)
+
+- Fixed **[S9508]**: excluded `CHANGELOG_OLD.md` from the npm package
+  (removed from `package.json`'s `files` allowlist) - ioBroker shows
+  the README via a GitHub link, not from the installed npm package, so
+  the file remains fully readable on GitHub without needing to ship
+  inside the tarball.
+
+### 0.7.9 (2026-08-21)
+
+- Fixed **[E5025]**/**[E5036]**: installed the missing
+  `@alcalzone/release-script-plugin-license` dev dependency required
+  for the `"license"` plugin referenced in `.releaseconfig.json`.
+
+### 0.7.8 (2026-08-21)
+
+- Fixed **[E5018]**: added the missing `.releaseconfig.json` (`plugins:
+  iobroker, license`) required now that `@alcalzone/release-script` is
+  a dev dependency - caught by the `ioBroker.repositories` "ADD TO
+  LATEST" submission check.
+
+### 0.7.7 (2026-08-21)
+
+- Fixed **[E254]**: removed the orphaned `0.7.5` entry from
+  `common.news` - like `0.7.0` and `0.7.3` before it, that version was
+  never actually tagged/published to npm (`0.7.4` was followed directly
+  by `0.7.6`, which is now confirmed live under `latest`).
+
+### 0.7.6 (2026-08-21)
+
+- Fixed **[W6019]** and **[W0062]**: added `@alcalzone/release-script`
+  and `@alcalzone/release-script-plugin-iobroker` as dev dependencies
+  (with an `npm run release` script), and split this changelog - the 5
+  most recent entries stay here, everything older moved to
+  [CHANGELOG_OLD.md](CHANGELOG_OLD.md). Our existing manual
+  version-bump/tag workflow (see below) is unchanged; the tool is
+  available but not actively used for releasing yet.
+
 ### 0.7.5 (2026-08-21)
 
 *(Also never tagged/published to npm - superseded directly by 0.7.6.)*

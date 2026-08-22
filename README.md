@@ -19,6 +19,22 @@ Connects via Socket.IO to a WAIP-Web dispatch monitor and mirrors incidents
 announcements into ioBroker states – without needing a browser tab to stay
 open.
 
+## Table of contents
+
+- [About this adapter](#about-this-adapter)
+- [About WAIP-Web](#about-waip-web)
+- [Practical use cases](#practical-use-cases)
+- [Features](#features)
+  - [Why a session cookie is needed](#why-a-session-cookie-is-needed)
+- [Configuration](#configuration)
+- [States (under `waip-web.0.*`)](#states-under-waip-web0)
+  - [info](#info) · [status](#status) · [einsatz](#einsatz) ·
+    [einsatz.json](#einsatzjson) · [einsatz.tts](#einsatztts) ·
+    [debug](#debug)
+- [Logging](#logging)
+- [Changelog](#changelog)
+- [License](#license)
+
 ## About this adapter
 
 This adapter is an **unofficial community project** and has no connection
@@ -61,10 +77,56 @@ WAIP-Web itself is licensed under
 This adapter contains no code from the WAIP-Web project; it implements an
 independent client for its Socket.IO interface.
 
+## Practical use cases
+
+This section is about what you can actually *build* with the states this
+adapter provides – typical use in a fire station/EMS environment:
+
+- **Wall-mounted alarm display.** Bind `einsatz.json.current` to a VIS
+  table widget on a wall-mounted tablet or TV in the day room/vehicle
+  hall – incident type, keyword, address and alerted resources appear
+  automatically, without anyone having to keep a browser tab open on that
+  screen (which is the whole reason this adapter exists in the first
+  place).
+- **Trigger automations the instant an alarm comes in.** Watch
+  `einsatz.alarmAktiv` (or `info.connection` together with it) in a
+  script/blockly rule to switch on lights in the vehicle hall, open a
+  gate/door, send a push notification (e.g. via a Telegram/Pushover
+  adapter) with `einsatz.stichwort` + `einsatz.ort`, or flash a
+  smart-light scene – all a few seconds after the actual pager alert,
+  no polling required since ioBroker state changes fire instantly.
+- **Announce the alarm out loud.** `einsatz.tts.last` is a ready-to-play
+  absolute mp3 URL; point a `sonos`/`snapcast`/`text2speech`-style
+  automation at it (or just play the URL directly) to have the incident
+  announced over building speakers the moment `io.playtts` fires –
+  useful where members aren't all looking at a screen.
+- **Live headcount / feedback board.** The `einsatz.rueckmeldungAnzahl.*`
+  counters (per role: EK/GF/ZF/VF, per qualification: AGT/FZF/MA/MED)
+  update in real time as responders confirm via the app – bind them to
+  gauge or number widgets for an at-a-glance "who's coming" overview
+  during the response.
+- **Post-incident review / statistics.** `einsatz.json.history10` keeps
+  the last 10 completed incidents as a flat table – bind it to a second
+  VIS view or export it periodically (e.g. via a script reading the
+  state on `io.standby`) to keep a longer-running log or feed incident
+  counts into a dashboard/statistics adapter.
+- **Route/vehicle overview on a map.** `einsatz.json.routen` carries
+  each responding station's `lat`/`lon` and `color` – bind it to a VIS
+  map widget for a quick visual of who is en route, independent of the
+  WAIP-Web map itself.
+- **Bridge into other ioBroker automations.** Because every field is a
+  plain ioBroker state, it composes with anything else already running
+  in the instance – forward `einsatz.*` into a smart-home scene engine,
+  a Grafana/InfluxDB history for response-time analysis, or a
+  Node-RED-style flow via the ioBroker MQTT adapter, without writing a
+  single line against the WAIP-Web API.
+
 ## Features
 
 - Connects to the `/waip` namespace via `socket.io-client`, registers via
-  `emit('WAIP', monitorId)` (emitted 3× for robustness)
+  `emit('WAIP', monitorId)` once (relies on `REGISTRATION_TIMEOUT_MS`
+  as a fallback rather than repeated emits, since a redundant emit only
+  makes the server reply again without improving delivery reliability)
 - Manual reconnect handling (the library's own auto-reconnect is
   disabled) with a configurable delay
 - Registration timeout with an audit log (`debug.monitorAudit`)
@@ -97,6 +159,9 @@ independent client for its Socket.IO interface.
   at the wrong moment), a watchdog automatically finalizes the incident
   once its `ablaufzeit` has passed by more than a grace period
   (60 seconds), instead of leaving stale "active" data indefinitely.
+- Only ever shows the single most recently active incident; multiple
+  concurrently active incidents can currently only be viewed via the
+  WAIP-Web instance's own dashboard
 
 ### Why a session cookie is needed
 
@@ -164,6 +229,17 @@ a reliable switch for whether these fields currently hold real live data.
 The most recently finished incident remains available via
 `einsatz.json.history10`:
 
+> **Note:** The adapter always reflects only the single most recently
+> active incident (`einsatz.*` / `einsatz.json.current`) – matching the
+> official WAIP-Web frontend's alarm monitor. WAIP-Web can, in principle,
+> have several incidents active at the same time (e.g. two alerts coming
+> in close together). These states are **not an array of concurrently
+> running incidents** – they get overwritten by each new `io.new_waip`
+> event, so a second incident running in parallel is currently not
+> visible through this adapter. A complete overview of all currently
+> active incidents is, for now, only available via the connected
+> WAIP-Web instance's own dashboard.
+
 | State | Type | Description |
 | --- | --- | --- |
 | `alarmAktiv` | boolean | `true` since the last `io.new_waip`, `false` since the last `io.standby` |
@@ -204,11 +280,13 @@ those widgets). `routen`/`rueckmeldungen`/`emAlarmiert`/`emWeitere` only
 ever hold the *current* incident's data – they are cleared (`[]`) on
 `io.standby` and are **not** part of the history. `permissions` inside
 `current`/`history10` is stringified the same way as the standalone
-`einsatz.permissions` state.
+`einsatz.permissions` state. As with `einsatz.*` above, `current` only
+ever holds the single most recently active incident – see the note in
+the [`einsatz`](#einsatz) section.
 
 | State | Type | Description |
 | --- | --- | --- |
-| `current` | string (JSON array) | Current incident's flat data: the same 19 fields as the individual `einsatz.*` states above (`id` … `permissions`, plus `lat`/`lon`), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
+| `current` | string (JSON array) | Current incident's flat data: the same 19 fields as the individual `einsatz.*` states above (`id` … `permissions`, plus `lat`/`lon`), plus `registeredMonitor`/`registeredMonitorName` (the monitor the adapter was registered to at the time), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
 | `history10` | string (JSON array) | Last 10 completed incidents, same shape as `current`, one array entry per incident, written on `io.standby` |
 | `routen` | string (JSON array) | Routes of the current incident; each entry has `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` resolved to flat `lat`/`lon`) |
 | `rueckmeldungen` | string (JSON array) | Feedback entries of the current incident, as received from the server |
@@ -240,7 +318,53 @@ matters in the moment, so only the most recent one is kept.
 | `lastError` | string | Last error message reported by the server (`io.error`); plain text, not JSON, as the server sends this as a bare string |
 | `serverVersion` | string | Last reported server instance ID (`io.version`); a change suggests a server restart |
 
+## Logging
+
+All log text is in English. Repeatable failure conditions (session-cookie
+renewal, WAIP registration, the Socket.IO connection, a wrong-monitor
+event flood) are logged once at `warn` on first occurrence, then at
+`debug` while they persist, and once at `info` on recovery – matching the
+[official ioBroker logging guideline](https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/adapterdev.md#logging).
+
+See **[LOGGING.md](LOGGING.md)** for the full reference of every log
+message the adapter can produce, grouped by level, with its cause and an
+example.
+
 ## Changelog
+
+### 0.7.17 (2026-08-22)
+
+- Fixed `cleanupObsoleteObjects()` incorrectly deleting and recreating
+  the `einsatz.json` channel on every restart (it wasn't checking
+  `obj.type`, so the current channel object was mistaken for a leftover
+  state from before the 0.7.15 migration).
+- Fixed a spurious `status.registrationPending` "no existing object"
+  warning that could occur if the adapter was stopped before object
+  initialization had finished.
+- Reduced WAIP registration from three emits to a single emit - Socket.IO
+  already delivers reliably once connected, and the existing registration
+  timeout remains as the safety net for the rare case it doesn't confirm.
+- `permissions` inside `einsatz.json.current`/`.history10` is now always
+  stringified consistently with the standalone `einsatz.permissions`
+  state, and `einsatz.json.current` is wrapped in a single-element array
+  (VIS table widgets require an array at the root, not a bare object).
+- Fixed `einsatz.json.history10`/`debug.monitorAudit` staying `null`
+  instead of `[]` on a fresh install (they're excluded from the
+  per-restart reset to preserve history, which previously also meant
+  they were never initialized at all on first install).
+- Added `registeredMonitor`/`registeredMonitorName` fields to
+  `einsatz.json.current`/`.history10`.
+- Reworked logging: translated all remaining German log text to
+  English; implemented the official first-occurrence-`warn`/
+  repeat-`debug`/recovery-`info` pattern for recurring failures (session
+  cookie, registration, connection); capped noisy Socket.IO ping/pong
+  debug logging; a sustained flood of wrong-monitor events now escalates
+  to `warn` instead of staying at `info` indefinitely. See
+  [LOGGING.md](LOGGING.md) for the full reference.
+- Documentation: added a table of contents, a practical-use-cases
+  section, a known-limitation note (only the single most recently active
+  incident is shown - see [`einsatz`](#einsatz)), and enforced the
+  changelog's own 5-entry limit.
 
 ### 0.7.16 (2026-08-22)
 
@@ -305,66 +429,6 @@ matters in the moment, so only the most recent one is kept.
     patch/minor updates; major version bumps still require manual
     review.
   - No runtime changes.
-
-### 0.7.12 (2026-08-21)
-
-- Fixed **[E3005]**: `einsatz.permissions` is declared as
-  `common.type: "string"`, but `setField()` passed raw
-  booleans/numbers through unchanged (the WAIP server sends this
-  field as a raw boolean flag), so the stored `val` didn't match the
-  declared type. `setField()` now looks up the declared type and
-  always stringifies values for string-typed states, regardless of
-  the incoming JS type - found by the `ioBroker.repositories` object
-  structure check.
-
-### 0.7.11 (2026-08-21)
-
-- Fixed **[E3009]** (57 findings): added the missing channel/folder
-  objects (`status`, `einsatz`, `einsatz.rueckmeldungAnzahl`, `debug`,
-  `tts`) that ioBroker requires for every state path segment - found
-  by the `ioBroker.repositories` object structure check.
-- Fixed **[E3005]**/**[E1009]**: replaced the unsupported
-  `common.type: "mixed"` on `einsatz.permissions` (now `string`) and
-  `status.registrationAccepted` (now split into two booleans:
-  `registrationAccepted` and the new `registrationPending`).
-
-### 0.7.10 (2026-08-21)
-
-- Fixed **[S9508]**: excluded `CHANGELOG_OLD.md` from the npm package
-  (removed from `package.json`'s `files` allowlist) - ioBroker shows
-  the README via a GitHub link, not from the installed npm package, so
-  the file remains fully readable on GitHub without needing to ship
-  inside the tarball.
-
-### 0.7.9 (2026-08-21)
-
-- Fixed **[E5025]**/**[E5036]**: installed the missing
-  `@alcalzone/release-script-plugin-license` dev dependency required
-  for the `"license"` plugin referenced in `.releaseconfig.json`.
-
-### 0.7.8 (2026-08-21)
-
-- Fixed **[E5018]**: added the missing `.releaseconfig.json` (`plugins:
-  iobroker, license`) required now that `@alcalzone/release-script` is
-  a dev dependency - caught by the `ioBroker.repositories` "ADD TO
-  LATEST" submission check.
-
-### 0.7.7 (2026-08-21)
-
-- Fixed **[E254]**: removed the orphaned `0.7.5` entry from
-  `common.news` - like `0.7.0` and `0.7.3` before it, that version was
-  never actually tagged/published to npm (`0.7.4` was followed directly
-  by `0.7.6`, which is now confirmed live under `latest`).
-
-### 0.7.6 (2026-08-21)
-
-- Fixed **[W6019]** and **[W0062]**: added `@alcalzone/release-script`
-  and `@alcalzone/release-script-plugin-iobroker` as dev dependencies
-  (with an `npm run release` script), and split this changelog - the 5
-  most recent entries stay here, everything older moved to
-  [CHANGELOG_OLD.md](CHANGELOG_OLD.md). Our existing manual
-  version-bump/tag workflow (see below) is unchanged; the tool is
-  available but not actively used for releasing yet.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

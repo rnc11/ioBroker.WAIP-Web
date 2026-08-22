@@ -61,6 +61,17 @@ const ALLOWED_EINSATZ_FIELDS = [
 const RUECKMELDUNG_ANZAHL_KEYS = ['ek', 'gf', 'zf', 'vf', 'agt', 'fzf', 'ma', 'med'];
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
 const WARN_DEDUPE_MS = 5000;
+// Obergrenze für die Anzahl unterschiedlicher Nachrichten, die safeLog() gleichzeitig für
+// die Dedupe vorhält - verhindert unbegrenztes Wachstum über eine lange Laufzeit, falls
+// viele verschiedene (z.B. dynamische) Fehlermeldungen auftreten. Wird der Cache voll,
+// wird er komplett geleert (führt höchstens zu vereinzelt nicht deduplizierten Meldungen,
+// unkritisch - die Dedupe ist eine Rausch-Reduzierung, keine Korrektheitsanforderung).
+const WARN_DEDUPE_CACHE_MAX = 200;
+// Für die Eskalation wiederholter "Event für anderen Monitor"-Meldungen (siehe
+// wrapHandlerWithMonitorCheck/checkWrongMonitorRate) - Hinweis auf eine falsch
+// konfigurierte Monitor-ID, statt dauerhaft nur auf info zu bleiben.
+const WRONG_MONITOR_WARN_THRESHOLD = 20;
+const WRONG_MONITOR_WARN_WINDOW_MS = 5 * 60 * 1000;
 // Toleranz nach Ablauf von einsatz.ablaufzeit, bevor der Watchdog in restzeitInterval ein
 // verpasstes io.standby annimmt und den Einsatz automatisch abschließt (siehe dort).
 const MISSED_STANDBY_GRACE_MS = 60000;
@@ -316,19 +327,22 @@ const STATE_DEFS = [
 // Schneller Zugriff von setField() auf den deklarierten Typ eines States (siehe dort).
 const STATE_DEF_BY_ID = new Map(STATE_DEFS.map(def => [def.id, def]));
 
-// IDs, deren "string"-Wert tatsächlich ein JSON-*Array* enthält - werden von
-// resetAllStates() auf "[]" statt null zurückgesetzt (alle anderen "string"-States,
-// auch JSON-*Objekte* wie debug.lastEvent, werden auf null gesetzt). einsatz.json.current
-// ist trotz des Namens ebenfalls ein Array (mit maximal einem Element) - VIS-Tabellen-
-// Widgets erwarten am Root immer ein Array, siehe persistEinsatzSnapshot().
-// debug.monitorAudit ist ebenfalls ein JSON-Array, steht aber bewusst NICHT hier, da es
-// komplett in RESET_EXCLUDED_STATE_IDS ausgenommen ist (siehe dort).
+// IDs, deren "string"-Wert tatsächlich ein JSON-*Array* enthält - liefert den korrekten
+// Leerwert "[]" für resetAllStates() (alle anderen "string"-States, auch JSON-*Objekte*
+// wie debug.lastEvent, werden auf null gesetzt). einsatz.json.current ist trotz des Namens
+// ebenfalls ein Array (mit maximal einem Element) - VIS-Tabellen-Widgets erwarten am Root
+// immer ein Array, siehe persistEinsatzSnapshot(). einsatz.json.history10 und
+// debug.monitorAudit stehen ebenfalls hier, obwohl sie nicht bei jedem Neustart
+// zurückgesetzt werden (siehe RESET_EXCLUDED_STATE_IDS) - resetAllStates() braucht den
+// korrekten Leerwert trotzdem, um sie bei einer frischen Installation zu initialisieren.
 const JSON_ARRAY_STATE_IDS = new Set([
     'einsatz.json.current',
     'einsatz.json.routen',
     'einsatz.json.rueckmeldungen',
     'einsatz.json.emAlarmiert',
     'einsatz.json.emWeitere',
+    'einsatz.json.history10',
+    'debug.monitorAudit',
 ]);
 
 // "number"-States, bei denen 0 ein irreführender "leerer" Wert wäre (Einsatz-ID,
@@ -336,9 +350,11 @@ const JSON_ARRAY_STATE_IDS = new Set([
 // diese auf null statt 0 zurück.
 const NULLABLE_NUMBER_STATE_IDS = new Set(['einsatz.id', 'einsatz.latitude', 'einsatz.longitude']);
 
-// States, die resetAllStates() bewusst NICHT bei jedem Adapter-Start leert - die Historie
-// der letzten Einsätze (einsatz.json.history10) und das Verbindungs-/Registrierungs-
-// Audit-Log (debug.monitorAudit) sollen über Neustarts hinweg erhalten bleiben.
+// States, die resetAllStates() bei einem *bestehenden* Wert bewusst NICHT bei jedem
+// Adapter-Start überschreibt - die Historie der letzten Einsätze (einsatz.json.history10)
+// und das Verbindungs-/Registrierungs-Audit-Log (debug.monitorAudit) sollen über
+// Neustarts hinweg erhalten bleiben. Existiert noch KEIN Wert (frische Installation),
+// werden sie trotzdem einmalig initialisiert - siehe initStateIfMissing().
 const RESET_EXCLUDED_STATE_IDS = new Set(['einsatz.json.history10', 'debug.monitorAudit']);
 
 /* Prüft ob eine monitorID gültig ist (nicht-leer). */
@@ -574,11 +590,14 @@ class WaipWeb extends utils.Adapter {
         this.currentEinsatzUuid = null;
         this.currentEinsatzSnapshot = null; // -> einsatz.json.current/.routen/.rueckmeldungen/...
         this._restzeitZeroSince = null; // -> Watchdog gegen verpasstes io.standby, siehe restzeitInterval
+        this._recurringFailureKeys = new Set(); // -> logRecurringFailure()/logRecovered()
+        this._wrongMonitorWindowStart = 0; // -> checkWrongMonitorRate()
+        this._wrongMonitorWindowCount = 0;
         this.lastServerVersion = null;
 
         this._lastDisconnectMsg = null;
         this._lastDisconnectTs = 0;
-        this._warnCache = { lastMsg: null, ts: 0 };
+        this._warnCache = new Map(); // Nachricht -> zuletzt geloggt (ms), siehe safeLog()
         this._lastRestzeit = null;
         this._lastDebugEvent = { event: null, ts: 0 };
 
@@ -640,14 +659,19 @@ class WaipWeb extends utils.Adapter {
 
     /* Entfernt State-Objekte aus früheren Versionen (vis.*, json.*, geo.*, rueckmeldung.counts.*, ...),
        die durch die Umstrukturierung in 0.4.0 ersetzt wurden. setObjectNotExistsAsync legt neue
-       Objekte an, löscht aber nie alte - das übernehmen wir hier einmalig beim Start. */
+       Objekte an, löscht aber nie alte - das übernehmen wir hier einmalig beim Start.
+       obj.type === 'state' (nicht obj.common.type, das ist der Werttyp) prüft dabei explizit,
+       dass wirklich noch das alte State-Blatt vorliegt - relevant für IDs wie einsatz.json, die
+       bei der Umstrukturierung in 0.7.15 von State zu Channel gewechselt sind, aber dieselbe ID
+       behalten haben: ohne diese Prüfung würde hier sonst bei jedem Neustart der inzwischen
+       längst korrekt angelegte Channel wieder gelöscht und von initObjects() neu erzeugt. */
     async cleanupObsoleteObjects() {
         for (const id of OBSOLETE_OBJECT_IDS) {
             try {
                 const obj = await this.getObjectAsync(id);
-                if (obj) {
+                if (obj && obj.type === 'state') {
                     await this.delObjectAsync(id);
-                    this.log.info(`Veraltetes State-Objekt aus vorheriger Version entfernt: ${id}`);
+                    this.log.info(`Removed obsolete state object from a previous version: ${id}`);
                 }
             } catch {
                 /* ignore - Objekt existierte vermutlich nicht */
@@ -675,7 +699,7 @@ class WaipWeb extends utils.Adapter {
                 if (typeChanged || roleChanged) {
                     await this.delObjectAsync(def.id);
                     this.log.info(
-                        `State-Objekt mit geänderter Definition neu angelegt: ${def.id} ` +
+                        `Recreated state object with a changed definition: ${def.id} ` +
                             `(type ${obj.common.type} -> ${def.type}, role ${obj.common.role} -> ${def.role})`,
                     );
                 }
@@ -714,30 +738,54 @@ class WaipWeb extends utils.Adapter {
        ihren "leeren" Wert zurück - anders als initObjects()/setObjectNotExistsAsync(), das
        einen bereits vorhandenen Wert unangetastet lässt. Sorgt dafür, dass jeder Neustart
        mit einem sauber initialisierten Zustand beginnt, unabhängig vom Stand davor. Läuft
-       nach initObjects(), die States müssen also bereits existieren. */
+       nach initObjects(), die States müssen also bereits existieren.
+       Für RESET_EXCLUDED_STATE_IDS wird ein *bestehender* Wert nie überschrieben, aber bei
+       einer frischen Installation (noch nie ein Wert gesetzt) trotzdem einmalig
+       initialisiert - siehe initStateIfMissing(). Sonst bliebe z.B. einsatz.json.history10
+       nach der Installation dauerhaft auf null stehen statt auf "[]". */
     async resetAllStates() {
         const tasks = [];
         for (const def of STATE_DEFS) {
+            const emptyValue = this.computeEmptyStateValue(def);
             if (RESET_EXCLUDED_STATE_IDS.has(def.id)) {
+                tasks.push(this.initStateIfMissing(def.id, emptyValue));
                 continue;
             }
-            let value;
-            if (def.type === 'boolean') {
-                value = false;
-            } else if (def.type === 'number') {
-                value = NULLABLE_NUMBER_STATE_IDS.has(def.id) ? null : 0;
-            } else if (JSON_ARRAY_STATE_IDS.has(def.id)) {
-                value = '[]';
-            } else {
-                value = null;
-            }
-            tasks.push(this.setStateAsync(def.id, value, true));
+            tasks.push(this.setStateAsync(def.id, emptyValue, true));
         }
         const results = await Promise.allSettled(tasks);
         for (const r of results) {
             if (r.status === 'rejected') {
                 this.safeWarn('resetAllStates', r.reason);
             }
+        }
+    }
+
+    /* Liefert den "leeren" Wert, den resetAllStates() für einen State-Def schreibt. */
+    computeEmptyStateValue(def) {
+        if (def.type === 'boolean') {
+            return false;
+        }
+        if (def.type === 'number') {
+            return NULLABLE_NUMBER_STATE_IDS.has(def.id) ? null : 0;
+        }
+        if (JSON_ARRAY_STATE_IDS.has(def.id)) {
+            return '[]';
+        }
+        return null;
+    }
+
+    /* Schreibt emptyValue nur, falls für id noch gar kein State-Wert existiert (frische
+       Installation) - lässt einen bereits vorhandenen Wert unangetastet. Für die
+       RESET_EXCLUDED_STATE_IDS-Ausnahmen in resetAllStates() genutzt. */
+    async initStateIfMissing(id, emptyValue) {
+        try {
+            const st = await this.getStateAsync(id);
+            if (!st || st.val === undefined || st.val === null) {
+                await this.setStateAsync(id, emptyValue, true);
+            }
+        } catch (e) {
+            this.safeWarn(`initStateIfMissing ${id}`, e);
         }
     }
 
@@ -774,11 +822,11 @@ class WaipWeb extends utils.Adapter {
     async fetchMonitorList(baseUrl) {
         const clean = String(baseUrl || '').replace(/\/+$/, '');
         if (!clean) {
-            throw new Error('keine WAIP-Server-URL angegeben');
+            throw new Error('no WAIP server URL configured');
         }
         const res = await this.httpGet(`${clean}/waip/`);
         if (res.statusCode !== 200 || !res.body) {
-            throw new Error(`Monitor-Übersicht nicht abrufbar (status ${res.statusCode})`);
+            throw new Error(`Could not fetch monitor overview (status ${res.statusCode})`);
         }
         const html = res.body;
 
@@ -951,25 +999,28 @@ class WaipWeb extends utils.Adapter {
                     // Teil des normalen, selbstheilenden Session-Zyklus dieser Instanz
                     // (siehe refreshSessionCookie-Kommentar oben) -> info statt warn.
                     this.log.info(
-                        'Session-Cookie wurde vom Server neu ausgestellt (alte Session war ungültig) – erzwinge Reconnect',
+                        'Session cookie was reissued by the server (old session was invalid) – forcing reconnect',
                     );
                     this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'session_cookie_rotated' }).catch(
                         () => {},
                     );
                 } else {
                     this.log.debug(
-                        `session cookie erneuert (status ${res.statusCode}${expires ? `, gültig bis ${expires}` : ''}${this.nextSessionKeepaliveDelayMs ? `, nächstes Keepalive in ${Math.round(this.nextSessionKeepaliveDelayMs / 1000)}s` : ''})`,
+                        `session cookie renewed (status ${res.statusCode}${expires ? `, valid until ${expires}` : ''}${this.nextSessionKeepaliveDelayMs ? `, next keepalive in ${Math.round(this.nextSessionKeepaliveDelayMs / 1000)}s` : ''})`,
                     );
                 }
+                this.logRecovered('sessionCookie', 'Session cookie refresh recovered');
                 return { ok: true, rotated: isRotation };
             }
-            this.safeWarn(
+            this.logRecurringFailure(
+                'sessionCookie',
+                'warn',
                 'refreshSessionCookie',
-                `keepalive lieferte keinen Set-Cookie-Header (status ${res.statusCode})`,
+                `keepalive response had no Set-Cookie header (status ${res.statusCode})`,
             );
             return { ok: false, rotated: false };
         } catch (e) {
-            this.safeWarn('refreshSessionCookie', e);
+            this.logRecurringFailure('sessionCookie', 'warn', 'refreshSessionCookie', e);
             return { ok: false, rotated: false };
         }
     }
@@ -981,16 +1032,16 @@ class WaipWeb extends utils.Adapter {
        ohnehin mit den dann aktuellen Daten (Cookie etc.). */
     forceReconnect(reason) {
         if (this.connecting) {
-            this.log.debug(`forceReconnect(${reason}): connect() läuft bereits, überspringe erzwungenen Reconnect`);
+            this.log.debug(`forceReconnect(${reason}): connect() is already running, skipping the forced reconnect`);
             return;
         }
         if (!this.socket) {
             this.log.debug(
-                `forceReconnect(${reason}): aktuell keine offene Verbindung, nächster connect() erledigt das automatisch`,
+                `forceReconnect(${reason}): no open connection right now, the next connect() will handle this automatically`,
             );
             return;
         }
-        this.log.info(`Baue Socket.IO-Verbindung neu auf (${reason})`);
+        this.log.info(`Rebuilding the Socket.IO connection (${reason})`);
         this.connect(true);
     }
 
@@ -1011,7 +1062,7 @@ class WaipWeb extends utils.Adapter {
         this.sessionKeepaliveTimer = this.setTimeout(async () => {
             const { rotated } = await this.refreshSessionCookie();
             if (rotated) {
-                this.forceReconnect('Session-Cookie rotiert');
+                this.forceReconnect('session cookie rotated');
             }
             this.scheduleSessionKeepalive(this.nextSessionKeepaliveDelayMs || this.SESSION_KEEPALIVE_MS);
         }, delayMs);
@@ -1019,17 +1070,23 @@ class WaipWeb extends utils.Adapter {
 
     /* Sicheres, deduplizierendes Logging. level ist 'error'/'warn'/'info'/'debug' -
        je unerwarteter/handlungsbedürftiger ein Fall ist, desto höher das Level.
-       safeWarn() bleibt als Kurzform für den (weitaus häufigsten) warn-Fall erhalten. */
+       safeWarn() bleibt als Kurzform für den (weitaus häufigsten) warn-Fall erhalten.
+       Dedupe ist pro Nachricht (nicht nur die zuletzt geloggte) - sonst würden sich
+       abwechselnde unterschiedliche Meldungen gegenseitig die Deduplizierung einer
+       jeweils wiederkehrenden Meldung verhindern. */
     safeLog(level, context, err) {
         try {
             const now = Date.now();
             const msg = typeof err === 'string' ? err : err && err.message ? err.message : String(err);
             const out = context ? `${context}: ${msg}` : msg;
-            if (out === this._warnCache.lastMsg && now - this._warnCache.ts < WARN_DEDUPE_MS) {
+            const lastLoggedAt = this._warnCache.get(out);
+            if (lastLoggedAt !== undefined && now - lastLoggedAt < WARN_DEDUPE_MS) {
                 return;
             }
-            this._warnCache.lastMsg = out;
-            this._warnCache.ts = now;
+            if (this._warnCache.size >= WARN_DEDUPE_CACHE_MAX) {
+                this._warnCache.clear();
+            }
+            this._warnCache.set(out, now);
             this.log[level](out);
         } catch {
             /* silent */
@@ -1038,6 +1095,28 @@ class WaipWeb extends utils.Adapter {
 
     safeWarn(context, err) {
         this.safeLog('warn', context, err);
+    }
+
+    /* Loggt einen wiederkehrbaren Fehler nach dem offiziellen ioBroker-Logging-Muster
+       ("first occurrence at warn/error, repetitions at debug, recovery once at info" -
+       siehe Adapter-Entwicklerdoku, Abschnitt "Logging"): beim ersten Auftreten auf
+       `level`, bei jedem weiteren (bis zur Erholung via logRecovered()) nur noch auf
+       debug. Für tatsächlich wiederkehrende Zustände (Session-Cookie, Registrierung,
+       Verbindungsaufbau) gedacht, nicht für einmalige State-Write-Fehler. */
+    logRecurringFailure(key, level, context, err) {
+        const isFirst = !this._recurringFailureKeys.has(key);
+        this._recurringFailureKeys.add(key);
+        this.safeLog(isFirst ? level : 'debug', context, err);
+    }
+
+    /* Meldet die Erholung von einem zuvor über logRecurringFailure() gemeldeten Fehler -
+       loggt einmalig auf info, aber nur falls der Fehler unter diesem key tatsächlich
+       aktiv war (sonst kein Log, kein unnötiges Rauschen bei jedem erfolgreichen Versuch). */
+    logRecovered(key, msg) {
+        if (this._recurringFailureKeys.delete(key)) {
+            this.log.info(msg);
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: `${key}_recovered` }).catch(() => {});
+        }
     }
 
     /* Dedupliziertes Info-Logging für Disconnects. */
@@ -1080,6 +1159,34 @@ class WaipWeb extends utils.Adapter {
         this.getStateAsync('debug.ignoredCount')
             .then(c => this.setStateAsync('debug.ignoredCount', Number((c && c.val) || 0) + 1, true))
             .catch(() => {});
+    }
+
+    /* Eskaliert wiederholte "Event für anderen Monitor"-Meldungen auf warn, wenn sie
+       innerhalb eines Zeitfensters (WRONG_MONITOR_WARN_WINDOW_MS) einen Schwellwert
+       (WRONG_MONITOR_WARN_THRESHOLD) überschreiten - Hinweis auf eine falsch
+       konfigurierte Monitor-ID, statt dauerhaft nur auf info zu bleiben. Nutzt
+       logRecurringFailure()/logRecovered() für das übliche warn-einmal/debug-danach/
+       info-bei-Erholung-Muster. */
+    checkWrongMonitorRate() {
+        const now = Date.now();
+        if (now - this._wrongMonitorWindowStart > WRONG_MONITOR_WARN_WINDOW_MS) {
+            // Fenster abgelaufen, ohne dass es nochmal den Schwellwert erreicht hat ->
+            // falls zuvor eskaliert wurde, gilt die Rate jetzt als erholt.
+            this.logRecovered('wrongMonitor', 'Wrong-monitor event rate returned to normal');
+            this._wrongMonitorWindowStart = now;
+            this._wrongMonitorWindowCount = 0;
+        }
+        this._wrongMonitorWindowCount++;
+        if (this._wrongMonitorWindowCount >= WRONG_MONITOR_WARN_THRESHOLD) {
+            this.logRecurringFailure(
+                'wrongMonitor',
+                'warn',
+                'ignoredEvent.wrongMonitor',
+                `Repeatedly receiving events for a different monitor (current=${this.currentMonitor}, ` +
+                    `${this._wrongMonitorWindowCount} in the last ${Math.round(WRONG_MONITOR_WARN_WINDOW_MS / 60000)}min) ` +
+                    `- check the configured monitor ID`,
+            );
+        }
     }
 
     /* Setzt einen State; Objekte/Arrays werden JSON-stringifiziert. */
@@ -1133,10 +1240,15 @@ class WaipWeb extends utils.Adapter {
     }
 
     /* Extrahiert aus einem Einsatz-Snapshot nur die flachen Einsatzstamm-Felder
-       (ALLOWED_EINSATZ_FIELDS + lat/lon aus position) - ohne routen/rueckmeldungen/
-       emAlarmiert/emWeitere. Gemeinsam genutzt von persistEinsatzSnapshot()
-       (einsatz.json.current) und pushEinsatzToHistory() (einsatz.json.history10), damit
-       beide garantiert dasselbe Schema haben. */
+       (ALLOWED_EINSATZ_FIELDS + lat/lon aus position), ergänzt um den zum Aufrufzeitpunkt
+       registrierten Monitor - ohne routen/rueckmeldungen/emAlarmiert/emWeitere. Gemeinsam
+       genutzt von persistEinsatzSnapshot() (einsatz.json.current) und
+       pushEinsatzToHistory() (einsatz.json.history10), damit beide garantiert dasselbe
+       Schema haben. registeredMonitor/registeredMonitorName machen bei history10
+       nachvollziehbar, auf welchen Monitor der Adapter zum Zeitpunkt des jeweiligen
+       Einsatzes konfiguriert war (kann sich über die Zeit ändern) - bei current sind sie
+       redundant zu status.registeredMonitor/.registeredMonitorName, aber harmlos, da
+       beide Schemas identisch bleiben sollen. */
     buildFlatEinsatzJson(snapshot) {
         const src = snapshot || {};
         const flat = {};
@@ -1152,6 +1264,8 @@ class WaipWeb extends utils.Adapter {
             flat.permissions === null || typeof flat.permissions === 'string'
                 ? flat.permissions
                 : JSON.stringify(flat.permissions);
+        flat.registeredMonitor = this.currentMonitor || null;
+        flat.registeredMonitorName = this.monitorName || null;
         return flat;
     }
 
@@ -1232,14 +1346,16 @@ class WaipWeb extends utils.Adapter {
 
                 if (match === false) {
                     // Reine, erwartete Filterlogik (kein Fehler) - Häufigkeit ist über
-                    // debug.ignoredCount messbar; nur bei dauerhaft hoher Anzahl ein
-                    // Hinweis auf eine falsch konfigurierte Monitor-ID.
+                    // debug.ignoredCount messbar; checkWrongMonitorRate() eskaliert bei
+                    // dauerhaft hoher Anzahl auf warn (Hinweis auf falsch konfigurierte
+                    // Monitor-ID), bleibt sonst bei info.
                     this.safeLog(
                         'info',
                         'ignoredEvent.wrongMonitor',
-                        `Event für anderen Monitor empfangen (current=${this.currentMonitor})`,
+                        `Received an event for a different monitor (current=${this.currentMonitor})`,
                     );
                     this.incrementIgnoredCount();
+                    this.checkWrongMonitorRate();
                     return;
                 }
 
@@ -1254,6 +1370,7 @@ class WaipWeb extends utils.Adapter {
                     }
                     this.registrationPending = false;
                     this.setState('status.registrationPending', false, true);
+                    this.logRecovered('registration', 'WAIP registration recovered');
                 }
 
                 try {
@@ -1348,7 +1465,7 @@ class WaipWeb extends utils.Adapter {
         const results = await Promise.allSettled(tasks);
         for (const r of results) {
             if (r.status === 'rejected') {
-                this.safeWarn('Rückmeldung-Zähler setzen', r.reason);
+                this.safeWarn('updateRueckmeldungCounts', r.reason);
             }
         }
     }
@@ -1463,7 +1580,7 @@ class WaipWeb extends utils.Adapter {
             const results = await Promise.allSettled(tasks);
             for (const r of results) {
                 if (r.status === 'rejected') {
-                    this.safeWarn('Einsatz-Feld setzen', r.reason);
+                    this.safeWarn('handleAlarm.setFields', r.reason);
                 }
             }
 
@@ -1492,7 +1609,7 @@ class WaipWeb extends utils.Adapter {
             // Rückmeldungen für einen anderen (alten) Einsatz nicht mit aufnehmen.
             if (data.waip_uuid && this.currentEinsatzUuid && data.waip_uuid !== this.currentEinsatzUuid) {
                 this.log.debug(
-                    `Rückmeldung für abweichenden Einsatz ${data.waip_uuid} ignoriert (aktuell=${this.currentEinsatzUuid})`,
+                    `Ignoring feedback for a different incident ${data.waip_uuid} (current=${this.currentEinsatzUuid})`,
                 );
                 return;
             }
@@ -1542,7 +1659,7 @@ class WaipWeb extends utils.Adapter {
 
     async handleStandby() {
         try {
-            this.log.info('Standby empfangen - Einsatz beendet bzw. Monitor im Ruhezustand');
+            this.log.info('Standby received - incident ended, or monitor idle');
             this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'standby' }).catch(() => {});
             await this.finalizeCurrentEinsatz();
         } catch (e) {
@@ -1609,7 +1726,7 @@ class WaipWeb extends utils.Adapter {
                 // Wird bereits automatisch behandelt (Session-Refresh + Reconnect) ->
                 // kein Handlungsbedarf, daher info statt warn.
                 this.log.info(
-                    `WAIP-Server meldet neue Version/Instanz-ID (${this.lastServerVersion} -> ${serverId}) - vermutlich Server-Neustart`,
+                    `WAIP server reports a new version/instance ID (${this.lastServerVersion} -> ${serverId}) - likely a server restart`,
                 );
                 this.appendMonitorAudit({
                     ts: new Date().toISOString(),
@@ -1619,7 +1736,7 @@ class WaipWeb extends utils.Adapter {
                 }).catch(() => {});
                 this.lastServerVersion = serverId;
                 await this.refreshSessionCookie();
-                this.forceReconnect('Server-Version geändert');
+                this.forceReconnect('server version changed');
                 return;
             }
             this.lastServerVersion = serverId;
@@ -1680,6 +1797,12 @@ class WaipWeb extends utils.Adapter {
 
     /* Cleanup helper: schließt und entfernt eine vorhandene socket-Instanz vollständig. */
     cleanupSocket() {
+        // Nur wenn tatsächlich ein Socket existierte, ist auch initObjects() bereits
+        // gelaufen (this.socket wird ausschließlich in connect() gesetzt, das erst nach
+        // initObjects() läuft) - sonst könnte onUnload() (ruft cleanupSocket() unbedingt
+        // auf) die States unten setzen, bevor deren Objekte überhaupt angelegt wurden,
+        // z.B. bei einem sehr schnellen Neustart der Instanz kurz nach der Installation.
+        const hadSocket = !!this.socket;
         try {
             if (!this.socket) {
                 return;
@@ -1708,7 +1831,9 @@ class WaipWeb extends utils.Adapter {
             this.socket = null;
             this.connecting = false;
             this.registrationPending = false;
-            this.setState('status.registrationPending', false, true);
+            if (hadSocket) {
+                this.setState('status.registrationPending', false, true);
+            }
             if (this.registrationTimer) {
                 this.clearTimeout(this.registrationTimer);
                 this.registrationTimer = null;
@@ -1720,53 +1845,25 @@ class WaipWeb extends utils.Adapter {
         this.connecting = false;
         this.setState('status.connected', true, true);
         this.setState('info.connection', true, true);
+        this.logRecovered('connection', 'Socket.IO connection recovered');
 
         try {
-            this.log.info(`socket.emit('WAIP', ${monStr}) [1/3]`);
-            this.appendMonitorAudit({
-                ts: new Date().toISOString(),
-                event: 'emit_WAIP',
-                value: monStr,
-                attempt: 1,
-            }).catch(() => {});
+            // Ein einzelner Emit reicht: Socket.IO liefert ab einem bestehenden 'connect'
+            // bereits zuverlässig zu, und ein echter Verbindungsabbruch wird ohnehin über
+            // onSocketDisconnect()/onSocketConnectError() samt Reconnect (und damit einem
+            // frischen Emit) abgefangen. Bleibt die Registrierung trotzdem unbestätigt,
+            // greift REGISTRATION_TIMEOUT_MS weiter unten als Sicherheitsnetz. Frühere
+            // Versionen emittierten hier 3× - das führte nur dazu, dass der Server bei
+            // jedem (redundanten) Emit erneut mit dem aktuellen Status antwortete
+            // (io.standby/io.new_waip), ohne einen zusätzlichen Zuverlässigkeitsgewinn.
+            this.log.info(`socket.emit('WAIP', ${monStr})`);
+            this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'emit_WAIP', value: monStr }).catch(
+                () => {},
+            );
             this.socket.emit('WAIP', monStr);
         } catch (e) {
-            this.safeWarn('socket.emit.WAIP', e);
+            this.logRecurringFailure('registration', 'warn', 'socket.emit.WAIP', e);
         }
-
-        this.setTimeout(() => {
-            try {
-                this.log.debug(`socket.emit('WAIP', ${monStr}) [2/3]`);
-                this.appendMonitorAudit({
-                    ts: new Date().toISOString(),
-                    event: 'emit_WAIP',
-                    value: monStr,
-                    attempt: 2,
-                }).catch(() => {});
-                if (this.socket) {
-                    this.socket.emit('WAIP', monStr);
-                }
-            } catch (e) {
-                this.safeWarn('socket.emit.WAIP.2', e);
-            }
-        }, 1000);
-
-        this.setTimeout(() => {
-            try {
-                this.log.debug(`socket.emit('WAIP', ${monStr}) [3/3]`);
-                this.appendMonitorAudit({
-                    ts: new Date().toISOString(),
-                    event: 'emit_WAIP',
-                    value: monStr,
-                    attempt: 3,
-                }).catch(() => {});
-                if (this.socket) {
-                    this.socket.emit('WAIP', monStr);
-                }
-            } catch (e) {
-                this.safeWarn('socket.emit.WAIP.3', e);
-            }
-        }, 3000);
 
         this.registrationPending = true;
         this.setState('status.registeredMonitor', monStr, true);
@@ -1786,7 +1883,10 @@ class WaipWeb extends utils.Adapter {
             const acc = accState ? accState.val : null;
             if (acc !== true) {
                 await this.setStateAsync('status.registrationAccepted', false, true);
-                this.log.warn(
+                this.logRecurringFailure(
+                    'registration',
+                    'warn',
+                    'onSocketConnect',
                     `WAIP registration for monitor ${this.currentMonitor} not confirmed within ${this.REGISTRATION_TIMEOUT_MS}ms`,
                 );
                 this.appendMonitorAudit({
@@ -1798,7 +1898,7 @@ class WaipWeb extends utils.Adapter {
             this.registrationTimer = null;
         }, this.REGISTRATION_TIMEOUT_MS);
 
-        this.log.info(`Verbunden Monitor ${monStr} -> namespace /waip (registered via WAIP emit)`);
+        this.log.info(`Connected monitor ${monStr} -> namespace /waip (registered via WAIP emit)`);
     }
 
     onSocketDisconnect(reason) {
@@ -1889,11 +1989,19 @@ class WaipWeb extends utils.Adapter {
                 if (this.socket && this.socket.io && this.socket.io.engine) {
                     const eng = this.socket.io.engine;
                     this.log.debug(`engine pingInterval=${eng.pingInterval} pingTimeout=${eng.pingTimeout}`);
+                    // ping/pong/open/close wiederholen sich für die gesamte Verbindungsdauer
+                    // (alle pingInterval ms) ohne diagnostischen Mehrwert nach den ersten paar -
+                    // deshalb hier begrenzt, anders als die Message-Preview darunter (jeweils
+                    // anderer Inhalt, seltener, bleibt bewusst unbegrenzt).
+                    let enginePingPongLogCount = 0;
                     eng.on('packet', pkt => {
                         try {
                             if (pkt && pkt.type) {
                                 if (['ping', 'pong', 'open', 'close'].includes(String(pkt.type))) {
-                                    this.log.debug(`engine.packet: ${JSON.stringify(pkt)}`);
+                                    if (enginePingPongLogCount < 10) {
+                                        enginePingPongLogCount++;
+                                        this.log.debug(`engine.packet: ${JSON.stringify(pkt)}`);
+                                    }
                                 } else if (pkt.data && typeof pkt.data === 'string') {
                                     const preview = pkt.data.length > 200 ? `${pkt.data.slice(0, 200)}...` : pkt.data;
                                     this.log.debug(`engine.packet.message preview: ${preview}`);
@@ -1969,7 +2077,7 @@ class WaipWeb extends utils.Adapter {
                 }
             });
         } catch (e) {
-            this.safeWarn('connect', e);
+            this.logRecurringFailure('connection', 'warn', 'connect', e);
             this.connecting = false;
         }
     }
@@ -2013,9 +2121,9 @@ class WaipWeb extends utils.Adapter {
         }
         const einsatzUuid = this.currentEinsatzUuid;
         this.log.warn(
-            `Vermutlich verpasstes io.standby erkannt (ablaufzeit seit ${Math.round(
+            `Likely missed io.standby detected (ablaufzeit exceeded by more than ${Math.round(
                 MISSED_STANDBY_GRACE_MS / 1000,
-            )}s überschritten) - Einsatz ${einsatzUuid} wird automatisch abgeschlossen.`,
+            )}s) - finalizing incident ${einsatzUuid} automatically.`,
         );
         this.appendMonitorAudit({
             ts: new Date().toISOString(),
