@@ -81,6 +81,15 @@ Schnittstelle.
   während gerade ein Einsatz läuft, werden dessen Live-Felder
   (`einsatz.*`) ebenfalls geleert und füllen sich erst wieder, sobald
   der Server das nächste Event zu diesem Einsatz sendet.
+- Schutz vor veralteten Daten: Beginnt ein neuer Einsatz, bevor für ihn
+  eigene Routen-/Rückmeldungs-Events eingetroffen sind, werden
+  `einsatz.json.routen`/`.rueckmeldungen` und die Rückmeldungs-Zähler
+  sofort geleert, statt auf diese Events zu warten. Und falls `io.standby`
+  für einen Einsatz jemals verpasst wird (z.B. durch einen Disconnect
+  zum falschen Zeitpunkt), schließt ein Watchdog den Einsatz automatisch
+  ab, sobald seine `ablaufzeit` um mehr als eine Gnadenfrist (60
+  Sekunden) überschritten ist, statt unbegrenzt veraltete "aktiv"-Daten
+  stehen zu lassen.
 
 ### Warum ein Session-Cookie nötig ist
 
@@ -187,11 +196,13 @@ ein einfaches `{routen, rueckmeldungen, ...}`-Objekt werden von diesen
 Widgets in der Regel nicht dargestellt). `routen`/`rueckmeldungen`/
 `emAlarmiert`/`emWeitere` enthalten immer nur die Daten des **aktuellen**
 Einsatzes – sie werden bei `io.standby` geleert (`[]`) und sind **nicht**
-Teil der History.
+Teil der History. `permissions` innerhalb von `current`/`history10` wird
+genauso als String gespeichert wie im eigenständigen
+`einsatz.permissions`-State.
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `current` | string (JSON) | Flache Daten des aktuellen Einsatzes: dieselben 19 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `permissions`, plus `lat`/`lon`), gebündelt als ein Objekt |
+| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 19 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `permissions`, plus `lat`/`lon`), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
 | `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleiches Schema wie `current`, ein Array-Eintrag pro Einsatz, geschrieben bei `io.standby` |
 | `routen` | string (JSON-Array) | Routen des aktuellen Einsatzes; jeder Eintrag hat `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` zu flachem `lat`/`lon` aufgelöst) |
 | `rueckmeldungen` | string (JSON-Array) | Rückmeldungen des aktuellen Einsatzes, wie vom Server empfangen |
