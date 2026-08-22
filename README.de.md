@@ -18,6 +18,7 @@ ohne dass ein Browser-Tab dauerhaft offen sein muss.
 - [Funktionen](#funktionen)
   - [Warum ein Session-Cookie nötig ist](#warum-ein-session-cookie-nötig-ist)
 - [Konfiguration](#konfiguration)
+  - [Stichwort-Beschreibungen](#stichwort-beschreibungen)
 - [States (unter `waip-web.0.*`)](#states-unter-waip-web0)
   - [info](#info) · [status](#status) · [einsatz](#einsatz) ·
     [einsatz.json](#einsatzjson) · [einsatz.tts](#einsatztts) ·
@@ -159,6 +160,12 @@ Rettungsdienst-Wache:
 - Zeigt immer nur den zuletzt aktiven Einsatz; mehrere gleichzeitig
   laufende Einsätze sind aktuell nur über das Dashboard der
   WAIP-Web-Instanz selbst einsehbar
+- Optionale Klartext-Beschreibung zu `einsatz.stichwort`
+  (`einsatz.beschreibung`), lokal ermittelt aus einer selbst pflegbaren,
+  export-/importierbaren Stichwort-Tabelle sowie einem optionalen
+  Dekoder für das von mehreren Leitstellen verwendete
+  Rettungsdienst-Stichwortschema (`R<RTW>N<NEF>`) - siehe
+  [Stichwort-Beschreibungen](#stichwort-beschreibungen)
 
 ### Warum ein Session-Cookie nötig ist
 
@@ -193,6 +200,50 @@ Das Session-Keepalive-Intervall ist **nicht konfigurierbar** – es wird bei
 jeder Erneuerung vollautomatisch aus der vom Server gemeldeten Cookie-
 Laufzeit abgeleitet (min. 55s, max. 5 Min., analog zu
 `/js/session_keepalive.js` der Website selbst).
+
+### Stichwort-Beschreibungen
+
+`einsatz.stichwort` wird unverändert vom Server als bloßer Code
+übernommen (z.B. `B2`, `H:VU mit P`) – WAIP-Web selbst erklärt nicht,
+was das bedeutet, und es gibt kein bundesweit einheitliches Schema:
+jede Leitstelle nutzt ihr eigenes Stichwortverzeichnis.
+`einsatz.beschreibung` schließt diese Lücke **vollständig lokal**, es
+werden dabei keine Daten irgendwohin gesendet:
+
+1. **Rettungsdienst-Dekodierung** (Admin-Checkbox, standardmäßig aus):
+   passt das Stichwort auf das Muster `R<Anzahl RTW>N<Anzahl NEF>[p][f][-NT]`
+   (z.B. `R1N0` → "Rettungswagen: 1, Notfalleinsatzfahrzeug: 0"), wird
+   automatisch eine Beschreibung erzeugt. Dieses Schema wird von
+   mehreren Leitstellen verwendet, nicht nur einer einzelnen Instanz
+   (siehe [die dokumentierte Erklärung der Leitstelle Lausitz](https://www.leitstelle-lausitz.de/anpassung-der-einsatzstichworte-rettungsdienst/)
+   dazu) – nur aktivieren, wenn eure Leitstelle dieses Muster tatsächlich
+   verwendet. Der Text für jeden Teil ist selbst konfigurierbar (5
+   zusätzliche Textfelder erscheinen, sobald die Checkbox aktiviert
+   ist), da der Adapter mehrsprachig ist und diese Bezeichnungen nicht
+   automatisch übersetzt werden:
+
+   | Teil | Bedeutung | Default-Bezeichnung |
+   | --- | --- | --- |
+   | `R<n>` | Anzahl Rettungswagen | `Rettungswagen` |
+   | `N<n>` | Anzahl Notfalleinsatzfahrzeuge | `Notfalleinsatzfahrzeug` |
+   | Suffix `p` | Polytrauma | `Polytrauma` |
+   | Suffix `f` | First Responder einbezogen | `First Responder` |
+   | Suffix `-NT` | Notfalltransport mit Notfallkrankenwagen | `Notfalltransport mit Notfallkrankenwagen` |
+2. **Stichwort-Tabelle** (Admin-Tabelle, wird nur geprüft, falls Schritt 1
+   nicht gegriffen hat): eine Liste von `{Stichwort-Muster, Beschreibung,
+   Abgleich-Typ}`-Zeilen – Abgleich-Typ ist `beginnt mit` oder `enthält`,
+   der Vergleich ist case-insensitiv, und passen mehrere Zeilen, gewinnt
+   automatisch das **spezifischste (längste) Muster** – die Zeilenreihenfolge
+   hat keinen Einfluss auf den Abgleich, die Tabelle kann also gefahrlos
+   nach Stichwort sortiert werden (Klick auf die Spaltenüberschrift). Die
+   Tabelle ist mit einer beispielhaften Feuerwehr-/Rettungsdienst-
+   Stichwortliste (`B:...`/`H:...`) als Startpunkt vorbefüllt – das ist
+   **nicht** für irgendeine bestimmte Leitstelle bestätigt, bei Bedarf
+   anpassen oder komplett ersetzen. Die Tabelle lässt sich über die
+   Buttons oberhalb davon als CSV exportieren/importieren.
+
+Passt weder Schritt 1 noch 2, bleibt `einsatz.beschreibung` einfach
+`null` – kein Fehler.
 
 ## States (unter `waip-web.0.*`)
 
@@ -255,6 +306,7 @@ stehen. Der zuletzt abgeschlossene Einsatz bleibt trotzdem über
 | `uuid` | string | Eindeutige Einsatz-UUID (dient auch der Zuordnung von Rückmeldungen) |
 | `einsatzart` | string | z. B. „Brandeinsatz", „Hilfeleistungseinsatz", „Rettungseinsatz", „Krankentransport" |
 | `stichwort` | string | Alarmstichwort |
+| `beschreibung` | string | Beschreibung zu `stichwort`, lokal ermittelt (wird nicht vom Server gesendet) - siehe [Stichwort-Beschreibungen](#stichwort-beschreibungen) unten. `null` falls nichts passte |
 | `ort` | string | Ort |
 | `ortsteil` | string | Ortsteil (falls abweichend vom Ort) |
 | `zeitstempel` | string (date) | Alarmzeit |
@@ -286,7 +338,7 @@ Abschnitt [`einsatz`](#einsatz).
 
 | State | Typ | Beschreibung |
 | --- | --- | --- |
-| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 11 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `zeitstempel`, plus `lat`/`lon`), zusätzlich `registeredMonitor`/`registeredMonitorName` (der Monitor, auf den der Adapter zu diesem Zeitpunkt registriert war), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
+| `current` | string (JSON-Array) | Flache Daten des aktuellen Einsatzes: dieselben 12 Felder wie die einzelnen `einsatz.*`-States oben (`id` … `zeitstempel`, plus `beschreibung`, `lat`/`lon`), zusätzlich `registeredMonitor`/`registeredMonitorName` (der Monitor, auf den der Adapter zu diesem Zeitpunkt registriert war), gebündelt als ein Objekt innerhalb eines Arrays mit einem Element (`[]` falls kein Einsatz aktiv) – der Array-Wrapper ist nötig, weil die meisten Tabellen-Widgets am Root ein Array statt eines nackten Objekts erwarten |
 | `history10` | string (JSON-Array) | Letzte 10 abgeschlossenen Einsätze, gleiches Schema wie `current`, ein Array-Eintrag pro Einsatz, geschrieben bei `io.standby` |
 | `routen` | string (JSON-Array) | Routen des aktuellen Einsatzes; jeder Eintrag hat `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` zu flachem `lat`/`lon` aufgelöst) |
 | `rueckmeldungen` | string (JSON-Array) | Rückmeldungen des aktuellen Einsatzes, wie vom Server empfangen |

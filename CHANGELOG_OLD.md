@@ -1,5 +1,22 @@
 # Older changes
 
+### 0.7.15 (2026-08-22)
+
+- Restructured `einsatz.json` into a channel with flat,
+  table-widget-friendly sub-states (`current`/`history10`/`routen`/
+  `rueckmeldungen`/`emAlarmiert`/`emWeitere`) - nested JSON wasn't
+  rendering in VIS table widgets.
+- Moved `tts.*` under `einsatz.tts.*` (removed the meaningless
+  `tts.history10`); `tts.last` now resolves to a full absolute mp3 URL
+  instead of the server's often-relative path.
+- Moved `status.alarmAktiv`/`status.restzeit` to
+  `einsatz.alarmAktiv`/`einsatz.restzeit`.
+- Flattened `debug.normalizedPosition` and corrected
+  `debug.lastError`'s role from `json` to `text`.
+- All states are now actively reset to their empty value on every
+  adapter start, except `einsatz.json.history10` and
+  `debug.monitorAudit`, which persist across restarts.
+
 ### 0.7.14 (2026-08-22)
 
 - Fixed **[E1032]**/**[E2004]**: trimmed `common.news` to the 7

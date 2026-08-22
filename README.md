@@ -27,6 +27,7 @@ open.
 - [Features](#features)
   - [Why a session cookie is needed](#why-a-session-cookie-is-needed)
 - [Configuration](#configuration)
+  - [Alarm keyword descriptions](#alarm-keyword-descriptions)
 - [States (under `waip-web.0.*`)](#states-under-waip-web0)
   - [info](#info) · [status](#status) · [einsatz](#einsatz) ·
     [einsatz.json](#einsatzjson) · [einsatz.tts](#einsatztts) ·
@@ -162,6 +163,11 @@ adapter provides – typical use in a fire station/EMS environment:
 - Only ever shows the single most recently active incident; multiple
   concurrently active incidents can currently only be viewed via the
   WAIP-Web instance's own dashboard
+- Optional plain-language description for `einsatz.stichwort`
+  (`einsatz.beschreibung`), resolved locally from a user-maintained,
+  export-/importable keyword table plus an optional decoder for the
+  `R<RTW>N<NEF>` rescue-service keyword scheme used by several dispatch
+  centers - see [Alarm keyword descriptions](#alarm-keyword-descriptions)
 
 ### Why a session cookie is needed
 
@@ -196,6 +202,48 @@ The session keepalive interval is **not configurable** – it's derived
 fully automatically on every renewal from the cookie lifetime the server
 reports (min. 55s, max. 5 min., matching `/js/session_keepalive.js` on
 the site itself).
+
+### Alarm keyword descriptions
+
+`einsatz.stichwort` is passed through unchanged from the server as a
+bare code (e.g. `B2`, `H:VU mit P`) – WAIP-Web itself doesn't explain
+what it means, and there is no nationwide standard: every dispatch
+center uses its own keyword catalog. `einsatz.beschreibung` fills that
+gap **entirely locally**, no data is sent anywhere:
+
+1. **Rescue-service decoding** (admin checkbox, off by default): if the
+   keyword matches the pattern `R<RTW-count>N<NEF-count>[p][f][-NT]`
+   (e.g. `R1N0` → "Rettungswagen: 1, Notfalleinsatzfahrzeug: 0"), a
+   description is generated automatically. This scheme is used by
+   several German dispatch centers, not just one specific instance (see
+   [Leitstelle Lausitz's documented explanation](https://www.leitstelle-lausitz.de/anpassung-der-einsatzstichworte-rettungsdienst/)
+   of it) – only enable it if your dispatch center actually uses this
+   pattern. The text for each part is itself configurable (5 additional
+   text fields appear once the checkbox is enabled), since the adapter
+   is multi-language and these labels aren't translated automatically:
+
+   | Part | Meaning | Default label |
+   | --- | --- | --- |
+   | `R<n>` | Number of ambulances (Rettungswagen) | `Rettungswagen` |
+   | `N<n>` | Number of emergency vehicles (Notfalleinsatzfahrzeug) | `Notfalleinsatzfahrzeug` |
+   | `p` suffix | Polytrauma | `Polytrauma` |
+   | `f` suffix | First responder included | `First Responder` |
+   | `-NT` suffix | Special ambulance transport | `Notfalltransport mit Notfallkrankenwagen` |
+2. **Keyword table** (admin table, checked only if step 1 didn't
+   match): a list of `{keyword pattern, description, match type}`
+   rows – match type is `starts with` or `contains`, comparison is
+   case-insensitive, and if several rows match, the **most specific
+   (longest) pattern wins automatically** – row order has no effect on
+   matching, so the table can be freely sorted by keyword (click the
+   column header) without changing behavior. The table is pre-filled
+   with an example fire/rescue keyword list (`B:...`/`H:...`) as a
+   starting point only – it is **not** confirmed to match any specific
+   dispatch center's real catalog, edit or fully replace it as needed.
+   The table can be exported/imported as CSV via the buttons above it
+   in the admin UI.
+
+If neither step produces a match, `einsatz.beschreibung` is simply
+`null` - not an error.
 
 ## States (under `waip-web.0.*`)
 
@@ -257,6 +305,7 @@ The most recently finished incident remains available via
 | `uuid` | string | Unique incident UUID (also used to associate feedback) |
 | `einsatzart` | string | e.g. "Brandeinsatz" (fire), "Hilfeleistungseinsatz" (technical assistance), "Rettungseinsatz" (rescue/EMS), "Krankentransport" (patient transport) |
 | `stichwort` | string | Alarm keyword |
+| `beschreibung` | string | Description for `stichwort`, resolved locally (not sent by the server) - see [Alarm keyword descriptions](#alarm-keyword-descriptions) below. `null` if nothing matched |
 | `ort` | string | Location/town |
 | `ortsteil` | string | District (if different from `ort`) |
 | `zeitstempel` | string (date) | Alarm time |
@@ -287,7 +336,7 @@ incident – see the note in the [`einsatz`](#einsatz) section.
 
 | State | Type | Description |
 | --- | --- | --- |
-| `current` | string (JSON array) | Current incident's flat data: the same 11 fields as the individual `einsatz.*` states above (`id` … `zeitstempel`, plus `lat`/`lon`), plus `registeredMonitor`/`registeredMonitorName` (the monitor the adapter was registered to at the time), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
+| `current` | string (JSON array) | Current incident's flat data: the same 12 fields as the individual `einsatz.*` states above (`id` … `zeitstempel`, plus `beschreibung`, `lat`/`lon`), plus `registeredMonitor`/`registeredMonitorName` (the monitor the adapter was registered to at the time), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
 | `history10` | string (JSON array) | Last 10 completed incidents, same shape as `current`, one array entry per incident, written on `io.standby` |
 | `routen` | string (JSON array) | Routes of the current incident; each entry has `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` resolved to flat `lat`/`lon`) |
 | `rueckmeldungen` | string (JSON array) | Feedback entries of the current incident, as received from the server |
@@ -332,6 +381,22 @@ message the adapter can produce, grouped by level, with its cause and an
 example.
 
 ## Changelog
+
+### 0.7.20 (2026-08-22)
+
+- Added `einsatz.beschreibung`: a plain-language description for
+  `einsatz.stichwort`, resolved entirely locally (also included in
+  `einsatz.json.current`/`.history10`). Two sources, in order:
+  - An optional decoder for the `R<RTW>N<NEF>[p][f][-NT]` rescue-service
+    keyword scheme used by several dispatch centers - the label for
+    each part is fully configurable via 5 new text fields.
+  - A user-maintained keyword table (admin table, CSV export/import,
+    pre-filled with an example fire/rescue keyword list) where the
+    most specific (longest) matching pattern wins automatically,
+    regardless of row order - the table can be freely sorted by
+    keyword.
+  - `null` if nothing matches. See
+    [Alarm keyword descriptions](#alarm-keyword-descriptions).
 
 ### 0.7.19 (2026-08-22)
 
@@ -410,23 +475,6 @@ example.
     by more than 60s without a matching `io.standby` ever arriving -
     previously a missed `io.standby` (e.g. due to a disconnect at the
     wrong moment) could leave stale "active" data indefinitely.
-
-### 0.7.15 (2026-08-22)
-
-- Restructured `einsatz.json` into a channel with flat,
-  table-widget-friendly sub-states (`current`/`history10`/`routen`/
-  `rueckmeldungen`/`emAlarmiert`/`emWeitere`) - nested JSON wasn't
-  rendering in VIS table widgets.
-- Moved `tts.*` under `einsatz.tts.*` (removed the meaningless
-  `tts.history10`); `tts.last` now resolves to a full absolute mp3 URL
-  instead of the server's often-relative path.
-- Moved `status.alarmAktiv`/`status.restzeit` to
-  `einsatz.alarmAktiv`/`einsatz.restzeit`.
-- Flattened `debug.normalizedPosition` and corrected
-  `debug.lastError`'s role from `json` to `text`.
-- All states are now actively reset to their empty value on every
-  adapter start, except `einsatz.json.history10` and
-  `debug.monitorAudit`, which persist across restarts.
 
 Older entries have moved to [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 

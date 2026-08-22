@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "waip-web",
-    "version": "0.7.19",
+    "version": "0.7.20",
     "news": {
+      "0.7.20": {
+        "en": "Added einsatz.beschreibung: a plain-language description for einsatz.stichwort, resolved entirely locally. Two sources, in order: an optional decoder for the R<RTW>N<NEF>[p][f][-NT] rescue-service keyword scheme used by several dispatch centers (labels fully configurable via 5 new text fields), then a user-maintained keyword table (admin table, CSV export/import, pre-filled with an example fire/rescue keyword list) where the most specific (longest) matching pattern wins automatically regardless of row order. Also included in einsatz.json.current/.history10. null if nothing matches.",
+        "de": "einsatz.beschreibung ergänzt: eine Klartext-Beschreibung zu einsatz.stichwort, vollständig lokal ermittelt. Zwei Quellen, in dieser Reihenfolge: ein optionaler Dekoder für das von mehreren Leitstellen verwendete Rettungsdienst-Stichwortschema R<RTW>N<NEF>[p][f][-NT] (Beschriftungen über 5 neue Textfelder frei konfigurierbar), danach eine selbst pflegbare Stichwort-Tabelle (Admin-Tabelle, CSV-Export/-Import, mit einer beispielhaften Feuerwehr-/Rettungsdienst-Stichwortliste vorbefüllt), bei der automatisch das spezifischste (längste) passende Muster gewinnt, unabhängig von der Zeilenreihenfolge. Ebenfalls in einsatz.json.current/.history10 enthalten. null, falls nichts passt.",
+        "ru": "Добавлен einsatz.beschreibung: понятное описание для einsatz.stichwort, полностью разрешаемое локально. Два источника по порядку: дополнительный декодер для схемы ключевых слов спасательной службы R<RTW>N<NEF>[p][f][-NT], используемой несколькими диспетчерскими центрами (метки полностью настраиваются с помощью 5 новых текстовых полей), затем поддерживаемая пользователем таблица ключевых слов (таблица администратора, экспорт/импорт CSV, предварительно заполненный примером списка ключевых слов пожарной/спасательной службы), где наиболее конкретный (самый длинный) шаблон соответствия выигрывает автоматически независимо от порядка строк. Также включен в einsatz.json.current/.history10. null, если ничего не соответствует.",
+        "pt": "Adicionado einsatz.beschreibung: uma descrição em linguagem simples para einsatz.stichwort, resolvida inteiramente localmente. Duas fontes, em ordem: um decodificador opcional para o esquema de palavras-chave de serviço de resgate R<RTW>N<NEF>[p][f][-NT] usado por vários centros de despacho (rótulos totalmente configuráveis ​​por meio de 5 novos campos de texto) e, em seguida, uma tabela de palavras-chave mantida pelo usuário (tabela de administração, exportação/importação CSV, pré-preenchida com um exemplo de lista de palavras-chave de incêndio/resgate) onde o padrão de correspondência mais específico (mais longo) vence automaticamente, independentemente da ordem das linhas. Também incluído em einsatz.json.current/.history10. null se nada corresponder.",
+        "nl": "Einsatz.beschreibung toegevoegd: een duidelijke taalbeschrijving voor einsatz.stichwort, volledig lokaal opgelost. Twee bronnen, op volgorde: een optionele decoder voor het trefwoordschema R<RTW>N<NEF>[p][f][-NT] van de reddingsdienst dat door verschillende meldkamers wordt gebruikt (labels volledig configureerbaar via 5 nieuwe tekstvelden), en vervolgens een door de gebruiker bijgehouden trefwoordentabel (beheertabel, CSV-export/-import, vooraf gevuld met een voorbeeldlijst met trefwoorden voor brand/redding) waarbij het meest specifieke (langste) overeenkomende patroon automatisch wint, ongeacht de rijvolgorde. Ook opgenomen in einsatz.json.current/.history10. null als er niets overeenkomt.",
+        "fr": "Ajout de einsatz.beschreibung : une description en langage clair pour einsatz.stichwort, résolue entièrement localement. Deux sources, dans l'ordre : un décodeur optionnel pour le schéma de mots-clés des services de secours R<RTW>N<NEF>[p][f][-NT] utilisé par plusieurs centres de répartition (étiquettes entièrement configurables via 5 nouveaux champs de texte), puis une table de mots-clés gérée par l'utilisateur (table d'administration, export/import CSV, pré-remplie avec un exemple de liste de mots-clés incendie/sauvetage) où le modèle de correspondance le plus spécifique (le plus long) l'emporte automatiquement quel que soit l'ordre des lignes. Également inclus dans einsatz.json.current/.history10. null si rien ne correspond.",
+        "it": "Aggiunto einsatz.beschreibung: una descrizione in linguaggio semplice per einsatz.stichwort, risolta interamente localmente. Due fonti, in ordine: un decodificatore opzionale per lo schema di parole chiave del servizio di soccorso R<RTW>N<NEF>[p][f][-NT] utilizzato da diversi centri di spedizione (etichette completamente configurabili tramite 5 nuovi campi di testo), quindi una tabella di parole chiave gestita dall'utente (tabella di amministrazione, esportazione/importazione CSV, precompilata con un esempio di elenco di parole chiave per incendio/soccorso) in cui il modello di corrispondenza più specifico (più lungo) vince automaticamente indipendentemente dall'ordine delle righe. Incluso anche in einsatz.json.current/.history10. null se non corrisponde nulla.",
+        "es": "Se agregó einsatz.beschreibung: una descripción en lenguaje sencillo para einsatz.stichwort, resuelta completamente localmente. Dos fuentes, en orden: un decodificador opcional para el esquema de palabras clave del servicio de rescate R<RTW>N<NEF>[p][f][-NT] utilizado por varios centros de despacho (etiquetas completamente configurables a través de 5 nuevos campos de texto), luego una tabla de palabras clave mantenida por el usuario (tabla de administración, exportación/importación CSV, precargada con una lista de palabras clave de ejemplo de incendio/rescate) donde el patrón de coincidencia más específico (más largo) gana automáticamente independientemente del orden de las filas. También incluido en einsatz.json.current/.history10. nulo si nada coincide.",
+        "pl": "Dodano einsatz.beschreibung: prosty opis einsatz.stichwort, rozwiązany całkowicie lokalnie. Dwa źródła w kolejności: opcjonalny dekoder schematu słów kluczowych R<RTW>N<NEF>[p][f][-NT] służb ratowniczych używany przez kilka centrów dyspozytorskich (etykiety w pełni konfigurowalne za pomocą 5 nowych pól tekstowych), następnie utrzymywana przez użytkownika tabela słów kluczowych (tabela administracyjna, eksport/import CSV, wstępnie wypełniona przykładową listą słów kluczowych straży pożarnej/ratownictwa), w której najbardziej konkretny (najdłuższy) pasujący wzorzec wygrywa automatycznie niezależnie od kolejności wierszy. Zawarte także w pliku einsatz.json.current/.history10. null, jeśli nic nie pasuje.",
+        "uk": "Додано einsatz.beschreibung: опис простою мовою для einsatz.stichwort, вирішений повністю локально. Два джерела по порядку: додатковий декодер для схеми ключових слів служби порятунку R<RTW>N<NEF>[p][f][-NT], яка використовується кількома диспетчерськими центрами (мітки повністю налаштовуються за допомогою 5 нових текстових полів), а потім таблиця ключових слів, що підтримується користувачем (таблиця адміністратора, експорт/імпорт CSV, попередньо заповнений прикладом списку ключових слів пожежно-рятувальної служби), де автоматично перемагає найбільш конкретний (найдовший) відповідний шаблон незалежно від порядку рядків. Також включено в einsatz.json.current/.history10. null, якщо нічого не відповідає.",
+        "zh-cn": "添加了 einsatz.beschreibung：对 einsatz.stichwort 的简单语言描述，完全在本地解析。两个源，按顺序排列：用于多个调度中心使用的 R<RTW>N<NEF>[p][f][-NT] 救援服务关键字方案的可选解码器（通过 5 个新文本字段完全可配置的标签），然后是用户维护的关键字表（管理表、CSV 导出/导入、预先填充示例消防/救援关键字列表），其中最具体（最长）的匹配模式自动获胜，无论行顺序如何。也包含在 einsatz.json.current/.history10 中。如果没有匹配则为 null。"
+      },
       "0.7.19": {
         "en": "Fixed a bug where incoming feedback (io.new_rmld) was silently dropped as \"wrong monitor\" whenever the responding station's number (wache_nr) differed from the registered monitor ID: payloadMonitorMatch() incorrectly treated wache_nr/wache_id/wacheId as monitor-identifying fields, but confirmed against the WAIP-Web server source, wache_nr on a feedback event is the station number of the crew that submitted it, unrelated to the monitor/dispatch-center ID. Removed these three from the match candidates - alarms and routes were never affected (they don't carry these fields).",
         "de": "Einen Bug behoben, durch den eingehende Rückmeldungen (io.new_rmld) fälschlich als \"falscher Monitor\" verworfen wurden, sobald die Wachennummer der zurückmeldenden Einsatzkraft (wache_nr) von der registrierten Monitor-ID abwich: payloadMonitorMatch() behandelte wache_nr/wache_id/wacheId fälschlich als Monitor-Kennungsfelder - anhand des WAIP-Web-Server-Quellcodes bestätigt, ist wache_nr bei einer Rückmeldung die Wachennummer der meldenden Einsatzkraft, ohne Bezug zur Monitor-/Leitstellen-ID. Alle drei aus den Kandidatenfeldern entfernt - Alarme und Routen waren nie betroffen (sie enthalten diese Felder nicht).",
@@ -80,19 +93,6 @@
         "pl": "Naprawiono [E1032]/[E2004]: przycięto plik common.news do 7 wpisów dozwolonych przez kreatora repozytorium i usunięto osierocony wpis 0.7.10 (nigdy nie opublikowany w npm). Naprawiono [W0066]: przypięto @types/node do ^22.0.0 (było >=22, co spowodowało niedopasowanie 26.x). Naprawiono [W4040]/[W4042]: poprawiono adresy URL schematu JSON .vscode/settings.json dla io-package.json/jsonConfig na te, których faktycznie oczekuje ioBroker. Naprawiono [S8914]: zastąpiono niestandardowy przepływ pracy automerge zależnego od kanonicznej akcji iobroker-bot-orga/action-automerge-dependentabot@v1 i dodano pasujący plik .github/auto-merge.yml (produkcja: zawsze poprawki, drobne tylko dla poprawek bezpieczeństwa; rozwój: drobne też dozwolone). Brak zmian w czasie wykonywania.",
         "uk": "Виправлено [E1032]/[E2004]: обрізано common.news до 7 записів, дозволених конструктором сховища, і видалено загублений запис 0.7.10 (ніколи не публікувався в npm). Виправлено [W0066]: закріплено @types/node до ^22.0.0 (було >=22, вирішувалося до невідповідного 26.x). Виправлено [W4040]/[W4042]: виправлено URL-адреси схеми JSON .vscode/settings.json для io-package.json/jsonConfig на ті, які насправді очікує ioBroker. Виправлено [S8914]: замінено настроюваний робочий процес автоматичного об’єднання Dependabot канонічною дією iobroker-bot-orga/action-automerge-dependabot@v1 і додано відповідний .github/auto-merge.yml (виробництво: виправлення завжди, незначні лише для виправлень безпеки; розробка: також дозволено незначні). Без змін часу виконання.",
         "zh-cn": "修复了 [E1032]/[E2004]：将 common.news 修剪为存储库构建器允许的 7 个条目，并删除了孤立的 0.7.10 条目（从未发布到 npm）。已修复 [W0066]：将 @types/node 固定到 ^22.0.0（>=22，解析为不匹配的 26.x）。修复了 [W4040]/[W4042]：将 io-package.json/jsonConfig 的 .vscode/settings.json JSON 架构 URL 更正为 ioBroker 实际期望的 URL。已修复 [S8914]：用规范的 iobroker-bot-orga/action-automerge-dependabot@v1 操作替换了自定义 Dependabot 自动合并工作流程，并添加了匹配的 .github/auto-merge.yml （生产：始终打补丁，仅针对安全修复进行次要修复；开发：也允许进行次要修复）。没有运行时变化。"
-      },
-      "0.7.13": {
-        "en": "Addressed all remaining ioBroker.repositories checker suggestions: added devDependencies @types/node and @tsconfig/node22 plus a tsconfig.json for editor tooling (S0065/S0085/S0087), added .vscode/settings.json with JSON schemas for io-package.json/admin/jsonConfig.json (S4036), added the release-script-plugin-manual-review plugin (S5026), and added a Dependabot auto-merge workflow for patch/minor updates - major version bumps still require manual review (S8913). No runtime changes.",
-        "de": "Alle verbleibenden Suggestions des ioBroker.repositories-Checkers umgesetzt: devDependencies @types/node und @tsconfig/node22 sowie eine tsconfig.json für das Editor-Tooling ergänzt (S0065/S0085/S0087), .vscode/settings.json mit JSON-Schemas für io-package.json/admin/jsonConfig.json ergänzt (S4036), das Plugin release-script-plugin-manual-review ergänzt (S5026), und einen Dependabot-Automerge-Workflow für Patch-/Minor-Updates ergänzt - Major-Updates erfordern weiterhin manuellen Review (S8913). Keine Laufzeit-Änderungen.",
-        "ru": "Учтены все оставшиеся предложения по проверке ioBroker.repositories: добавлены devDependency @types/node и @tsconfig/node22, а также tsconfig.json для инструментов редактора (S0065/S0085/S0087), добавлен .vscode/settings.json со схемами JSON для io-package.json/admin/jsonConfig.json (S4036), добавлен плагин Release-script-plugin-manual-review (S5026) и добавлен рабочий процесс автоматического слияния Dependabot для исправлений/незначительных обновлений — основные версии по-прежнему требуют проверки вручную (S8913). Никаких изменений во время выполнения.",
-        "pt": "Abordou todas as sugestões restantes do verificador ioBroker.repositories: adicionou devDependencies @types/node e @tsconfig/node22 além de um tsconfig.json para ferramentas de editor (S0065/S0085/S0087), adicionou .vscode/settings.json com esquemas JSON para io-package.json/admin/jsonConfig.json (S4036), adicionou o plugin release-script-plugin-manual-review (S5026) e adicionou um fluxo de trabalho de mesclagem automática do Dependabot para atualizações de patch/menores - os principais problemas de versão ainda exigem revisão manual (S8913). Nenhuma alteração no tempo de execução.",
-        "nl": "Alle resterende suggesties voor de controle van ioBroker.repositories opgelost: devDependencies @types/node en @tsconfig/node22 toegevoegd plus een tsconfig.json voor editortools (S0065/S0085/S0087), .vscode/settings.json toegevoegd met JSON-schema's voor io-package.json/admin/jsonConfig.json (S4036), toegevoegd de release-script-plugin-manual-review plug-in (S5026), en een Dependabot-workflow voor automatisch samenvoegen toegevoegd voor patch-/kleine updates - grote versiehobbels vereisen nog steeds handmatige beoordeling (S8913). Geen runtime-wijzigingen.",
-        "fr": "Correction de toutes les suggestions restantes du vérificateur ioBroker.repositories : ajout de devDependencies @types/node et @tsconfig/node22 plus un tsconfig.json pour les outils d'édition (S0065/S0085/S0087), ajout de .vscode/settings.json avec des schémas JSON pour io-package.json/admin/jsonConfig.json (S4036), ajout du release-script-plugin-manual-review (S5026) et ajout d'un flux de travail de fusion automatique Dependabot pour les correctifs/mises à jour mineures - les modifications de version majeures nécessitent toujours une révision manuelle (S8913). Aucun changement d'exécution.",
-        "it": "Risolti tutti i restanti suggerimenti del controllo ioBroker.repositories: aggiunti devDependencies @types/node e @tsconfig/node22 più un tsconfig.json per gli strumenti dell'editor (S0065/S0085/S0087), aggiunto .vscode/settings.json con schemi JSON per io-package.json/admin/jsonConfig.json (S4036), aggiunto il plugin release-script-plugin-manual-review (S5026) e aggiunto un flusso di lavoro di unione automatica di Dependabot per aggiornamenti patch/minori: i maggiori aggiornamenti della versione richiedono ancora una revisione manuale (S8913). Nessuna modifica all'esecuzione.",
-        "es": "Se abordaron todas las sugerencias restantes del verificador de ioBroker.repositories: se agregaron devDependencies @types/node y @tsconfig/node22 más un tsconfig.json para herramientas de edición (S0065/S0085/S0087), se agregó .vscode/settings.json con esquemas JSON para io-package.json/admin/jsonConfig.json (S4036), se agregó el complemento release-script-plugin-manual-review (S5026) y agregó un flujo de trabajo de fusión automática de Dependabot para parches/actualizaciones menores; los cambios importantes en las versiones aún requieren revisión manual (S8913). Sin cambios en el tiempo de ejecución.",
-        "pl": "Rozwiązano wszystkie pozostałe sugestie dotyczące sprawdzania ioBroker.repositories: dodano devDependency @types/node i @tsconfig/node22 oraz tsconfig.json dla narzędzi edytora (S0065/S0085/S0087), dodano .vscode/settings.json ze schematami JSON dla io-package.json/admin/jsonConfig.json (S4036), dodano wtyczkę Release-script-Plugin-Manual-Review (S5026) i dodano przepływ pracy automatycznego scalania w programie Depabot w przypadku poprawek/drobnych aktualizacji — główne błędy wersji nadal wymagają ręcznego przeglądu (S8913). Brak zmian w czasie wykonywania.",
-        "uk": "Вирішено всі інші пропозиції перевірки ioBroker.repositories: додано devDependencies @types/node і @tsconfig/node22, а також tsconfig.json для інструментів редактора (S0065/S0085/S0087), додано .vscode/settings.json зі схемами JSON для io-package.json/admin/jsonConfig.json (S4036), додано плагін release-script-plugin-manual-review (S5026) і додано робочий процес автоматичного об’єднання Dependabot для виправлень/мінорних оновлень – основні помилки версії все ще потребують перегляду вручну (S8913). Без змін часу виконання.",
-        "zh-cn": "解决了所有剩余的 ioBroker.repositories 检查器建议：添加了 devDependency @types/node 和 @tsconfig/node22 以及用于编辑器工具的 tsconfig.json (S0065/S0085/S0087)，添加了 .vscode/settings.json 以及 io-package.json/admin/jsonConfig.json (S4036) 的 JSON 模式，添加了release-script-plugin-manual-review 插件 (S5026)，并添加了用于补丁/次要更新的 Dependabot 自动合并工作流程 - 主要版本更新仍需要手动审核 (S8913)。没有运行时变化。"
       }
     },
     "titleLang": {
@@ -166,7 +166,220 @@
     "url": "https://wachalarm.leitstelle-lausitz.de",
     "monitorID": "",
     "registrationTimeoutSec": 10,
-    "reconnectDelaySec": 5
+    "reconnectDelaySec": 5,
+    "rdKeywordDecodingEnabled": false,
+    "stichwortMapping": [
+      {
+        "stichwort": "B:BMA",
+        "beschreibung": "Brandmeldeanlage ausgelöst",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Boot",
+        "beschreibung": "Freizeitboot-Brand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Explosion",
+        "beschreibung": "Brand nach Explosion",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Fläche",
+        "beschreibung": "Flur-/Wiesenbrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Gebäude groß",
+        "beschreibung": "Zimmer-, Keller-, Dach- oder landwirtschaftlicher Gebäudebrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Gebäude klein",
+        "beschreibung": "Garage, Schuppen, Bungalow, elektrische Anlage, Trafo",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Gefahrgut",
+        "beschreibung": "Gefahrgut-Brand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Großflugzeug",
+        "beschreibung": "Großflugzeugbrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Klein",
+        "beschreibung": "Papierkorb, Container, Kontrolle nach Brand, keine Ausbreitungsgefahr",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Kleinflugzeug",
+        "beschreibung": "Kleinflugzeugbrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Lkw",
+        "beschreibung": "Lkw, Bus, Traktor, Campinganhänger",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Pkw",
+        "beschreibung": "Pkw-/Motorrad-Brand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Schiene",
+        "beschreibung": "Schienenfahrzeugbrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Schiff",
+        "beschreibung": "Berufs-/Passagierschiff-Brand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Schornstein",
+        "beschreibung": "Schornsteinbrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Sonderobjekt",
+        "beschreibung": "Sonderobjekt mit eigenem Alarmplan",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Wald",
+        "beschreibung": "Wald-/Bahndammbrand",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "B:Wald groß/WSP",
+        "beschreibung": "Wald-/Getreidefeldbrand (groß)",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Einsturz",
+        "beschreibung": "Gebäude-/Bauwerkseinsturz",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Flugunfall groß",
+        "beschreibung": "Großflugzeugabsturz",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Flugunfall klein",
+        "beschreibung": "Kleinflugzeugabsturz",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Gas",
+        "beschreibung": "Gasaustritt",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Gefahrgut groß",
+        "beschreibung": "Größerer Gefahrgut-Einsatz",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Gefahrgut klein",
+        "beschreibung": "Kleinerer Gefahrgut-Einsatz",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Hilfeleistung",
+        "beschreibung": "Ausleuchten, Transportunterstützung, Rettung allgemein",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Klein",
+        "beschreibung": "Kellerüberflutung, Beseitigung von Trümmern",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Kommunal",
+        "beschreibung": "Amtshilfe/Verwaltungseinsatz",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Natur",
+        "beschreibung": "Wetterbedingte Schäden",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Öl Land",
+        "beschreibung": "Ölspur auf Straße",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Öl Wasser",
+        "beschreibung": "Ölverschmutzung eines Gewässers",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Person auf Schiene",
+        "beschreibung": "Personenunfall auf Bahngleisen",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Person im Wasser/Eis",
+        "beschreibung": "Wasser-/Eisrettung",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Rettung aus Höhen/Tiefen",
+        "beschreibung": "Höhen-/Tiefenrettung",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Tier in Not",
+        "beschreibung": "Tierrettung",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:Türnotöffnung",
+        "beschreibung": "Notöffnung wegen Person in Gefahr",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:VU Klemm",
+        "beschreibung": "Person im Fahrzeug eingeklemmt",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:VU Lkw/Bus",
+        "beschreibung": "Schwerfahrzeug-Unfall",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:VU mit P",
+        "beschreibung": "Verkehrsunfall mit Personenschaden",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:VU ohne P",
+        "beschreibung": "Verkehrsunfall ohne Personenschaden",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:VU Schiene",
+        "beschreibung": "Bahnunfall",
+        "matchType": "startsWith"
+      },
+      {
+        "stichwort": "H:VU Schiff",
+        "beschreibung": "Schiffsunfall",
+        "matchType": "startsWith"
+      }
+    ],
+    "rdLabelR": "Rettungswagen",
+    "rdLabelN": "Notfalleinsatzfahrzeug",
+    "rdLabelP": "Polytrauma",
+    "rdLabelF": "First Responder",
+    "rdLabelNT": "Notfalltransport mit Notfallkrankenwagen"
   },
   "objects": [],
   "instanceObjects": [
