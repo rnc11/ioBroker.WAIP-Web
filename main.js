@@ -61,6 +61,9 @@ const ALLOWED_EINSATZ_FIELDS = [
 const RUECKMELDUNG_ANZAHL_KEYS = ['ek', 'gf', 'zf', 'vf', 'agt', 'fzf', 'ma', 'med'];
 const DISCONNECT_DEDUPE_MS = 60000; // suppress identical disconnect logs for 60s
 const WARN_DEDUPE_MS = 5000;
+// Toleranz nach Ablauf von einsatz.ablaufzeit, bevor der Watchdog in restzeitInterval ein
+// verpasstes io.standby annimmt und den Einsatz automatisch abschließt (siehe dort).
+const MISSED_STANDBY_GRACE_MS = 60000;
 
 /* Für die dynamische Monitor-Auswahl im Admin (siehe fetchMonitorList/onMessage):
    Die /waip/-Übersichtsseite einer WAIP-Web-Instanz gliedert die verfügbaren
@@ -216,7 +219,7 @@ const STATE_DEFS = [
         id: 'einsatz.json.current',
         type: 'string',
         role: 'json',
-        name: 'Einsatzstamm des aktuellen Einsatzes, flaches Objekt (JSON)',
+        name: 'Einsatzstamm des aktuellen Einsatzes (JSON-Array mit einem Element, leer falls kein Einsatz aktiv)',
     },
     {
         id: 'einsatz.json.history10',
@@ -315,10 +318,13 @@ const STATE_DEF_BY_ID = new Map(STATE_DEFS.map(def => [def.id, def]));
 
 // IDs, deren "string"-Wert tatsächlich ein JSON-*Array* enthält - werden von
 // resetAllStates() auf "[]" statt null zurückgesetzt (alle anderen "string"-States,
-// auch JSON-*Objekte* wie debug.lastEvent/einsatz.json.current, werden auf null gesetzt).
+// auch JSON-*Objekte* wie debug.lastEvent, werden auf null gesetzt). einsatz.json.current
+// ist trotz des Namens ebenfalls ein Array (mit maximal einem Element) - VIS-Tabellen-
+// Widgets erwarten am Root immer ein Array, siehe persistEinsatzSnapshot().
 // debug.monitorAudit ist ebenfalls ein JSON-Array, steht aber bewusst NICHT hier, da es
 // komplett in RESET_EXCLUDED_STATE_IDS ausgenommen ist (siehe dort).
 const JSON_ARRAY_STATE_IDS = new Set([
+    'einsatz.json.current',
     'einsatz.json.routen',
     'einsatz.json.rueckmeldungen',
     'einsatz.json.emAlarmiert',
@@ -567,6 +573,7 @@ class WaipWeb extends utils.Adapter {
         this.sessionCookie = null;
         this.currentEinsatzUuid = null;
         this.currentEinsatzSnapshot = null; // -> einsatz.json.current/.routen/.rueckmeldungen/...
+        this._restzeitZeroSince = null; // -> Watchdog gegen verpasstes io.standby, siehe restzeitInterval
         this.lastServerVersion = null;
 
         this._lastDisconnectMsg = null;
@@ -1138,6 +1145,13 @@ class WaipWeb extends utils.Adapter {
         }
         flat.lat = src.position && typeof src.position.lat === 'number' ? src.position.lat : null;
         flat.lon = src.position && typeof src.position.lon === 'number' ? src.position.lon : null;
+        // Konsistent zum eigenständigen einsatz.permissions-State (setField() stringifiziert
+        // dort ebenfalls jeden Nicht-String-Wert) - sonst könnte permissions hier z.B. ein
+        // rohes Boolean sein, im Einzel-State aber immer ein String.
+        flat.permissions =
+            flat.permissions === null || typeof flat.permissions === 'string'
+                ? flat.permissions
+                : JSON.stringify(flat.permissions);
         return flat;
     }
 
@@ -1259,7 +1273,9 @@ class WaipWeb extends utils.Adapter {
     async persistEinsatzSnapshot() {
         try {
             const flat = this.buildFlatEinsatzJson(this.currentEinsatzSnapshot);
-            await this.setStateAsync('einsatz.json.current', JSON.stringify(flat), true);
+            // Als Array mit einem Element speichern (nicht das nackte Objekt) - VIS-Tabellen-
+            // Widgets erwarten am Root immer ein Array, sonst liefern sie keine Zeile.
+            await this.setStateAsync('einsatz.json.current', JSON.stringify([flat]), true);
         } catch (e) {
             this.safeWarn('persistEinsatzSnapshot', e);
         }
@@ -1372,6 +1388,20 @@ class WaipWeb extends utils.Adapter {
                 await this.pushEinsatzToHistory();
                 this.currentEinsatzUuid = data.uuid;
                 this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
+                // Sofort leeren statt auf das nächste io.routes/io.new_rmld für den neuen
+                // Einsatz zu warten - sonst zeigen diese States/Zähler bis dahin noch die
+                // Routen/Rückmeldungen des alten Einsatzes (z.B. relevant, wenn zwischen
+                // beiden Einsätzen ein io.standby verpasst wurde). einsatz.json.current und
+                // .emAlarmiert/.emWeitere werden weiter unten in dieser Methode ohnehin
+                // unbedingt neu geschrieben, brauchen hier keine gesonderte Behandlung.
+                await this.writeJsonArrayState('einsatz.json.routen', []);
+                await this.writeJsonArrayState('einsatz.json.rueckmeldungen', []);
+                try {
+                    await this.setStateAsync('einsatz.routenGesamt', 0, true);
+                } catch (e) {
+                    this.safeWarn('einsatz.routenGesamt.setState', e);
+                }
+                await this.updateRueckmeldungCounts();
             } else if (!this.currentEinsatzSnapshot) {
                 this.currentEinsatzSnapshot = { routen: [], rueckmeldungen: [] };
             }
@@ -1495,17 +1525,26 @@ class WaipWeb extends utils.Adapter {
        bezogenen States geleert - so bleibt alarmAktiv ein verlässlicher Schalter dafür, ob
        einsatz.* gerade echte Live-Daten enthält, statt still den letzten (beendeten)
        Einsatz weiter anzuzeigen. */
+    /* Schließt den aktuellen Einsatz ab: alarmAktiv=false, Archivierung nach
+       einsatz.json.history10, Leeren aller einsatz.*-States. Gemeinsam genutzt von einem
+       echten io.standby (handleStandby()) und vom Watchdog in restzeitInterval, falls
+       io.standby verpasst wurde (siehe dort). */
+    async finalizeCurrentEinsatz() {
+        try {
+            await this.setStateAsync('einsatz.alarmAktiv', false, true);
+        } catch (e) {
+            this.safeWarn('einsatz.alarmAktiv.setState', e);
+        }
+        await this.pushEinsatzToHistory();
+        await this.clearCurrentEinsatzStates();
+        this._restzeitZeroSince = null;
+    }
+
     async handleStandby() {
         try {
             this.log.info('Standby empfangen - Einsatz beendet bzw. Monitor im Ruhezustand');
             this.appendMonitorAudit({ ts: new Date().toISOString(), event: 'standby' }).catch(() => {});
-            try {
-                await this.setStateAsync('einsatz.alarmAktiv', false, true);
-            } catch (e) {
-                this.safeWarn('einsatz.alarmAktiv.setState', e);
-            }
-            await this.pushEinsatzToHistory();
-            await this.clearCurrentEinsatzStates();
+            await this.finalizeCurrentEinsatz();
         } catch (e) {
             // Standby konnte nicht verarbeitet werden -> Historie/States ggf. inkonsistent.
             this.safeLog('error', 'handleStandby', e);
@@ -1520,7 +1559,7 @@ class WaipWeb extends utils.Adapter {
         const tasks = this.ALLOWED_EINSATZ_FIELDS.map(k => this.setStateAsync(`einsatz.${k}`, null, true));
         tasks.push(this.setStateAsync('einsatz.latitude', null, true));
         tasks.push(this.setStateAsync('einsatz.longitude', null, true));
-        tasks.push(this.setStateAsync('einsatz.json.current', null, true));
+        tasks.push(this.writeJsonArrayState('einsatz.json.current', []));
         tasks.push(this.writeJsonArrayState('einsatz.json.routen', []));
         tasks.push(this.writeJsonArrayState('einsatz.json.rueckmeldungen', []));
         tasks.push(this.writeJsonArrayState('einsatz.json.emAlarmiert', []));
@@ -1938,23 +1977,52 @@ class WaipWeb extends utils.Adapter {
     /* Intervall: Restzeit bis Einsatzende. */
     startRestzeitInterval() {
         this.restzeitInterval = this.setInterval(async () => {
+            let rest = 0;
             try {
                 const s = await this.getStateAsync('einsatz.ablaufzeit');
-                if (!s || s.val === undefined || s.val === null || s.val === '') {
-                    await this.updateRestzeit(0);
-                    return;
+                if (s && s.val !== undefined && s.val !== null && s.val !== '') {
+                    const end = new Date(s.val);
+                    if (!isNaN(end.getTime())) {
+                        rest = Math.max(0, Math.floor((end.getTime() - Date.now()) / 1000));
+                    }
                 }
-                const end = new Date(s.val);
-                if (isNaN(end.getTime())) {
-                    await this.updateRestzeit(0);
-                    return;
-                }
-                const rest = Math.max(0, Math.floor((end.getTime() - Date.now()) / 1000));
-                await this.updateRestzeit(rest);
             } catch {
-                await this.updateRestzeit(0);
+                rest = 0;
             }
+            await this.updateRestzeit(rest);
+            await this.checkMissedStandby(rest);
         }, 1000);
+    }
+
+    /* Watchdog gegen ein verpasstes io.standby: steht einsatz.restzeit seit
+       MISSED_STANDBY_GRACE_MS auf 0, obwohl noch ein Einsatz als aktiv geführt wird, wird
+       angenommen, dass io.standby verpasst wurde (z.B. durch einen Disconnect zum
+       falschen Zeitpunkt) - der Einsatz wird dann automatisch abgeschlossen, statt
+       unbegrenzt mit veralteten Daten als "aktiv" stehen zu bleiben. */
+    async checkMissedStandby(rest) {
+        if (rest > 0 || !this.currentEinsatzUuid || !this.currentEinsatzSnapshot) {
+            this._restzeitZeroSince = null;
+            return;
+        }
+        if (this._restzeitZeroSince === null) {
+            this._restzeitZeroSince = Date.now();
+            return;
+        }
+        if (Date.now() - this._restzeitZeroSince < MISSED_STANDBY_GRACE_MS) {
+            return;
+        }
+        const einsatzUuid = this.currentEinsatzUuid;
+        this.log.warn(
+            `Vermutlich verpasstes io.standby erkannt (ablaufzeit seit ${Math.round(
+                MISSED_STANDBY_GRACE_MS / 1000,
+            )}s überschritten) - Einsatz ${einsatzUuid} wird automatisch abgeschlossen.`,
+        );
+        this.appendMonitorAudit({
+            ts: new Date().toISOString(),
+            event: 'missed_standby_timeout',
+            einsatz: einsatzUuid,
+        }).catch(() => {});
+        await this.finalizeCurrentEinsatz();
     }
 
     async updateRestzeit(rest) {

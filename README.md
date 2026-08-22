@@ -89,6 +89,14 @@ independent client for its Socket.IO interface.
   actively running, its live fields (`einsatz.*`) are cleared too and
   only repopulate once the server sends the next event for that
   incident.
+- Stale-data protection: when a new incident starts before the previous
+  one's routes/feedback events for the *new* incident have arrived,
+  `einsatz.json.routen`/`.rueckmeldungen` and the feedback counters are
+  cleared immediately rather than waiting for those events. And if
+  `io.standby` is ever missed for an incident (e.g. due to a disconnect
+  at the wrong moment), a watchdog automatically finalizes the incident
+  once its `ablaufzeit` has passed by more than a grace period
+  (60 seconds), instead of leaving stale "active" data indefinitely.
 
 ### Why a session cookie is needed
 
@@ -194,11 +202,13 @@ directly to VIS table widgets (nested structures like a plain
 `{routen, rueckmeldungen, ...}` object generally aren't rendered by
 those widgets). `routen`/`rueckmeldungen`/`emAlarmiert`/`emWeitere` only
 ever hold the *current* incident's data – they are cleared (`[]`) on
-`io.standby` and are **not** part of the history.
+`io.standby` and are **not** part of the history. `permissions` inside
+`current`/`history10` is stringified the same way as the standalone
+`einsatz.permissions` state.
 
 | State | Type | Description |
 | --- | --- | --- |
-| `current` | string (JSON) | Current incident's flat data: the same 19 fields as the individual `einsatz.*` states above (`id` … `permissions`, plus `lat`/`lon`), bundled as one object |
+| `current` | string (JSON array) | Current incident's flat data: the same 19 fields as the individual `einsatz.*` states above (`id` … `permissions`, plus `lat`/`lon`), bundled as one object inside a single-element array (`[]` if no incident is active) – the array wrapper is needed because most table widgets require an array at the root, not a bare object |
 | `history10` | string (JSON array) | Last 10 completed incidents, same shape as `current`, one array entry per incident, written on `io.standby` |
 | `routen` | string (JSON array) | Routes of the current incident; each entry has `nr_wache`, `name_wache`, `color`, `lat`, `lon` (`position` resolved to flat `lat`/`lon`) |
 | `rueckmeldungen` | string (JSON array) | Feedback entries of the current incident, as received from the server |
@@ -231,6 +241,19 @@ matters in the moment, so only the most recent one is kept.
 | `serverVersion` | string | Last reported server instance ID (`io.version`); a change suggests a server restart |
 
 ## Changelog
+
+### 0.7.16 (2026-08-22)
+
+- Fixed two stale-data gaps around incident transitions:
+  - When a new incident starts before its own routes/feedback events
+    arrive, `einsatz.json.routen`/`.rueckmeldungen` and the feedback
+    counters are now cleared immediately instead of waiting for those
+    events.
+  - Added a watchdog that automatically finalizes an incident
+    (archives it, clears live fields) if its `ablaufzeit` is exceeded
+    by more than 60s without a matching `io.standby` ever arriving -
+    previously a missed `io.standby` (e.g. due to a disconnect at the
+    wrong moment) could leave stale "active" data indefinitely.
 
 ### 0.7.15 (2026-08-22)
 
